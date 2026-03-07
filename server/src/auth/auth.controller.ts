@@ -38,16 +38,14 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    // Stub implementation
-    return { message: 'If that email exists, a reset link has been sent.' };
+    return this.authService.forgotPassword(dto);
   }
 
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    // Stub implementation
-    return { message: 'Password updated successfully.' };
+    return this.authService.resetPassword(dto);
   }
 
   @Public()
@@ -61,6 +59,8 @@ export class AuthController {
   @Post('sign-out')
   @HttpCode(HttpStatus.NO_CONTENT)
   async signOut(@Request() req: any) {
-    await this.authService.signOut(req.user.id);
+    const token = req.get('Authorization').replace('Bearer ', '');
+    const deviceId = req.user.device_id || 'default';
+    await this.authService.signOut(req.user.id, token, deviceId);
   }
 }

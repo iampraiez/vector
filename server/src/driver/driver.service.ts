@@ -9,9 +9,6 @@ export class DriverService {
     private redis: RedisService,
   ) {}
 
-  // ==========================================
-  // HOME / DASHBOARD
-  // ==========================================
   async getHomeSummary(driverId: string) {
     // Basic logic for home
     return {

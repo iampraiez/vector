@@ -7,6 +7,10 @@ export class SignInDto {
   @IsString()
   @IsNotEmpty()
   password!: string;
+
+  @IsString()
+  @IsOptional()
+  device_id?: string;
 }
 
 export class SignUpDriverDto {
@@ -94,4 +98,8 @@ export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty()
   refresh_token!: string;
+
+  @IsString()
+  @IsOptional()
+  device_id?: string;
 }

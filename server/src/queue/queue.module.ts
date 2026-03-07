@@ -1,6 +1,8 @@
 import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailModule } from '../mail/mail.module';
+import { EmailProcessor } from './email.processor';
 
 @Global()
 @Module({
@@ -18,7 +20,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     BullModule.registerQueue({
       name: 'notification',
     }),
+    MailModule,
   ],
+  providers: [EmailProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

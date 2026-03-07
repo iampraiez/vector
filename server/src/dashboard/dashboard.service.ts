@@ -10,11 +10,7 @@ export class DashboardService {
     private readonly redis: RedisService,
   ) {}
 
-  // ==========================================
-  // OVERVIEW API
-  // ==========================================
   async getMetrics(companyId: string) {
-    // Basic implementation for overview metrics
     const [activeDrivers, pendingOrders] = await Promise.all([
       this.prisma.driver.count({
         where: { company_id: companyId, status: 'active' },
@@ -26,12 +22,12 @@ export class DashboardService {
 
     return {
       active_drivers: activeDrivers,
-      active_drivers_change: '+0', // Mock trend data
+      active_drivers_change: '+0',
       pending_orders: pendingOrders,
       pending_orders_change: '+0',
-      on_time_rate: 98.5, // Mock data
+      on_time_rate: 98.5,
       on_time_rate_change: '+1.2',
-      fuel_saved_usd: 120, // Mock data
+      fuel_saved_usd: 120,
       fuel_saved_change: '+5',
     };
   }
@@ -64,9 +60,6 @@ export class DashboardService {
     return { orders };
   }
 
-  // ==========================================
-  // ORDERS API
-  // ==========================================
   async createOrder(companyId: string, dto: CreateOrderDto) {
     return this.prisma.stop.create({
       data: {
@@ -155,9 +148,6 @@ export class DashboardService {
     await this.prisma.stop.delete({ where: { id: stopId } });
   }
 
-  // ==========================================
-  // DRIVERS API
-  // ==========================================
   async getDrivers(companyId: string, query: PaginationDto & { status?: string }) {
     const page = query.page || 1;
     const limit = query.limit || 20;
@@ -315,9 +305,6 @@ export class DashboardService {
     });
   }
 
-  // ==========================================
-  // TRACKING API (Admin/Manager view)
-  // ==========================================
   async getLiveTracking(companyId: string) {
     const drivers = await this.prisma.driver.findMany({
       where: { company_id: companyId, status: { in: ['active', 'idle'] } },
@@ -345,9 +332,6 @@ export class DashboardService {
     };
   }
 
-  // ==========================================
-  // REPORTS API
-  // ==========================================
   async getReportSummary(companyId: string, query: ReportQueryDto) {
     // Stub implementation for report summary logic
     return {
@@ -393,9 +377,6 @@ export class DashboardService {
     };
   }
 
-  // ==========================================
-  // BILLING API (Paystack Stubs)
-  // ==========================================
   async getBillingInfo(companyId: string) {
     const record = await this.prisma.billingRecord.findFirst({
       where: { company_id: companyId, status: 'active' },
@@ -469,9 +450,6 @@ export class DashboardService {
     return { message: 'Plan will be canceled at the end of the billing period.' };
   }
 
-  // ==========================================
-  // SETTINGS API
-  // ==========================================
   async getSettings(companyId: string) {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
@@ -525,9 +503,6 @@ export class DashboardService {
     });
   }
 
-  // ==========================================
-  // NOTIFICATIONS API
-  // ==========================================
   async getNotifications(userId: string, query: PaginationDto) {
     const page = query.page || 1;
     const limit = query.limit || 20;
@@ -550,7 +525,6 @@ export class DashboardService {
   }
 
   async markNotificationRead(userId: string, targetId: string) {
-    // If targetId is 'all', mark all as read
     if (targetId === 'all') {
       await this.prisma.notification.updateMany({
         where: { user_id: userId, read: false },

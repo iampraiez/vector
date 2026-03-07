@@ -24,8 +24,14 @@ export class AuthService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  private async generateTokens(user: { id: string; email: string; role: string; company_id: string }) {
-    const payload = { sub: user.id, email: user.email, role: user.role, company_id: user.company_id };
+  private async generateTokens(user: { id: string; email: string; role: string; company_id: string }, device_id: string = 'default') {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      company_id: user.company_id,
+      device_id
+    };
     
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -38,12 +44,12 @@ export class AuthService {
       }),
     ]);
 
-    // Store refresh token hash in Redis
+    // Store refresh token hash in Redis (keyed by userId and deviceId)
     const tokenHash = await bcrypt.hash(refresh_token, 10);
     const ttlDays = parseInt(this.configService.get('JWT_REFRESH_EXPIRATION', '7d').replace('d', ''), 10);
-    await this.redis.set(`rt:${user.id}`, tokenHash, ttlDays * 24 * 60 * 60);
+    await this.redis.set(`rt:${user.id}:${device_id}`, tokenHash, ttlDays * 24 * 60 * 60);
 
-    return { access_token, refresh_token, expires_in: 3600, user };
+    return { access_token, refresh_token, expires_in: 3600, user, device_id };
   }
 
   async signIn(dto: SignInDto) {
@@ -63,12 +69,22 @@ export class AuthService {
       throw new UnauthorizedException('Account is inactive');
     }
 
+    // Require email verification before logging in
+    if (!user.email_verified) {
+      // Generate a new OTP and queue email since the old one might have expired
+      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      await this.redis.set(`verify:${user.email}`, token, 3600);
+      await this.emailQueue.add('sendVerification', { email: user.email, token });
+
+      throw new UnauthorizedException('Please verify your email address. A new verification code has been sent to your inbox.');
+    }
+
     return this.generateTokens({
       id: user.id,
       email: user.email,
       role: user.role,
       company_id: user.company_id,
-    });
+    }, dto.device_id);
   }
 
   async signUpDriver(dto: SignUpDriverDto) {
@@ -176,7 +192,12 @@ export class AuthService {
     }
 
     await this.redis.del(`verify:${dto.email}`);
-    // In a full implementation, you'd likely set an `email_verified` flag on the User here if it existed
+
+    // Mark the user's email as verified in the database
+    await this.prisma.user.update({
+      where: { email: dto.email },
+      data: { email_verified: true }
+    });
 
     return { message: 'Email verified successfully.' };
   }
@@ -187,7 +208,8 @@ export class AuthService {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
 
-      const storedHash = await this.redis.get(`rt:${payload.sub}`);
+      const deviceId = payload.device_id || 'default';
+      const storedHash = await this.redis.get(`rt:${payload.sub}:${deviceId}`);
       if (!storedHash) throw new UnauthorizedException('Invalid refresh token');
 
       const isMatch = await bcrypt.compare(dto.refresh_token, storedHash);
@@ -205,13 +227,58 @@ export class AuthService {
         email: user.email,
         role: user.role,
         company_id: user.company_id,
-      });
+      }, deviceId);
     } catch (e) {
       throw new UnauthorizedException('Token invalid or expired');
     }
   }
 
-  async signOut(userId: string) {
-    await this.redis.del(`rt:${userId}`);
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (user) {
+      const token = uuidv4();
+
+      await this.redis.set(`reset:${token}`, user.id, 1800);
+
+      const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3001');
+      await this.emailQueue.add('sendPasswordReset', {
+        email: user.email,
+        token,
+        resetLink: `${frontendUrl}/reset-password?token=${token}`
+      });
+    }
+
+    // Always return same message to prevent email enumeration (security best practice)
+    return { message: 'If that email exists, a reset link has been sent.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const userId = await this.redis.get(`reset:${dto.token}`);
+
+    if (!userId) {
+      throw new UnauthorizedException('Invalid or expired password reset token');
+    }
+
+    const hashedPassword = await this.hashPassword(dto.new_password);
+
+    // Update the user's password in the database
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    // Delete the used token to prevent reuse
+    await this.redis.del(`reset:${dto.token}`);
+
+    return { message: 'Password updated successfully.' };
+  }
+
+  async signOut(userId: string, accessToken: string, deviceId: string = 'default') {
+    // Invalidate the refresh token session 
+    await this.redis.del(`rt:${userId}:${deviceId}`);
+
+    // Blacklist the specific access token being used (prevents re-use of this token)
+    // Store it for 1 hour (matching JWT_ACCESS_EXPIRATION default)
+    await this.redis.set(`bl:${accessToken}`, 'revoked', 3600);
   }
 }
