@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Post, Param, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Param,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';

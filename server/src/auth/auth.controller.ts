@@ -1,8 +1,32 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
-import { SignInDto, SignUpDriverDto, SignUpFleetDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, RefreshTokenDto } from './dto/auth.dto';
+import {
+  SignInDto,
+  SignUpDriverDto,
+  SignUpFleetDto,
+  VerifyEmailDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  RefreshTokenDto,
+} from './dto/auth.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+
+interface RequestWithUser extends ExpressRequest {
+  user: {
+    id: string;
+    device_id?: string;
+  };
+}
 
 @Controller('auth')
 export class AuthController {
@@ -58,8 +82,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('sign-out')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async signOut(@Request() req: any) {
-    const token = req.get('Authorization').replace('Bearer ', '');
+  async signOut(@Request() req: RequestWithUser) {
+    const authHeader = req.get('Authorization');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : '';
     const deviceId = req.user.device_id || 'default';
     await this.authService.signOut(req.user.id, token, deviceId);
   }

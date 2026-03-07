@@ -24,10 +24,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      const res = exception.getResponse() as any;
+      const res = exception.getResponse() as
+        | string
+        | { message?: string | string[]; error?: string };
       error = this.getErrorSlug(status);
-      message = res.message || exception.message;
-      details = res.error ? { original_error: res.error } : {};
+      if (typeof res === 'object') {
+        message = Array.isArray(res.message)
+          ? res.message[0]
+          : res.message || exception.message;
+        details = res.error ? { original_error: res.error } : {};
+      } else {
+        message = res;
+      }
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       if (exception.code === 'P2002') {
         status = HttpStatus.CONFLICT;
@@ -41,7 +49,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack);
-      message = process.env.NODE_ENV === 'development' ? exception.message : message;
+      message =
+        process.env.NODE_ENV === 'development' ? exception.message : message;
     } else {
       this.logger.error('Unhandled exception', exception);
     }
@@ -55,14 +64,22 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   private getErrorSlug(status: number): string {
     switch (status) {
-      case 400: return 'bad_request';
-      case 401: return 'unauthenticated';
-      case 403: return 'forbidden';
-      case 404: return 'not_found';
-      case 409: return 'conflict';
-      case 422: return 'unprocessable';
-      case 429: return 'rate_limited';
-      default: return 'internal_server_error';
+      case 400:
+        return 'bad_request';
+      case 401:
+        return 'unauthenticated';
+      case 403:
+        return 'forbidden';
+      case 404:
+        return 'not_found';
+      case 409:
+        return 'conflict';
+      case 422:
+        return 'unprocessable';
+      case 429:
+        return 'rate_limited';
+      default:
+        return 'internal_server_error';
     }
   }
 }

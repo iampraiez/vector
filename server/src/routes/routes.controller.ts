@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { RoutesService } from './routes.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -65,7 +77,7 @@ export class RoutesController {
   assignRoute(
     @CurrentUser('company_id') companyId: string,
     @Param('route_id') routeId: string,
-    @Body() dto: any,
+    @Body() dto: { driver_id: string },
   ) {
     return this.routesService.assignRoute(companyId, routeId, dto);
   }

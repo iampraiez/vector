@@ -11,9 +11,9 @@ export class TrackingService {
       where: { external_id: token },
       include: {
         driver: {
-          include: { user: { select: { full_name: true, phone: true } } }
-        }
-      }
+          include: { user: { select: { full_name: true, phone: true } } },
+        },
+      },
     });
 
     if (!stop) throw new NotFoundException('Invalid tracking link');
@@ -33,13 +33,13 @@ export class TrackingService {
         : null,
       live_location: stop.driver
         ? { lat: stop.driver.current_lat, lng: stop.driver.current_lng }
-        : null
+        : null,
     };
   }
 
   async rateDelivery(token: string, dto: { rating: number; comment?: string }) {
     const stop = await this.prisma.stop.findFirst({
-      where: { external_id: token, status: 'completed' }
+      where: { external_id: token, status: 'completed' },
     });
 
     if (!stop) {
@@ -52,7 +52,7 @@ export class TrackingService {
         customer_rating: dto.rating,
         customer_rating_comment: dto.comment,
         customer_rated_at: new Date(),
-      }
+      },
     });
 
     return { message: 'Thank you for your feedback!' };

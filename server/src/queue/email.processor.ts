@@ -13,7 +13,7 @@ export class EmailProcessor {
   async handleSendVerification(job: Job<{ email: string; token: string }>) {
     const { email, token } = job.data;
     this.logger.log(`Processing verification email for ${email}`);
-    
+
     const html = `
       <h1>Welcome to Vector!</h1>
       <p>Your verification code is: <strong>${token}</strong></p>
@@ -25,10 +25,12 @@ export class EmailProcessor {
   }
 
   @Process('sendPasswordReset')
-  async handleSendPasswordReset(job: Job<{ email: string; token: string; resetLink: string }>) {
+  async handleSendPasswordReset(
+    job: Job<{ email: string; token: string; resetLink: string }>,
+  ) {
     const { email, resetLink } = job.data;
     this.logger.log(`Processing password reset email for ${email}`);
-    
+
     const html = `
       <h1>Password Reset Request</h1>
       <p>We received a request to reset your Vector password.</p>

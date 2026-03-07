@@ -16,7 +16,7 @@ export class HealthController {
 
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-    } catch (e) {
+    } catch {
       dbStatus = 'error';
     }
 
@@ -24,7 +24,7 @@ export class HealthController {
       await this.redis.set('health_check', 'ok', 5);
       const val = await this.redis.get('health_check');
       if (val !== 'ok') redisStatus = 'error';
-    } catch (e) {
+    } catch {
       redisStatus = 'error';
     }
 

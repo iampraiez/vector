@@ -1,10 +1,26 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { CreateOrderDto, PaginationDto, UpdateOrderDto } from './dto/dashboard.dto';
+import {
+  CreateOrderDto,
+  PaginationDto,
+  UpdateOrderDto,
+} from './dto/dashboard.dto';
 
 @Controller('dashboard/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,7 +65,7 @@ export class OrdersController {
   @Post('bulk')
   importBulk(
     @CurrentUser('company_id') companyId: string,
-    @Body() data: { orders: CreateOrderDto[] }
+    @Body() data: { orders: CreateOrderDto[] },
   ) {
     return this.dashboardService.importBulkOrders(companyId, data.orders);
   }

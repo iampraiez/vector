@@ -12,10 +12,7 @@ export class NavigationController {
   constructor(private readonly driverService: DriverService) {}
 
   @Get('stops/:stop_id')
-  getStop(
-    @CurrentUser('id') userId: string,
-    @Param('stop_id') stopId: string,
-  ) {
+  getStop(@CurrentUser('id') userId: string, @Param('stop_id') stopId: string) {
     return this.driverService.getStop(userId, stopId);
   }
 

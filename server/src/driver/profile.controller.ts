@@ -17,10 +17,7 @@ export class ProfileController {
   }
 
   @Patch()
-  updateProfile(
-    @CurrentUser('id') userId: string,
-    @Body() dto: any,
-  ) {
+  updateProfile(@CurrentUser('id') userId: string, @Body() dto: any) {
     return this.driverService.updateProfile(userId, dto);
   }
 

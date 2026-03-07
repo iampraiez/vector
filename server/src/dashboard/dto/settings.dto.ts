@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class UpdateCompanySettingsDto {
   @IsString()
@@ -12,7 +12,7 @@ export class UpdateCompanySettingsDto {
   @IsString()
   @IsOptional()
   timezone?: string;
-  
+
   // More fields could be added
 }
 

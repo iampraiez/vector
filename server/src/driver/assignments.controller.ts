@@ -12,7 +12,10 @@ export class AssignmentsController {
   constructor(private readonly driverService: DriverService) {}
 
   @Get()
-  getAssignments(@CurrentUser('id') userId: string, @Query('date') date: string) {
+  getAssignments(
+    @CurrentUser('id') userId: string,
+    @Query('date') date: string,
+  ) {
     return this.driverService.getAssignments(userId, date);
   }
 }

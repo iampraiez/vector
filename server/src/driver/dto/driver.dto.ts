@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsArray,
+} from 'class-validator';
 
 export class UpdateStatusDto {
   @IsEnum(['active', 'idle', 'offline', 'suspended'])
@@ -31,7 +37,7 @@ export class CompleteDeliveryDto {
 export class FailDeliveryDto {
   @IsString()
   reason!: string;
-  
+
   @IsString()
   @IsOptional()
   notes?: string;

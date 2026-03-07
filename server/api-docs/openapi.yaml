@@ -1,0 +1,1110 @@
+openapi: 3.0.0
+info:
+  title: Vector API
+  description: Full API specification for the Vector fleet management platform
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+tags:
+  - name: Auth
+    description: Authentication & Authorization
+  - name: Dashboard
+    description: Web dashboard operations for admin/manager
+  - name: Driver
+    description: Mobile application operations for drivers
+  - name: Tracking
+    description: Public parcel tracking and rating
+paths:
+  # --------------------------------------------------------------------------
+  # AUTHENTICATION Endpoints
+  # --------------------------------------------------------------------------
+  /auth/sign-in:
+    post:
+      summary: Sign in user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInDto'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /auth/sign-up/driver:
+    post:
+      summary: Register a new driver
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpDriverDto'
+      responses:
+        '201':
+          description: Driver registered successfully
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /auth/sign-up/fleet:
+    post:
+      summary: Register a new fleet company and admin user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpFleetDto'
+      responses:
+        '201':
+          description: Fleet owner registered successfully
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /auth/verify-email:
+    post:
+      summary: Verify user email using OTP token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailDto'
+      responses:
+        '200':
+          description: Email verified successfully
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/forgot-password:
+    post:
+      summary: Request password reset link
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordDto'
+      responses:
+        '200':
+          description: Reset link requested
+
+  /auth/reset-password:
+    post:
+      summary: Reset password using token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordDto'
+      responses:
+        '200':
+          description: Password updated
+
+  /auth/refresh:
+    post:
+      summary: Refresh JWT access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenDto'
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensResponse'
+
+  /auth/sign-out:
+    post:
+      summary: Sign out user by revoking refresh token
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Successfully signed out
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # --------------------------------------------------------------------------
+  # DASHBOARD Endpoints
+  # --------------------------------------------------------------------------
+  /dashboard/overview:
+    get:
+      summary: Get overview metrics
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary metrics retrieved
+
+  /dashboard/orders:
+    get:
+      summary: List all orders
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of orders with pagination
+    post:
+      summary: Create new order/stop
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderDto'
+      responses:
+        '201':
+          description: Order created
+
+  /dashboard/orders/bulk:
+    post:
+      summary: Bulk import orders
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orders:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateOrderDto'
+      responses:
+        '201':
+          description: Bulk import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: integer
+                    example: 42
+                  skipped:
+                    type: integer
+                    example: 0
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
+  /dashboard/orders/{stop_id}:
+    patch:
+      summary: Update order
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # Add update fields here
+      responses:
+        '200':
+          description: Order updated
+    delete:
+      summary: Delete order
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Order deleted
+
+  /dashboard/drivers:
+    get:
+      summary: List drivers
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of drivers
+
+  /dashboard/drivers/{driver_id}:
+    get:
+      summary: Get driver detail
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Driver details
+    patch:
+      summary: Update driver profile
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # Driver fields to update
+      responses:
+        '200':
+          description: Driver updated
+    delete:
+      summary: Soft-delete driver
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Driver deactivated
+
+  /dashboard/drivers/invite:
+    post:
+      summary: Create driver invite
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Invite created
+
+  /dashboard/tracking:
+    get:
+      summary: Get active fleet tracking
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active driver locations
+
+  /dashboard/reports/summary:
+    get:
+      summary: Get report summary metrics
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Report summary
+
+  /dashboard/reports/charts:
+    get:
+      summary: Get data for reports charts
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Chart data
+
+  /dashboard/reports/performance:
+    get:
+      summary: Get driver performance
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Paginated driver performance stats
+
+  /dashboard/reports/export:
+    get:
+      summary: Export report as CSV
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV file attachment
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /dashboard/billing:
+    get:
+      summary: Get billing info
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Billing plan and status
+
+  /dashboard/billing/invoices:
+    get:
+      summary: Get invoice history
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of invoices
+
+  /dashboard/billing/change-plan:
+    post:
+      summary: Change billing plan
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Checkout generated
+
+  /dashboard/billing/update-payment:
+    post:
+      summary: Update payment method
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Payment method setup created
+
+  /dashboard/billing/cancel:
+    post:
+      summary: Cancel subscription
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Subscription cancelled
+
+  /dashboard/settings:
+    get:
+      summary: Get company settings
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Settings data
+    patch:
+      summary: Update settings
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Settings updated
+
+  /dashboard/settings/api-keys:
+    post:
+      summary: Create new API key
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: API key generated
+
+  /dashboard/settings/api-keys/{key_id}:
+    delete:
+      summary: Revoke API key
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Key revoked
+
+  /dashboard/notifications:
+    get:
+      summary: Get admin notifications
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Paginated notifications
+
+  /dashboard/notifications/{notification_id}/read:
+    patch:
+      summary: Mark notification as read
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Marked as read
+
+  /dashboard/notifications/read-all:
+    post:
+      summary: Mark all as read
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All marked read
+
+  /dashboard/notifications/{notification_id}:
+    delete:
+      summary: Delete notification
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+
+  # --------------------------------------------------------------------------
+  # DRIVER Endpoints
+  # --------------------------------------------------------------------------
+  /driver/home:
+    get:
+      summary: Get driver home summary
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Driver summary
+
+  /driver/status:
+    patch:
+      summary: Update driver activity status
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, idle, offline, suspended]
+      responses:
+        '200':
+          description: Status updated
+
+  /driver/status/location:
+    patch:
+      summary: Update driver GPS coordinates
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat:
+                  type: number
+                lng:
+                  type: number
+      responses:
+        '200':
+          description: Location updated
+
+  /driver/assignments:
+    get:
+      summary: Get assigned routes for a date
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Assigned routes
+
+  /driver/routes/{route_id}/preview:
+    get:
+      summary: Preview route details
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: route_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Route preview
+
+  /driver/routes/{route_id}/start:
+    post:
+      summary: Start a route
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: route_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Route started
+
+  /driver/navigation/stops/{stop_id}:
+    get:
+      summary: Get stop detail
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stop detail
+
+  /driver/navigation/stops/{stop_id}/arrive:
+    patch:
+      summary: Mark manual arrival at stop
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Marked arrived
+
+  /driver/navigation/stops/{stop_id}/skip:
+    patch:
+      summary: Skip a stop
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Marked skipped/failed
+
+  /driver/delivery/{stop_id}/complete:
+    post:
+      summary: Complete a delivery
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                photo_urls:
+                  type: array
+                  items:
+                    type: string
+                signature_url:
+                  type: string
+      responses:
+        '200':
+          description: Delivery complete
+
+  /driver/delivery/{stop_id}/fail:
+    post:
+      summary: Fail a delivery
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stop_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Delivery failed
+
+  /driver/history:
+    get:
+      summary: Driver completed route history
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: History retrieved
+
+  /driver/profile:
+    get:
+      summary: Get driver profile
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+    patch:
+      summary: Update driver profile
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Updated
+
+  /driver/profile/avatar:
+    post:
+      summary: Upload new avatar
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Avatar updated
+
+  /driver/settings:
+    get:
+      summary: Get driver settings
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Settings
+    patch:
+      summary: Update settings
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Settings updated
+
+  /driver/notifications:
+    get:
+      summary: Driver notifications
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notification list
+
+  /driver/notifications/{notification_id}/read:
+    patch:
+      summary: Mark read
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Marked read
+
+  /driver/notifications/read-all:
+    post:
+      summary: Mark all read
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All marked read
+
+  /driver/onboarding:
+    post:
+      summary: Complete driver onboarding
+      tags: [Driver]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicle_type:
+                  type: string
+                vehicle_plate:
+                  type: string
+      responses:
+        '200':
+          description: Onboarding complete
+
+  # --------------------------------------------------------------------------
+  # TRACKING Endpoints
+  # --------------------------------------------------------------------------
+  /track:
+    get:
+      summary: Track delivery status
+      tags: [Tracking]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Public delivery info
+
+  /track/rate:
+    post:
+      summary: Submit delivery rating
+      tags: [Tracking]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                feedback:
+                  type: string
+      responses:
+        '200':
+          description: Rating received
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SignInDto:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: driver@example.com
+        password:
+          type: string
+          example: strongpassword123
+        device_id:
+          type: string
+          example: uuid-device
+          
+    CreateOrderDto:
+      type: object
+      required:
+        - customer_name
+        - address
+        - is_priority
+      properties:
+        customer_name:
+          type: string
+          example: John Doe
+        address:
+          type: string
+          example: 123 Main St
+        lat:
+          type: number
+          example: 40.7128
+        lng:
+          type: number
+          example: -74.0060
+        is_priority:
+          type: boolean
+          example: false
+
+    SignUpDriverDto:
+      type: object
+      required:
+        - company_code
+        - full_name
+        - email
+        - phone
+        - password
+      properties:
+        company_code: { type: string, example: FLEET-XYZ123 }
+        full_name: { type: string, example: John Doe }
+        email: { type: string, format: email, example: john@example.com }
+        phone: { type: string, example: "+1234567890" }
+        password: { type: string, example: securePasswerd456 }
+        vehicle_type: { type: string, example: "Van" }
+        vehicle_plate: { type: string, example: "ABC-1234" }
+
+    SignUpFleetDto:
+      type: object
+      required:
+        - full_name
+        - email
+        - password
+        - company_name
+        - plan_id
+      properties:
+        full_name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string }
+        company_name: { type: string }
+        plan_id: { type: string }
+
+    VerifyEmailDto:
+      type: object
+      required: [email, token]
+      properties:
+        email: { type: string, format: email }
+        token: { type: string }
+
+    ForgotPasswordDto:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    ResetPasswordDto:
+      type: object
+      required: [token, new_password]
+      properties:
+        token: { type: string }
+        new_password: { type: string }
+
+    RefreshTokenDto:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+        device_id: { type: string }
+
+    UserResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string }
+        company_id: { type: string, format: uuid }
+
+    AuthTokensResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer }
+        user: { $ref: '#/components/schemas/UserResponse' }
+
+    ErrorModel:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+        details: { type: object }
+
+  responses:
+    BadRequest:
+      description: Bad Request (Validation failed)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorModel' }
+    Unauthorized:
+      description: Unauthorized (Invalid credentials or token)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorModel' }
+    NotFound:
+      description: Not Found (e.g. invalid reference)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorModel' }
+    Conflict:
+      description: Conflict (e.g. email already exists)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorModel' }
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorModel' }

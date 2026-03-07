@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body } from '@nestjs/common';
 import { TrackingService } from './tracking.service';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -16,7 +16,7 @@ export class TrackingController {
   @Public()
   rateDelivery(
     @Query('token') token: string,
-    @Body() dto: any,
+    @Body() dto: { rating: number; comment?: string },
   ) {
     return this.trackingService.rateDelivery(token, dto);
   }

@@ -32,12 +32,18 @@ export class LoggingInterceptor implements NestInterceptor {
         next: () => {
           const { statusCode } = response;
           const duration = Date.now() - start;
-          this.logger.log(`[${reqId}] ${method} ${originalUrl} ${statusCode} - ${duration}ms - ${ip} - ${userAgent}`);
+          this.logger.log(
+            `[${reqId}] ${method} ${originalUrl} ${statusCode} - ${duration}ms - ${ip} - ${userAgent}`,
+          );
         },
-        error: (err) => {
-          const statusCode = err.status || 500;
+        error: (err: unknown) => {
+          const errorResponse = err as { status?: number; statusCode?: number };
+          const statusCode =
+            errorResponse?.status || errorResponse?.statusCode || 500;
           const duration = Date.now() - start;
-          this.logger.error(`[${reqId}] ${method} ${originalUrl} ${statusCode} - ${duration}ms - ${ip} - ${userAgent}`);
+          this.logger.error(
+            `[${reqId}] ${method} ${originalUrl} ${statusCode} - ${duration}ms - ${ip} - ${userAgent}`,
+          );
         },
       }),
     );

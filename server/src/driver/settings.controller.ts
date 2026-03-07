@@ -17,10 +17,7 @@ export class SettingsController {
   }
 
   @Patch()
-  updateSettings(
-    @CurrentUser('id') userId: string,
-    @Body() dto: any,
-  ) {
+  updateSettings(@CurrentUser('id') userId: string, @Body() dto: any) {
     return this.driverService.updateSettings(userId, dto);
   }
 }

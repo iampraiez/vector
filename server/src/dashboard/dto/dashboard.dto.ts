@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsEnum, Min, Max, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+  IsEmail,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { StopPriority } from '@prisma/client';
 

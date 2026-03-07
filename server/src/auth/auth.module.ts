@@ -15,9 +15,15 @@ import { RedisModule } from '../redis/redis.module';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-      secret: configService.get<string>('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: (configService.get<string>('JWT_ACCESS_EXPIRATION', '1h')) as any },
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          expiresIn: configService.get<string>(
+            'JWT_ACCESS_EXPIRATION',
+            '1h',
+          ) as any,
+        },
       }),
       inject: [ConfigService],
     }),

@@ -1,10 +1,26 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { CreateDriverDto, PaginationDto, UpdateDriverDto } from './dto/dashboard.dto';
+import {
+  CreateDriverDto,
+  PaginationDto,
+  UpdateDriverDto,
+} from './dto/dashboard.dto';
 
 @Controller('dashboard/drivers')
 @UseGuards(JwtAuthGuard, RolesGuard)

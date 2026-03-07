@@ -25,10 +25,12 @@ import { TrackingModule } from './tracking/tracking.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100, // 100 requests per minute global default
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100, // 100 requests per minute global default
+      },
+    ]),
     PrismaModule,
     RedisModule,
     QueueModule,

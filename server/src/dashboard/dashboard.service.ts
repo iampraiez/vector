@@ -1,7 +1,18 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { Prisma, DriverStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
-import { CreateOrderDto, PaginationDto, UpdateOrderDto, ReportQueryDto, ChangePlanDto } from './dto/dashboard.dto';
+import {
+  CreateOrderDto,
+  PaginationDto,
+  UpdateOrderDto,
+  ReportQueryDto,
+  ChangePlanDto,
+} from './dto/dashboard.dto';
 
 @Injectable()
 export class DashboardService {
@@ -35,11 +46,11 @@ export class DashboardService {
   async getActiveDrivers(companyId: string) {
     const drivers = await this.prisma.driver.findMany({
       where: { company_id: companyId, status: 'active' },
-      include: { user: { select: { full_name: true, avatar_url: true } } }
+      include: { user: { select: { full_name: true, avatar_url: true } } },
     });
 
     return {
-      drivers: drivers.map(d => ({
+      drivers: drivers.map((d) => ({
         id: d.id,
         name: d.user.full_name,
         status: d.status,
@@ -71,14 +82,17 @@ export class DashboardService {
     });
   }
 
-  async getOrders(companyId: string, query: PaginationDto & { status?: string }) {
+  async getOrders(
+    companyId: string,
+    query: PaginationDto & { status?: string; search?: string },
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = { company_id: companyId };
+    const where: Prisma.StopWhereInput = { company_id: companyId };
     if (query.status && query.status !== 'all') {
-      where.status = query.status;
+      where.status = query.status as Prisma.EnumStopStatusFilter;
     }
     if (query.search) {
       where.OR = [
@@ -98,7 +112,7 @@ export class DashboardService {
       this.prisma.stop.count({ where }),
     ]);
 
-    const formattedData = data.map(stop => ({
+    const formattedData = data.map((stop) => ({
       ...stop,
       driver_name: stop.driver?.user.full_name,
       route_name: stop.route?.name,
@@ -107,7 +121,10 @@ export class DashboardService {
     return {
       data: formattedData,
       pagination: {
-        page, limit, total, total_pages: Math.ceil(total / limit),
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
       },
       stats: await this.getOrderStats(companyId),
     };
@@ -120,8 +137,15 @@ export class DashboardService {
       _count: true,
     });
 
-    const stats: Record<string, number> = { total: 0, unassigned: 0, assigned: 0, in_progress: 0, completed: 0, failed: 0 };
-    stops.forEach(s => {
+    const stats: Record<string, number> = {
+      total: 0,
+      unassigned: 0,
+      assigned: 0,
+      in_progress: 0,
+      completed: 0,
+      failed: 0,
+    };
+    stops.forEach((s) => {
       stats[s.status] = s._count;
       stats.total += s._count;
     });
@@ -131,7 +155,7 @@ export class DashboardService {
   async updateOrder(companyId: string, stopId: string, dto: UpdateOrderDto) {
     return this.prisma.stop.update({
       where: { id: stopId, company_id: companyId },
-      data: dto as any,
+      data: dto as Prisma.StopUpdateInput,
     });
   }
 
@@ -142,27 +166,32 @@ export class DashboardService {
 
     if (!stop) throw new NotFoundException('Order not found');
     if (['in_progress', 'completed'].includes(stop.status)) {
-      throw new ConflictException('Cannot delete an order that is in progress or completed.');
+      throw new ConflictException(
+        'Cannot delete an order that is in progress or completed.',
+      );
     }
 
     await this.prisma.stop.delete({ where: { id: stopId } });
   }
 
-  async getDrivers(companyId: string, query: PaginationDto & { status?: string }) {
+  async getDrivers(
+    companyId: string,
+    query: PaginationDto & { status?: string; search?: string },
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = { company_id: companyId };
+    const where: Prisma.DriverWhereInput = { company_id: companyId };
     if (query.status && query.status !== 'all') {
-      where.status = query.status;
+      where.status = query.status as Prisma.EnumDriverStatusFilter;
     }
     if (query.search) {
       where.user = {
         OR: [
           { full_name: { contains: query.search, mode: 'insensitive' } },
           { email: { contains: query.search, mode: 'insensitive' } },
-        ]
+        ],
       };
     }
 
@@ -177,7 +206,7 @@ export class DashboardService {
       this.prisma.driver.count({ where }),
     ]);
 
-    const formatted = data.map(d => ({
+    const formatted = data.map((d) => ({
       id: d.id,
       user_id: d.user_id,
       name: d.user.full_name,
@@ -196,7 +225,10 @@ export class DashboardService {
     return {
       data: formatted,
       pagination: {
-        page, limit, total, total_pages: Math.ceil(total / limit),
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
       },
     };
   }
@@ -240,35 +272,49 @@ export class DashboardService {
     };
   }
 
-  async createDriverInvite(companyId: string, dto: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  createDriverInvite(_companyId: string, _dto: any) {
     // In a real app, you would:
     // 1. Create a user record with a generic password
     // 2. Or create an invite token in Redis and send an email
-    
+
     // For this stub, we return a mock response
     return {
       message: 'Driver invite sent successfully',
-      temp_password: 'vector-temp-pass', 
+      temp_password: 'vector-temp-pass',
     };
   }
 
   async updateDriver(companyId: string, driverId: string, dto: any) {
     const driver = await this.prisma.driver.findUnique({
       where: { id: driverId, company_id: companyId },
-      include: { user: true }
+      include: { user: true },
     });
-    
+
     if (!driver) throw new NotFoundException('Driver not found');
 
-    // Split updates between User table and Driver profile
-    const userUpdateData: any = {};
-    if (dto.full_name) userUpdateData.full_name = dto.full_name;
-    if (dto.phone) userUpdateData.phone = dto.phone;
+    const updateDto = dto as {
+      full_name?: string;
+      phone?: string;
+      status?: string;
+      vehicle_type?: string;
+      vehicle_plate?: string;
+    };
 
-    const driverUpdateData: any = {};
-    if (dto.status) driverUpdateData.status = dto.status;
-    if (dto.vehicle_type) driverUpdateData.vehicle_type = dto.vehicle_type;
-    if (dto.vehicle_plate) driverUpdateData.vehicle_plate = dto.vehicle_plate;
+    // Split updates between User table and Driver profile
+    const userUpdateData: Prisma.UserUpdateInput = {};
+    if (updateDto.full_name) userUpdateData.full_name = updateDto.full_name;
+    if (updateDto.phone) userUpdateData.phone = updateDto.phone;
+
+    const driverUpdateData: Prisma.DriverUpdateInput = {};
+    if (updateDto.status)
+      driverUpdateData.status = updateDto.status as
+        | Prisma.EnumDriverStatusFieldUpdateOperationsInput
+        | DriverStatus;
+    if (updateDto.vehicle_type)
+      driverUpdateData.vehicle_type = updateDto.vehicle_type;
+    if (updateDto.vehicle_plate)
+      driverUpdateData.vehicle_plate = updateDto.vehicle_plate;
 
     if (Object.keys(userUpdateData).length > 0) {
       await this.prisma.user.update({
@@ -278,7 +324,7 @@ export class DashboardService {
     }
 
     if (Object.keys(driverUpdateData).length > 0) {
-       await this.prisma.driver.update({
+      await this.prisma.driver.update({
         where: { id: driverId },
         data: driverUpdateData,
       });
@@ -298,7 +344,7 @@ export class DashboardService {
       where: { id: driver.user_id },
       data: { is_active: false },
     });
-    
+
     await this.prisma.driver.update({
       where: { id: driverId },
       data: { status: 'offline' },
@@ -316,11 +362,11 @@ export class DashboardService {
         current_lng: true,
         current_location_name: true,
         last_active_at: true,
-      }
+      },
     });
 
     return {
-      drivers: drivers.map(d => ({
+      drivers: drivers.map((d) => ({
         id: d.id,
         name: d.user.full_name,
         status: d.status,
@@ -328,34 +374,38 @@ export class DashboardService {
         lng: d.current_lng,
         location_name: d.current_location_name,
         last_active_at: d.last_active_at,
-      }))
+      })),
     };
   }
 
   async getReportSummary(companyId: string, query: ReportQueryDto) {
-    const timeFilter = query.start_date ? { gte: new Date(query.start_date) } : undefined;
+    const timeFilter = query.start_date
+      ? { gte: new Date(query.start_date) }
+      : undefined;
 
-    const stats = await this.prisma.stop.groupBy({
+    const statsResult = await this.prisma.stop.groupBy({
       by: ['status'],
       where: {
         company_id: companyId,
-        created_at: timeFilter
+        created_at: timeFilter,
       },
       _count: true,
     });
 
     let completed = 0;
     let failed = 0;
-    let total = 0;
 
-    stats.forEach(s => {
-      total += s._count;
+    statsResult.forEach((s) => {
       if (s.status === 'completed') completed += s._count;
       if (s.status === 'failed') failed += s._count;
     });
 
     const routes = await this.prisma.route.aggregate({
-      where: { company_id: companyId, status: 'completed', created_at: timeFilter },
+      where: {
+        company_id: companyId,
+        status: 'completed',
+        created_at: timeFilter,
+      },
       _sum: {
         total_distance_km: true,
         actual_duration_min: true,
@@ -364,8 +414,12 @@ export class DashboardService {
     });
 
     const totalDistance = routes._sum.total_distance_km || 0;
-    const avgDeliveryTime = routes._count > 0 ? (routes._sum.actual_duration_min || 0) / routes._count : 0;
-    const successRate = (completed + failed) > 0 ? (completed / (completed + failed)) * 100 : 0;
+    const avgDeliveryTime =
+      routes._count > 0
+        ? (routes._sum.actual_duration_min || 0) / routes._count
+        : 0;
+    const successRate =
+      completed + failed > 0 ? (completed / (completed + failed)) * 100 : 0;
     const fuelSavedUsd = totalDistance * 0.15; // Estimating savings by optimization vs baseline
 
     return {
@@ -377,42 +431,57 @@ export class DashboardService {
     };
   }
 
-  async getReportCharts(companyId: string, query: ReportQueryDto) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getReportCharts(companyId: string, _query: ReportQueryDto) {
     // Generate an array of the last 7 days
-    const days = [...Array(7)].map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      return d.toISOString().split('T')[0];
-    }).reverse();
+    const days = Array.from({ length: 7 })
+      .map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split('T')[0];
+      })
+      .reverse();
 
     const stops = await this.prisma.stop.findMany({
       where: {
         company_id: companyId,
-        created_at: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) }
+        created_at: {
+          gte: new Date(new Date().setDate(new Date().getDate() - 7)),
+        },
       },
-      select: { status: true, created_at: true }
+      select: { status: true, created_at: true },
     });
 
-    const deliveriesByDay = days.map(day => {
-      const count = stops.filter(s => s.status === 'completed' && s.created_at.toISOString().startsWith(day)).length;
+    const deliveriesByDay = days.map((day) => {
+      const count = stops.filter(
+        (s) =>
+          s.status === 'completed' &&
+          s.created_at.toISOString().startsWith(day),
+      ).length;
       return { date: day, count };
     });
 
-    const successRateTrend = days.map(day => {
-      const dayStops = stops.filter(s => s.created_at.toISOString().startsWith(day));
-      const completed = dayStops.filter(s => s.status === 'completed').length;
-      const failed = dayStops.filter(s => s.status === 'failed').length;
-      const rate = (completed + failed) > 0 ? (completed / (completed + failed)) * 100 : 0;
+    const successRateTrend = days.map((day) => {
+      const dayStops = stops.filter((s) =>
+        s.created_at.toISOString().startsWith(day),
+      );
+      const completed = dayStops.filter((s) => s.status === 'completed').length;
+      const failed = dayStops.filter((s) => s.status === 'failed').length;
+      const rate =
+        completed + failed > 0 ? (completed / (completed + failed)) * 100 : 0;
       return { date: day, rate };
     });
 
     return {
       deliveries_by_day: deliveriesByDay,
-      success_rate_trend: successRateTrend
+      success_rate_trend: successRateTrend,
     };
   }
 
-  async getDriverPerformance(companyId: string, query: ReportQueryDto & PaginationDto) {
+  async getDriverPerformance(
+    companyId: string,
+    query: ReportQueryDto & PaginationDto,
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 20;
     const skip = (page - 1) * limit;
@@ -424,10 +493,10 @@ export class DashboardService {
         skip,
         take: limit,
       }),
-      this.prisma.driver.count({ where: { company_id: companyId } })
+      this.prisma.driver.count({ where: { company_id: companyId } }),
     ]);
 
-    const data = drivers.map(d => ({
+    const data = drivers.map((d) => ({
       driver_id: d.id,
       name: d.user.full_name,
       deliveries_completed: d.total_deliveries,
@@ -437,11 +506,12 @@ export class DashboardService {
 
     return {
       data,
-      pagination: { page, limit, total, total_pages: Math.ceil(total / limit) }
+      pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
     };
   }
 
-  async generateReportCsv(companyId: string, query: ReportQueryDto) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async generateReportCsv(companyId: string, _query: ReportQueryDto) {
     const stops = await this.prisma.stop.findMany({
       where: { company_id: companyId },
       include: { driver: { include: { user: true } }, route: true },
@@ -449,22 +519,32 @@ export class DashboardService {
       take: 2000,
     });
 
-    const header = ['ID', 'External ID', 'Customer', 'Address', 'Status', 'Driver', 'Route', 'Created At'];
-    const rows = stops.map(s => [
-      s.id,
-      s.external_id || '',
-      `"${s.customer_name.replace(/"/g, '""')}"`,
-      `"${s.address.replace(/"/g, '""')}"`,
-      s.status,
-      `"${s.driver?.user.full_name || 'Unassigned'}"`,
-      `"${s.route?.name || 'Unrouted'}"`,
-      s.created_at.toISOString()
-    ]);
+    const header = [
+      'ID',
+      'External ID',
+      'Customer',
+      'Address',
+      'Status',
+      'Driver',
+      'Route',
+      'Created At',
+    ];
+    const rows = stops.map((s) => {
+      const driverName = s.driver?.user.full_name || 'Unassigned';
+      const routeName = s.route?.name || 'Unrouted';
+      return [
+        s.id,
+        s.external_id || '',
+        `"${s.customer_name.replace(/"/g, '""')}"`,
+        `"${s.address.replace(/"/g, '""')}"`,
+        s.status,
+        `"${driverName}"`,
+        `"${routeName}"`,
+        s.created_at.toISOString(),
+      ];
+    });
 
-    return [
-      header.join(','),
-      ...rows.map(r => r.join(','))
-    ].join('\\n');
+    return [header.join(','), ...rows.map((r) => r.join(','))].join('\\n');
   }
 
   async importBulkOrders(companyId: string, orders: CreateOrderDto[]) {
@@ -477,9 +557,18 @@ export class DashboardService {
       try {
         await this.createOrder(companyId, orders[i]);
         imported++;
-      } catch (err: any) {
+      } catch (err: unknown) {
         skipped++;
-        errors.push({ row: i + 1, reason: err.message || 'Unknown error' });
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'object' && err !== null && 'message' in err
+              ? (err.message as string)
+              : 'Unknown error';
+        errors.push({
+          row: i + 1,
+          reason: errorMessage,
+        });
       }
     }
 
@@ -489,7 +578,7 @@ export class DashboardService {
   async getBillingInfo(companyId: string) {
     const record = await this.prisma.billingRecord.findFirst({
       where: { company_id: companyId, status: 'active' },
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
     });
 
     if (!record) {
@@ -501,7 +590,9 @@ export class DashboardService {
           billing_cycle: 'monthly',
         },
         status: 'active',
-        current_period_end: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+        current_period_end: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
         payment_method: null,
       };
     }
@@ -528,7 +619,8 @@ export class DashboardService {
     return { invoices };
   }
 
-  async changePlan(companyId: string, dto: ChangePlanDto) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  changePlan(_companyId: string, _dto: ChangePlanDto) {
     // Stub for Paystack integration
     return {
       message: 'Plan change initiated',
@@ -536,7 +628,8 @@ export class DashboardService {
     };
   }
 
-  async updatePaymentMethod(companyId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  updatePaymentMethod(_companyId: string) {
     // Stub for Paystack integration
     return {
       message: 'Setup intent created',
@@ -556,7 +649,9 @@ export class DashboardService {
       });
     }
 
-    return { message: 'Plan will be canceled at the end of the billing period.' };
+    return {
+      message: 'Plan will be canceled at the end of the billing period.',
+    };
   }
 
   async getSettings(companyId: string) {
@@ -564,9 +659,15 @@ export class DashboardService {
       where: { id: companyId },
       include: {
         api_keys: {
-          select: { id: true, name: true, key_prefix: true, created_at: true, last_used_at: true }
-        }
-      }
+          select: {
+            id: true,
+            name: true,
+            key_prefix: true,
+            created_at: true,
+            last_used_at: true,
+          },
+        },
+      },
     });
 
     if (!company) throw new NotFoundException('Company not found');
@@ -577,29 +678,35 @@ export class DashboardService {
   async updateSettings(companyId: string, dto: any) {
     return this.prisma.company.update({
       where: { id: companyId },
-      data: dto as any,
+      data: dto as Prisma.CompanyUpdateInput,
     });
   }
 
   async createApiKey(companyId: string, dto: any, userId: string) {
     const rawKey = `vec_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
-    
+
     // In production, you would hash this before storing
     const keyPrefix = rawKey.substring(0, 8);
     const keyHash = rawKey; // Stub: store raw for now
 
+    const inputName =
+      dto && typeof dto === 'object' && 'name' in (dto as object)
+        ? (dto as { name: string }).name
+        : 'New API Key';
+
     const apiKey = await this.prisma.apiKey.create({
       data: {
         company_id: companyId,
-        name: dto.name,
+        name: inputName,
         key_hash: keyHash,
         key_prefix: keyPrefix,
         created_by: userId,
-      }
+      },
     });
 
     return {
-      message: 'API Key created successfully. Store it now as it will not be shown again.',
+      message:
+        'API Key created successfully. Store it now as it will not be shown again.',
       api_key: rawKey,
       id: apiKey.id,
       name: apiKey.name,
@@ -654,5 +761,3 @@ export class DashboardService {
     });
   }
 }
-
-

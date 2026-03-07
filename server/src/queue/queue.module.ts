@@ -9,8 +9,9 @@ import { EmailProcessor } from './email.processor';
   imports: [
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        redis: configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
+      useFactory: (configService: ConfigService) => ({
+        redis:
+          configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
       }),
       inject: [ConfigService],
     }),

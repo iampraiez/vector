@@ -41,9 +41,12 @@ export class ReportsController {
   async exportReport(
     @CurrentUser('company_id') companyId: string,
     @Query() query: ReportQueryDto,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
-    const csvData = await this.dashboardService.generateReportCsv(companyId, query);
+    const csvData = await this.dashboardService.generateReportCsv(
+      companyId,
+      query,
+    );
     res.header('Content-Type', 'text/csv');
     res.attachment('vector_report.csv');
     return res.send(csvData);

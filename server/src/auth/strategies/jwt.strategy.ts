@@ -2,8 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
+import { JwtPayload } from '../interfaces/auth.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,13 +17,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_ACCESS_SECRET') || 'default-secret',
+      secretOrKey:
+        configService.get<string>('JWT_ACCESS_SECRET') || 'default-secret',
       passReqToCallback: true,
     });
   }
 
-  async validate(req: any, payload: any) {
-    const token = req.get('Authorization').replace('Bearer ', '');
+  async validate(req: Request, payload: JwtPayload) {
+    const authHeader = req.get('Authorization');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : '';
 
     // 1. Blacklist check: Ensure this specific token hasn't been revoked
     const isRedeemed = await this.redis.get(`bl:${token}`);
@@ -49,10 +53,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User account is inactive');
     }
 
-    this.prisma.user.update({
-      where: { id: user.id },
-      data: { last_seen_at: new Date() },
-    }).catch(() => {});
+    this.prisma.user
+      .update({
+        where: { id: user.id },
+        data: { last_seen_at: new Date() },
+      })
+      .catch(() => {});
 
     return {
       id: user.id,
