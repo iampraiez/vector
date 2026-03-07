@@ -16,7 +16,7 @@ export class NavigationController {
     @CurrentUser('id') userId: string,
     @Param('stop_id') stopId: string,
   ) {
-    return { stop_id: stopId };
+    return this.driverService.getStop(userId, stopId);
   }
 
   @Patch('stops/:stop_id/arrive')
@@ -24,7 +24,7 @@ export class NavigationController {
     @CurrentUser('id') userId: string,
     @Param('stop_id') stopId: string,
   ) {
-    return { message: 'Arrived' };
+    return this.driverService.arriveAtStop(userId, stopId);
   }
 
   @Patch('stops/:stop_id/skip')
@@ -32,6 +32,6 @@ export class NavigationController {
     @CurrentUser('id') userId: string,
     @Param('stop_id') stopId: string,
   ) {
-    return { message: 'Skipped' };
+    return this.driverService.skipStop(userId, stopId);
   }
 }

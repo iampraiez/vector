@@ -13,7 +13,6 @@ export class HomeController {
 
   @Get()
   getHome(@CurrentUser('id') userId: string) {
-    // Need to get driver_id from user_id first
-    return { message: 'Driver home tracking' };
+    return this.driverService.getHomeSummary(userId);
   }
 }

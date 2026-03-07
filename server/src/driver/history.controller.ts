@@ -17,6 +17,6 @@ export class HistoryController {
     @Query('page') page: string,
     @Query('limit') limit: string,
   ) {
-    return { data: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 } };
+    return this.driverService.getHistory(userId, page, limit);
   }
 }

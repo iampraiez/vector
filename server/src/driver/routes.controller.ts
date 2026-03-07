@@ -16,7 +16,7 @@ export class RoutesController {
     @CurrentUser('id') userId: string,
     @Param('route_id') routeId: string,
   ) {
-    return { route_id: routeId, preview: true };
+    return this.driverService.getRoutePreview(userId, routeId);
   }
 
   @Post(':route_id/start')
@@ -25,6 +25,6 @@ export class RoutesController {
     @CurrentUser('id') userId: string,
     @Param('route_id') routeId: string,
   ) {
-    return { message: 'Route started' };
+    return this.driverService.startRoute(userId, routeId);
   }
 }

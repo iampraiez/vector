@@ -18,7 +18,7 @@ export class DeliveryController {
     @Param('stop_id') stopId: string,
     @Body() dto: CompleteDeliveryDto,
   ) {
-    return { message: 'Delivery completed' };
+    return this.driverService.completeDelivery(userId, stopId, dto);
   }
 
   @Post(':stop_id/fail')
@@ -27,6 +27,6 @@ export class DeliveryController {
     @Param('stop_id') stopId: string,
     @Body() dto: FailDeliveryDto,
   ) {
-    return { message: 'Delivery failed' };
+    return this.driverService.failDelivery(userId, stopId, dto);
   }
 }

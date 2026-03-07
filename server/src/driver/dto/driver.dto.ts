@@ -1,5 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsArray, ValidateNested, IsBoolean } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNumber, IsOptional, IsEnum, IsArray } from 'class-validator';
 
 export class UpdateStatusDto {
   @IsEnum(['active', 'idle', 'offline', 'suspended'])

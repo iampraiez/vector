@@ -17,7 +17,7 @@ export class DriverNotificationsController {
     @Query('page') page: string,
     @Query('limit') limit: string,
   ) {
-    return { data: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 } };
+    return this.driverService.getNotifications(userId, page, limit);
   }
 
   @Patch(':notification_id/read')
@@ -25,11 +25,11 @@ export class DriverNotificationsController {
     @CurrentUser('id') userId: string,
     @Param('notification_id') notificationId: string,
   ) {
-    return { message: 'Marked read' };
+    return this.driverService.markNotificationRead(userId, notificationId);
   }
 
   @Post('read-all')
   markAllRead(@CurrentUser('id') userId: string) {
-    return { message: 'All marked read' };
+    return this.driverService.markAllNotificationsRead(userId);
   }
 }

@@ -13,7 +13,7 @@ export class ProfileController {
 
   @Get()
   getProfile(@CurrentUser('id') userId: string) {
-    return { id: userId, name: 'John Doe', email: 'john@example.com' };
+    return this.driverService.getProfile(userId);
   }
 
   @Patch()
@@ -21,11 +21,11 @@ export class ProfileController {
     @CurrentUser('id') userId: string,
     @Body() dto: any,
   ) {
-    return { message: 'Profile updated' };
+    return this.driverService.updateProfile(userId, dto);
   }
 
   @Post('avatar')
   uploadAvatar(@CurrentUser('id') userId: string, @Body() dto: any) {
-    return { avatar_url: 'https://cloudinary.com/fake-url.jpg' };
+    return this.driverService.uploadAvatar(userId, dto);
   }
 }

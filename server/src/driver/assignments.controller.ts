@@ -13,6 +13,6 @@ export class AssignmentsController {
 
   @Get()
   getAssignments(@CurrentUser('id') userId: string, @Query('date') date: string) {
-    return { date, assignments: [] };
+    return this.driverService.getAssignments(userId, date);
   }
 }

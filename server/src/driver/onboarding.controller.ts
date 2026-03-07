@@ -17,6 +17,6 @@ export class OnboardingController {
     @CurrentUser('id') userId: string,
     @Body() dto: OnboardingDto,
   ) {
-    return { message: 'Onboarding completed successfully' };
+    return this.driverService.completeOnboarding(userId, dto);
   }
 }

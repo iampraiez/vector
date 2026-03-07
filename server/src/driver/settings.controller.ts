@@ -13,7 +13,7 @@ export class SettingsController {
 
   @Get()
   getSettings(@CurrentUser('id') userId: string) {
-    return { notifications_enabled: true, location_tracking: 'always' };
+    return this.driverService.getSettings(userId);
   }
 
   @Patch()
@@ -21,6 +21,6 @@ export class SettingsController {
     @CurrentUser('id') userId: string,
     @Body() dto: any,
   ) {
-    return { message: 'Settings updated' };
+    return this.driverService.updateSettings(userId, dto);
   }
 }

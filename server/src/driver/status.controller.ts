@@ -17,7 +17,7 @@ export class StatusController {
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateStatusDto,
   ) {
-    return { status: dto.status };
+    return this.driverService.updateStatus(userId, dto);
   }
 
   @Patch('location')
@@ -25,6 +25,6 @@ export class StatusController {
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateLocationDto,
   ) {
-     return { lat: dto.lat, lng: dto.lng };
+    return this.driverService.updateLocation(userId, dto);
   }
 }
