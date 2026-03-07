@@ -1,4 +1,5 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -37,13 +38,14 @@ export class ReportsController {
   }
 
   @Get('export')
-  exportReport(
+  async exportReport(
     @CurrentUser('company_id') companyId: string,
     @Query() query: ReportQueryDto,
+    @Res() res: Response
   ) {
-    // Stub implementation
-    return {
-      message: 'Report generation started. You will be notified when it is ready.',
-    };
+    const csvData = await this.dashboardService.generateReportCsv(companyId, query);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('vector_report.csv');
+    return res.send(csvData);
   }
 }

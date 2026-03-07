@@ -47,12 +47,10 @@ export class OrdersController {
   }
 
   @Post('bulk')
-  importBulk() {
-    // Stub implementation for multipart CSV upload
-    return {
-      imported: 42,
-      skipped: 2,
-      errors: [{ row: 8, reason: 'Missing address' }],
-    };
+  importBulk(
+    @CurrentUser('company_id') companyId: string,
+    @Body() data: { orders: CreateOrderDto[] }
+  ) {
+    return this.dashboardService.importBulkOrders(companyId, data.orders);
   }
 }
