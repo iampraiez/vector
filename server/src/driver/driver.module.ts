@@ -1,0 +1,31 @@
+import { Module } from '@nestjs/common';
+import { DriverService } from './driver.service';
+import { HomeController } from './home.controller';
+import { StatusController } from './status.controller';
+import { AssignmentsController } from './assignments.controller';
+import { RoutesController } from './routes.controller';
+import { NavigationController } from './navigation.controller';
+import { DeliveryController } from './delivery.controller';
+import { HistoryController } from './history.controller';
+import { ProfileController } from './profile.controller';
+import { SettingsController } from './settings.controller';
+import { DriverNotificationsController } from './notifications.controller';
+import { OnboardingController } from './onboarding.controller';
+
+@Module({
+  controllers: [
+    HomeController,
+    StatusController,
+    AssignmentsController,
+    RoutesController,
+    NavigationController,
+    DeliveryController,
+    HistoryController,
+    ProfileController,
+    SettingsController,
+    DriverNotificationsController,
+    OnboardingController,
+  ],
+  providers: [DriverService],
+})
+export class DriverModule {}

@@ -1,0 +1,60 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class TrackingService {
+  constructor(private prisma: PrismaService) {}
+
+  async getTrackingData(token: string) {
+    // tracking_token is stored as an external_id on Stop in our schema
+    const stop = await this.prisma.stop.findFirst({
+      where: { external_id: token },
+      include: {
+        driver: {
+          include: { user: { select: { full_name: true, phone: true } } }
+        }
+      }
+    });
+
+    if (!stop) throw new NotFoundException('Invalid tracking link');
+
+    return {
+      status: stop.status,
+      address: stop.address,
+      customer_name: stop.customer_name,
+      arrived_at: stop.arrived_at,
+      completed_at: stop.completed_at,
+      driver: stop.driver?.user
+        ? {
+            name: stop.driver.user.full_name,
+            phone: stop.driver.user.phone,
+            rating: stop.driver.avg_rating,
+          }
+        : null,
+      live_location: stop.driver
+        ? { lat: stop.driver.current_lat, lng: stop.driver.current_lng }
+        : null
+    };
+  }
+
+  async rateDelivery(token: string, dto: { rating: number; comment?: string }) {
+    const stop = await this.prisma.stop.findFirst({
+      where: { external_id: token, status: 'completed' }
+    });
+
+    if (!stop) {
+      throw new NotFoundException('Delivery cannot be rated');
+    }
+
+    await this.prisma.stop.update({
+      where: { id: stop.id },
+      data: {
+        customer_rating: dto.rating,
+        customer_rating_comment: dto.comment,
+        customer_rated_at: new Date(),
+      }
+    });
+
+    return { message: 'Thank you for your feedback!' };
+  }
+}

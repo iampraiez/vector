@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  manager
+  driver
+}
+
+enum DriverStatus {
+  active
+  idle
+  offline
+  suspended
+}
+
+enum RouteStatus {
+  draft
+  scheduled
+  active
+  completed
+  cancelled
+}
+
+enum StopStatus {
+  unassigned
+  assigned
+  pending
+  in_progress
+  completed
+  failed
+  returned
+}
+
+enum StopPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum NotificationType {
+  delivery_failed
+  new_assignment
+  route_started
+  system_alert
+}
+
+model Company {
+  id                 String    @id @default(uuid())
+  name               String
+  company_code       String    @unique
+  subscription_tier  String?
+  paystack_customer_id String?
+  billing_email      String?
+  city               String?
+  state              String?
+  country            String?
+  logo_url           String?
+  timezone           String?   @default("UTC")
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  users              User[]
+  drivers            Driver[]
+  routes             Route[]
+  stops              Stop[]
+  delivery_ratings   DeliveryRating[]
+  notifications      Notification[]
+  billing_records    BillingRecord[]
+  invoices           Invoice[]
+  api_keys           ApiKey[]
+  audit_logs         AuditLog[]
+
+  @@map("companies")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  company_id   String
+  company      Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  email        String    @unique
+  password     String
+  full_name    String
+  phone        String?
+  role         Role      @default(driver)
+  avatar_url   String?
+  is_active    Boolean   @default(true)
+  last_seen_at DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  driver_profile Driver?
+  notifications  Notification[]
+  audit_logs     AuditLog[]
+  
+  @@map("users")
+}
+
+model Driver {
+  id                    String       @id @default(uuid())
+  user_id               String       @unique
+  user                  User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company_id            String
+  company               Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  vehicle_type          String?
+  vehicle_make          String?
+  vehicle_model         String?
+  vehicle_plate         String?
+  vehicle_color         String?
+  license_number        String?
+  current_lat           Float?
+  current_lng           Float?
+  current_location_name String?
+  status                DriverStatus @default(offline)
+  total_deliveries      Int          @default(0)
+  total_routes          Int          @default(0)
+  avg_rating            Float        @default(0.0)
+  rating_count          Int          @default(0)
+  last_active_at        DateTime?
+  created_at            DateTime     @default(now())
+  updated_at            DateTime     @updatedAt
+
+  routes                Route[]
+  stops                 Stop[]
+  delivery_ratings      DeliveryRating[]
+
+  @@index([company_id, status])
+  @@map("drivers")
+}
+
+model Route {
+  id                     String      @id @default(uuid())
+  company_id             String
+  company                Company     @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  name                   String      
+  date                   String      
+  status                 RouteStatus @default(draft)
+  driver_id              String?
+  driver                 Driver?     @relation(fields: [driver_id], references: [id], onDelete: SetNull)
+  assigned_by            String?
+  assigned_at            DateTime?
+  started_at             DateTime?
+  completed_at           DateTime?
+  total_stops            Int         @default(0)
+  completed_stops        Int         @default(0)
+  total_distance_km      Float       @default(0.0)
+  estimated_duration_min Int         @default(0)
+  actual_duration_min    Int?
+  optimization_score     Int?
+  notes                  String?
+  created_by             String?
+  created_at             DateTime    @default(now())
+  updated_at             DateTime    @updatedAt
+
+  stops                  Stop[]
+
+  @@index([company_id, date])
+  @@index([driver_id, date])
+  @@map("routes")
+}
+
+model Stop {
+  id                      String       @id @default(uuid())
+  route_id                String?
+  route                   Route?       @relation(fields: [route_id], references: [id], onDelete: SetNull)
+  company_id              String
+  company                 Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  driver_id               String?
+  driver                  Driver?      @relation(fields: [driver_id], references: [id], onDelete: SetNull)
+  external_id             String?      // e.g., ORD-1234
+  customer_name           String
+  customer_email          String?
+  customer_phone          String?
+  address                 String
+  city                    String?
+  state                   String?
+  postal_code             String?
+  country                 String?
+  lat                     Float?
+  lng                     Float?
+  sequence                Int          @default(0)
+  packages                Int          @default(1)
+  priority                StopPriority @default(normal)
+  time_window_start       String?      // HH:mm
+  time_window_end         String?      // HH:mm
+  notes                   String?
+  status                  StopStatus   @default(unassigned)
+  arrived_at              DateTime?
+  completed_at            DateTime?
+  failure_reason          String?
+  failure_notes           String?
+  signature_url           String?
+  photo_url               String?
+  signature_name          String?
+  customer_rating         Int?
+  customer_rating_comment String?
+  customer_rated_at       DateTime?
+  created_at              DateTime     @default(now())
+  updated_at              DateTime     @updatedAt
+
+  delivery_ratings        DeliveryRating[]
+
+  @@index([company_id, status])
+  @@index([route_id, sequence])
+  @@map("stops")
+}
+
+model DeliveryRating {
+  id                    String   @id @default(uuid())
+  stop_id               String
+  stop                  Stop     @relation(fields: [stop_id], references: [id], onDelete: Cascade)
+  driver_id             String
+  driver                Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  company_id            String
+  company               Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  rating                Int      // 1 to 5
+  comment               String?
+  categories            Json?    // { on_time: boolean, handled_with_care: boolean, etc }
+  created_at            DateTime @default(now())
+
+  @@index([driver_id])
+  @@index([company_id])
+  @@map("delivery_ratings")
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  user_id    String
+  user       User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company_id String
+  company    Company          @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  type       NotificationType
+  title      String
+  body       String
+  data       Json?            @default("{}")
+  read       Boolean          @default(false)
+  read_at    DateTime?
+  created_at DateTime         @default(now())
+
+  @@index([user_id, read])
+  @@map("notifications")
+}
+
+model BillingRecord {
+  id                     String   @id @default(uuid())
+  company_id             String
+  company                Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  paystack_customer_id   String?
+  paystack_subscription_id String?
+  plan_id                String
+  status                 String
+  current_period_start   DateTime
+  current_period_end     DateTime
+  cancel_at_period_end   Boolean  @default(false)
+  seats_included         Int      @default(0)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  @@index([company_id])
+  @@map("billing_records")
+}
+
+model Invoice {
+  id                 String   @id @default(uuid())
+  company_id         String
+  company            Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  paystack_invoice_id String?
+  amount_cents       Int
+  currency           String   @default("NGN")
+  status             String
+  description        String?
+  period_start       DateTime
+  period_end         DateTime
+  invoice_pdf_url    String?
+  paid_at            DateTime?
+  created_at         DateTime @default(now())
+
+  @@index([company_id])
+  @@map("invoices")
+}
+
+model ApiKey {
+  id           String    @id @default(uuid())
+  company_id   String
+  company      Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  name         String
+  key_hash     String    @unique
+  key_prefix   String
+  last_used_at DateTime?
+  expires_at   DateTime?
+  created_by   String?
+  created_at   DateTime  @default(now())
+  revoked_at   DateTime?
+
+  @@index([company_id])
+  @@map("api_keys")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  company_id    String
+  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user_id       String?
+  user          User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  action        String
+  resource_type String
+  resource_id   String
+  old_value     Json?
+  new_value     Json?
+  ip_address    String?
+  user_agent    String?
+  created_at    DateTime @default(now())
+
+  @@index([company_id, resource_type])
+  @@map("audit_logs")
+}
