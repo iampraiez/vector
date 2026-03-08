@@ -46,6 +46,10 @@ jobs:
         working-directory: server
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        working-directory: server
+        run: pnpm prisma generate
+
       - name: Lint
         working-directory: server
         run: pnpm lint
