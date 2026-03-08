@@ -77,12 +77,6 @@ jobs:
         working-directory: server
         run: pnpm build
 
-  # ──────────────────────────────────────────────────────────────────────────
-  # Render handles deployment automatically by watching the main branch.
-  # This job only runs Prisma migrations after a push to main.
-  # Make sure RENDER_DEPLOY_HOOK_URL is set in your GitHub Secrets.
-  # Get it from: Render Dashboard → Your Service → Settings → Deploy Hook
-  # ──────────────────────────────────────────────────────────────────────────
   deploy:
     name: Trigger Render Deploy
     runs-on: ubuntu-latest

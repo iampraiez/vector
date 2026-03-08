@@ -1,36 +1,61 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
+
+interface SendGridError {
+  response?: {
+    body?: unknown;
+  };
+  message?: string;
+}
 
 @Injectable()
 export class MailService {
-  private resend: Resend;
   private readonly from: string;
   private readonly logger = new Logger(MailService.name);
 
   constructor(private readonly configService: ConfigService) {
-    this.resend = new Resend(this.configService.getOrThrow<string>('RESEND_API_KEY'));
-    this.from = this.configService.get<string>('MAIL_FROM', 'onboarding@resend.dev');
+    const apiKey = this.configService.getOrThrow<string>('SENDGRID_API_KEY');
+    sgMail.setApiKey(apiKey);
+
+    this.from = this.configService.getOrThrow<string>('SENDER_EMAIL');
   }
 
   async sendMail(
     to: string,
     subject: string,
     html: string,
+    text?: string,
   ): Promise<{ messageId: string }> {
-    const { data, error } = await this.resend.emails.send({
-      from: this.from,
-      to,
-      subject,
-      html,
-    });
+    try {
+      await sgMail.send({
+        to,
+        from: {
+          email: this.from,
+          name: 'Vector',
+        },
+        subject,
+        text: text || html.replace(/<[^>]*>?/gm, ''),
+        html,
+      });
 
-    if (error) {
-      this.logger.error(`Failed to send email to ${to}: ${error.message}`);
-      throw new Error(error.message);
+      this.logger.log(`Email sent via SendGrid to ${to}`);
+
+      return { messageId: 'sendgrid-' + Date.now() };
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null) {
+        const err = error as SendGridError;
+        if (err.response && err.response.body) {
+          this.logger.error(
+            `Failed to send email to ${to}: ${JSON.stringify(err.response.body)}`,
+          );
+        } else if (err.message) {
+          this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+        }
+        throw new Error(err.message || 'Unknown email error');
+      }
+      this.logger.error(`Failed to send email to ${to}: ${String(error)}`);
+      throw new Error(String(error));
     }
-
-    this.logger.log(`Email sent: ${data?.id ?? 'unknown'}`);
-    return { messageId: data?.id ?? '' };
   }
 }
