@@ -298,7 +298,7 @@ export class AuthService {
 
       const frontendUrl = this.configService.get<string>(
         'FRONTEND_URL',
-        'http://localhost:3001',
+        'http://localhost:3000',
       );
       await this.emailQueue.add('sendPasswordReset', {
         email: user.email,
@@ -307,7 +307,6 @@ export class AuthService {
       });
     }
 
-    // Always return same message to prevent email enumeration (security best practice)
     return { message: 'If that email exists, a reset link has been sent.' };
   }
 

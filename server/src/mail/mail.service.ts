@@ -9,21 +9,23 @@ export class MailService {
 
   constructor(private configService: ConfigService) {
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST', 'smtp.example.com'),
-      port: this.configService.get<number>('SMTP_PORT', 587),
-      secure: this.configService.get<boolean>('SMTP_SECURE', false),
+      service: 'gmail',
       auth: {
-        user: this.configService.get<string>('SMTP_USER', 'user'),
-        pass: this.configService.get<string>('SMTP_PASS', 'pass'),
+        user: this.configService.get<string>('SMTP_USER'),
+        pass: this.configService.get<string>('SMTP_PASS'),
       },
     });
   }
 
-  async sendMail(to: string, subject: string, html: string): Promise<any> {
+  async sendMail(
+    to: string,
+    subject: string,
+    html: string,
+  ): Promise<{ messageId: string }> {
     try {
       const from = this.configService.get<string>(
         'SMTP_FROM',
-        '"Vector Support" <noreply@vector.com>',
+        `"Vector Support" <${this.configService.get<string>('SMTP_USER')}>`,
       );
       const info = (await this.transporter.sendMail({
         from,
@@ -33,9 +35,9 @@ export class MailService {
       })) as { messageId: string };
       this.logger.log(`Email sent: ${info.messageId}`);
       return info;
-    } catch (_error) {
-      this.logger.error(`Failed to send email to ${to}`, _error);
-      throw _error;
+    } catch (error: unknown) {
+      this.logger.error(`Failed to send email to ${to}`, error);
+      throw error;
     }
   }
 }
