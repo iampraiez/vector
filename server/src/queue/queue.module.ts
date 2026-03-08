@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
 import { EmailProcessor } from './email.processor';
+import { NotificationProcessor } from './notification.processor';
 
 @Global()
 @Module({
@@ -12,6 +13,9 @@ import { EmailProcessor } from './email.processor';
       useFactory: (configService: ConfigService) => ({
         redis:
           configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
+        settings: {
+          maxStalledCount: 0,
+        },
       }),
       inject: [ConfigService],
     }),
@@ -23,7 +27,7 @@ import { EmailProcessor } from './email.processor';
     }),
     MailModule,
   ],
-  providers: [EmailProcessor],
+  providers: [EmailProcessor, NotificationProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

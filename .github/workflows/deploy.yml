@@ -1,0 +1,195 @@
+name: CI/CD – Vector Server → Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CF_PROJECT_NAME: vector-server
+  SECRET_NAMES: |
+    DATABASE_URL
+    REDIS_URL
+    JWT_ACCESS_SECRET
+    JWT_REFRESH_SECRET
+    JWT_ACCESS_EXPIRATION
+    JWT_REFRESH_EXPIRATION
+    FRONTEND_URL
+    SMTP_USER
+    SMTP_PASS
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  quality:
+    name: Lint & Type-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: server/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: server
+        run: pnpm lint
+
+      - name: Type-check
+        working-directory: server
+        run: pnpm tsc --noEmit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: quality
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: server/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: server
+        run: pnpm prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build
+        working-directory: server
+        run: pnpm build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: server/dist
+          retention-days: 1
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+
+    # Expose all app secrets as env vars so the secret-upsert script can read
+    # them by name (e.g. process.env.DATABASE_URL) without hardcoding values.
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+      JWT_ACCESS_EXPIRATION: ${{ secrets.JWT_ACCESS_EXPIRATION }}
+      JWT_REFRESH_EXPIRATION: ${{ secrets.JWT_REFRESH_EXPIRATION }}
+      FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: server/dist
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      # ── Step 1: Create the Pages project if it doesn't exist ──────────────
+      - name: Ensure Cloudflare Pages project exists
+        run: |
+          echo "Checking whether project '$CF_PROJECT_NAME' exists..."
+
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${CF_PROJECT_NAME}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Project already exists – skipping creation."
+          else
+            echo "Project not found (HTTP $HTTP_STATUS) – creating..."
+            RESPONSE=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{
+                \"name\": \"${CF_PROJECT_NAME}\",
+                \"production_branch\": \"main\"
+              }")
+
+            SUCCESS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('success', False))")
+            if [ "$SUCCESS" != "True" ]; then
+              echo "Failed to create project:"
+              echo "$RESPONSE"
+              exit 1
+            fi
+            echo "Project created successfully."
+          fi
+
+      # ── Step 2: Upsert all environment variables ──────────────────────────
+      - name: Sync environment variables to Cloudflare
+        run: |
+          echo "$SECRET_NAMES" | while IFS= read -r SECRET_NAME; do
+            SECRET_NAME=$(echo "$SECRET_NAME" | xargs)   # trim whitespace / blank lines
+            [ -z "$SECRET_NAME" ] && continue
+
+            SECRET_VALUE="${!SECRET_NAME}"               # indirect variable expansion
+
+            if [ -z "$SECRET_VALUE" ]; then
+              echo "⚠️  Warning: GitHub Secret '$SECRET_NAME' is empty – skipping."
+              continue
+            fi
+
+            echo "Setting secret: $SECRET_NAME"
+            echo "$SECRET_VALUE" | wrangler pages secret put "$SECRET_NAME" \
+              --project-name "$CF_PROJECT_NAME"
+          done
+
+      # ── Step 3: Run DB migrations ──────────────────────────────────────────
+      - name: Run database migrations
+        working-directory: server
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # ── Step 4: Deploy ────────────────────────────────────────────────────
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ env.CF_PROJECT_NAME }}
+          directory: server/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
