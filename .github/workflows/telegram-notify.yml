@@ -82,16 +82,16 @@ jobs:
         run: |
           MESSAGE="${HEADER_EMOJI} *New Push – ${REPO##*/}*
 
-📦 *Repo:*   \`${REPO}\`
-🌿 *Branch:* \`${BRANCH}\`
-🔢 *Commit:* [${SHORT_SHA}](https://github.com/${REPO}/commit/${GITHUB_SHA})
-💬 *Message:* ${SAFE_MSG}
-👤 *Author:* [${ACTOR}](https://github.com/${ACTOR})
-🕐 *Time:*    ${TIMESTAMP}
-${STATUS_EMOJI} *Status:* ${STATUS_LABEL}
+          📦 *Repo:*   \`${REPO}\`
+          🌿 *Branch:* \`${BRANCH}\`
+          🔢 *Commit:* [${SHORT_SHA}](https://github.com/${REPO}/commit/${GITHUB_SHA})
+          💬 *Message:* ${SAFE_MSG}
+          👤 *Author:* [${ACTOR}](https://github.com/${ACTOR})
+          🕐 *Time:*    ${TIMESTAMP}
+          ${STATUS_EMOJI} *Status:* ${STATUS_LABEL}
 
-📝 *Files changed:*
-${CHANGED_FILES}"
+          📝 *Files changed:*
+          ${CHANGED_FILES}"
 
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${CHAT_ID}" \
