@@ -181,10 +181,13 @@ jobs:
               --project-name "$CF_PROJECT_NAME"
           done
 
-      # ── Step 3: Run DB migrations ──────────────────────────────────────────
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
       - name: Run database migrations
         working-directory: server
-        run: npx prisma migrate deploy
+        run: pnpm prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
