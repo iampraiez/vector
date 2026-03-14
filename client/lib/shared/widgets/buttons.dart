@@ -24,37 +24,50 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget buttonChild = Row(
-      mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (isLoading)
-          const Padding(
-            padding: EdgeInsets.only(right: AppSpacing.p2),
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+    Widget buttonChild = Center(
+      child: isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: AppColors.white,
+              ),
+            )
+          : Row(
+              mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.p2),
+                    child: icon!,
+                  ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
-          )
-        else if (icon != null)
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.p2),
-            child: icon!,
-          ),
-        Text(label),
-      ],
     );
 
     ButtonStyle style;
+    const buttonPadding = EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: 16);
+    final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd));
+    final minimumSize = isFullWidth ? const Size.fromHeight(52) : null;
+
     switch (variant) {
       case ButtonVariant.primary:
         style = ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+          padding: buttonPadding,
+          shape: buttonShape,
+          minimumSize: minimumSize,
         );
         return ElevatedButton(onPressed: isLoading ? null : onPressed, style: style, child: buttonChild);
       
@@ -63,8 +76,9 @@ class AppButton extends StatelessWidget {
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+          padding: buttonPadding,
+          shape: buttonShape,
+          minimumSize: minimumSize,
         );
         return ElevatedButton(onPressed: isLoading ? null : onPressed, style: style, child: buttonChild);
 
@@ -72,16 +86,18 @@ class AppButton extends StatelessWidget {
         style = OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           side: const BorderSide(color: AppColors.border),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+          padding: buttonPadding,
+          shape: buttonShape,
+          minimumSize: minimumSize,
         );
         return OutlinedButton(onPressed: isLoading ? null : onPressed, style: style, child: buttonChild);
 
       case ButtonVariant.ghost:
         style = TextButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+          padding: buttonPadding,
+          shape: buttonShape,
+          minimumSize: minimumSize,
         );
         return TextButton(onPressed: isLoading ? null : onPressed, style: style, child: buttonChild);
     }

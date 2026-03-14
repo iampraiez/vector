@@ -120,11 +120,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   ),
                                 ],
                               ),
-                              AppButton(
-                                label: 'Sign in',
-                                variant: ButtonVariant.outline,
-                                onPressed: () => context.push('/signin'),
-                              ),
                             ],
                           ),
                           const SizedBox(height: AppSpacing.p6),
