@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
+import 'widgets/dashboard_button.dart';
 
 class DashboardSignInScreen extends StatefulWidget {
   const DashboardSignInScreen({super.key});
@@ -59,7 +60,7 @@ class _DashboardSignInScreenState extends State<DashboardSignInScreen> {
                           child: const Icon(Icons.local_shipping, size: 16, color: AppColors.white),
                         ),
                         const SizedBox(width: 10),
-                        const Text('VECTOR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.16, color: AppColors.textPrimary)),
+                        const Text('VECTOR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: -0.16, color: AppColors.textPrimary)),
                       ],
                     ),
                   ),
@@ -121,16 +122,18 @@ class _DashboardSignInScreenState extends State<DashboardSignInScreen> {
                                 onChanged: (val) => setState(() => _email = val),
                                 onFieldSubmitted: (_) => _handleSignIn(),
                                 keyboardType: TextInputType.emailAddress,
-                                decoration: InputDecoration(
-                                  hintText: 'you@company.com',
-                                  prefixIcon: const Icon(Icons.email_outlined, size: 16, color: AppColors.textHint),
-                                  suffixIcon: _emailValid && _email.isNotEmpty ? const Icon(Icons.check_circle, size: 16, color: AppColors.success) : null,
-                                  filled: true, fillColor: _emailValid && _email.isNotEmpty ? const Color(0xFFFAFFFE) : AppColors.white,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _emailValid && _email.isNotEmpty ? AppColors.primary : AppColors.border, width: 1.5)),
-                                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                                ),
+                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+                                  decoration: InputDecoration(
+                                    hintText: 'you@company.com',
+                                    hintStyle: const TextStyle(color: AppColors.textHint, fontWeight: FontWeight.normal),
+                                    prefixIcon: const Icon(Icons.email_outlined, size: 16, color: AppColors.textHint),
+                                    suffixIcon: _emailValid && _email.isNotEmpty ? const Icon(Icons.check_circle, size: 16, color: AppColors.success) : null,
+                                    filled: true, fillColor: _emailValid && _email.isNotEmpty ? const Color(0xFFFAFFFE) : AppColors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _emailValid && _email.isNotEmpty ? AppColors.primary : AppColors.border, width: 1.5)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                                  ),
                               ),
                               const SizedBox(height: 16),
 
@@ -141,45 +144,39 @@ class _DashboardSignInScreenState extends State<DashboardSignInScreen> {
                                 obscureText: !_showPassword,
                                 onChanged: (val) => setState(() => _password = val),
                                 onFieldSubmitted: (_) => _handleSignIn(),
-                                decoration: InputDecoration(
-                                  hintText: 'Enter your password',
-                                  prefixIcon: const Icon(Icons.lock_outline, size: 16, color: AppColors.textHint),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 16, color: AppColors.textMuted),
-                                    onPressed: () => setState(() => _showPassword = !_showPassword),
+                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter your password',
+                                    hintStyle: const TextStyle(color: AppColors.textHint, fontWeight: FontWeight.normal),
+                                    prefixIcon: const Icon(Icons.lock_outline, size: 16, color: AppColors.textHint),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 16, color: AppColors.textMuted),
+                                      onPressed: () => setState(() => _showPassword = !_showPassword),
+                                    ),
+                                    filled: true, fillColor: AppColors.white,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
                                   ),
-                                  filled: true, fillColor: AppColors.white,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border, width: 1.5)),
-                                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                                ),
                               ),
 
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
-                                  onPressed: () => context.push('/forgot-password'),
+                                  onPressed: () => context.push('/dashboard/forgot-password'),
                                   style: TextButton.styleFrom(foregroundColor: AppColors.primary, textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                   child: const Text('Forgot password?'),
                                 ),
                               ),
                               const SizedBox(height: 24),
 
-                              ElevatedButton(
-                                onPressed: _canSubmit ? _handleSignIn : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  disabledBackgroundColor: const Color(0x14000000),
-                                  disabledForegroundColor: const Color(0xFFBDBDBD),
-                                  padding: const EdgeInsets.all(13),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  elevation: _canSubmit ? 2 : 0,
-                                ),
-                                child: _loading
-                                  ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
-                                  : const Text('Sign in to dashboard', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                              ),
+                               DashboardButton(
+                                 label: 'Sign in to dashboard',
+                                 enabled: _canSubmit,
+                                 loading: _loading,
+                                 onTap: _handleSignIn,
+                               ),
                             ],
                           ),
                         ),

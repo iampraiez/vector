@@ -98,7 +98,7 @@ class _DashboardSettingsScreenState extends State<DashboardSettingsScreen> {
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primary.withValues(alpha: 0.15),
@@ -784,7 +784,7 @@ class _DashboardSettingsScreenState extends State<DashboardSettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(

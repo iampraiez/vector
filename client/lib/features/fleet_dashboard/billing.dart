@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/colors.dart';
 import 'dashboard_layout.dart';
+import 'widgets/dashboard_status_badge.dart';
 
 class DashboardBillingScreen extends StatefulWidget {
   const DashboardBillingScreen({super.key});
@@ -175,23 +176,35 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        blurRadius: 32,
+                        offset: const Offset(0, 16),
                       ),
                     ],
                   ),
                   child: Stack(
                     children: [
                       Positioned(
-                        top: -50,
-                        right: -50,
+                        top: -60,
+                        right: -60,
                         child: Container(
-                          width: 150,
-                          height: 150,
+                          width: 180,
+                          height: 180,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.06),
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -40,
+                        left: 100,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.04),
                           ),
                         ),
                       ),
@@ -339,7 +352,7 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
                                 color: AppColors.white,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: plan['current']
                                       ? AppColors.primary
@@ -554,7 +567,7 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
                           color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.divider),
                         ),
                         child: Column(
@@ -671,7 +684,7 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
                           color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.divider),
                         ),
                         child: Column(
@@ -706,7 +719,7 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.divider),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -839,35 +852,9 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                       ),
                                     ),
                                   ),
-                                  DataCell(
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFECFDF5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.check_circle_rounded,
-                                            size: 12,
-                                            color: Color(0xFF059669),
-                                          ),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            'Paid',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w800,
-                                              color: Color(0xFF059669),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                   DataCell(
+                                    DashboardStatusBadge(
+                                      label: inv['status'] as String,
                                     ),
                                   ),
                                   DataCell(

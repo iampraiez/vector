@@ -142,7 +142,7 @@ class _DashboardDriverDetailScreenState
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.divider),
                     boxShadow: [
                       BoxShadow(
@@ -161,7 +161,7 @@ class _DashboardDriverDetailScreenState
                             width: 80,
                             height: 80,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(14),
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -397,7 +397,7 @@ class _DashboardDriverDetailScreenState
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.divider),
                     boxShadow: [
                       BoxShadow(
@@ -697,7 +697,7 @@ class _DashboardDriverDetailScreenState
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(

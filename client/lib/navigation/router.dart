@@ -28,6 +28,7 @@ import '../features/driver_app/notifications.dart' as driver_notifications;
 // Fleet Dashboard
 import '../features/fleet_dashboard/sign_in.dart' as fleet_signin;
 import '../features/fleet_dashboard/sign_up.dart' as fleet_signup;
+import '../features/fleet_dashboard/forgot_password.dart' as fleet_forgot_password;
 import '../features/fleet_dashboard/overview.dart';
 import '../features/fleet_dashboard/drivers.dart';
 import '../features/fleet_dashboard/driver_detail.dart';
@@ -146,6 +147,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/dashboard/signup',
       builder: (context, state) => const fleet_signup.DashboardSignUpScreen(),
+    ),
+    GoRoute(
+      path: '/dashboard/forgot-password',
+      builder: (context, state) =>
+          const fleet_forgot_password.DashboardForgotPasswordScreen(),
     ),
     GoRoute(
       path: '/dashboard',

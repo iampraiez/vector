@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/colors.dart';
 import 'dashboard_layout.dart';
+import 'widgets/dashboard_status_badge.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class DashboardOrdersScreen extends StatefulWidget {
@@ -44,52 +45,6 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
 
   final List<String> _drivers = ['Alex Rivera', 'Sarah Chen', 'Mike Johnson', 'Emma Davis'];
 
-  Widget _buildStatusBadge(String status) {
-    final colors =
-        {
-          'unassigned': {
-            'bg': const Color(0xFFF3F4F6),
-            'text': const Color(0xFF6B7280),
-          },
-          'assigned': {
-            'bg': const Color(0xFFEFF6FF),
-            'text': const Color(0xFF3B82F6),
-          },
-          'in-progress': {
-            'bg': const Color(0xFFECFDF5),
-            'text': const Color(0xFF10B981),
-          },
-          'completed': {
-            'bg': const Color(0xFFF0FDF4),
-            'text': const Color(0xFF22C55E),
-          },
-          'failed': {
-            'bg': const Color(0xFFFEF2F2),
-            'text': const Color(0xFFEF4444),
-          },
-        }[status] ??
-        {'bg': const Color(0xFFF3F4F6), 'text': const Color(0xFF6B7280)};
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors['bg'],
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        status
-            .split('-')
-            .map((s) => s[0].toUpperCase() + s.substring(1))
-            .join(' '),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-          color: colors['text'],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +219,9 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                                       ),
                                   ],
                                 ),
-                                _buildStatusBadge(order['status'] as String),
+                                DashboardStatusBadge(
+                                  label: order['status'] as String,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -423,13 +380,11 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                                             4,
                                           ),
                                         ),
-                                        child: const Text(
-                                          'High Priority',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: Color(0xFFEF4444),
-                                          ),
+                                        child: DashboardStatusBadge(
+                                          label: 'Priority',
+                                          value: 'high',
+                                          type: DashboardStatusBadgeType.priority,
+                                          size: DashboardStatusBadgeSize.small,
                                         ),
                                       )
                                 ],
@@ -538,7 +493,9 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                                       ),
                               ),
                               DataCell(
-                                _buildStatusBadge(order['status'] as String),
+                                DashboardStatusBadge(
+                                  label: order['status'] as String,
+                                ),
                               ),
                               DataCell(
                                 Row(

@@ -16,6 +16,7 @@ dependencies:
   google_fonts: ^8.0.2
   shared_preferences: ^2.3.5
   country_picker: ^2.0.27
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:

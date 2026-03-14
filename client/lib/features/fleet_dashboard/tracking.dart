@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/colors.dart';
 import 'dashboard_layout.dart';
+import 'widgets/dashboard_status_badge.dart';
 
 class DashboardTrackingScreen extends StatefulWidget {
   const DashboardTrackingScreen({super.key});
@@ -151,7 +152,7 @@ class _DashboardTrackingScreenState extends State<DashboardTrackingScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.divider),
                           boxShadow: [
                             BoxShadow(
@@ -316,7 +317,7 @@ class _DashboardTrackingScreenState extends State<DashboardTrackingScreen> {
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
                             color: AppColors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: AppColors.divider),
                             boxShadow: [
                               BoxShadow(
@@ -396,13 +397,13 @@ class _DashboardTrackingScreenState extends State<DashboardTrackingScreen> {
                           : double.infinity,
                       child: InkWell(
                         onTap: () => setState(() => _selectedDriver = driver),
-                        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             color: AppColors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isSelected
                                   ? AppColors.primary
@@ -540,21 +541,10 @@ class _DashboardTrackingScreenState extends State<DashboardTrackingScreen> {
                 letterSpacing: -0.5,
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _getStatusColor(driver['status']).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                _getStatusLabel(driver['status']).toUpperCase(),
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: _getStatusColor(driver['status']),
-                  letterSpacing: 0.5,
-                ),
-              ),
+            DashboardStatusBadge(
+              label: driver['status'],
+              type: DashboardStatusBadgeType.status,
+              size: DashboardStatusBadgeSize.small,
             ),
           ],
         ),

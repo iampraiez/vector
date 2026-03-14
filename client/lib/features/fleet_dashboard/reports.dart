@@ -111,12 +111,12 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
                             padding: const EdgeInsets.all(28),
                             decoration: BoxDecoration(
                               color: AppColors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(color: AppColors.divider),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 20,
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 16,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
@@ -234,7 +234,7 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
                           color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.divider),
                         ),
                         child: Column(
@@ -303,6 +303,8 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           headingRowColor: WidgetStateProperty.all(AppColors.surface),
+                          dataRowMaxHeight: 56,
+                          dataRowMinHeight: 56,
                           columns: const [
                             DataColumn(label: Text('METRIC', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary, letterSpacing: 0.5))),
                             DataColumn(label: Text('THIS PERIOD', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary, letterSpacing: 0.5))),
@@ -409,12 +411,60 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
           Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 16),
           Container(
-            height: 200, width: double.infinity,
-            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border, style: BorderStyle.none)),
-            child: const Center(child: Text('Chart Component Placeholder\n(Requires additional chart package like fl_chart)', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
+            height: 240, width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.surface, AppColors.surface.withValues(alpha: 0.5)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _GridPainter(),
+                  ),
+                ),
+                const Center(
+                  child: Text(
+                    'Chart Component Placeholder\n(Requires additional chart package like fl_chart)',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
           )
         ],
       ),
     );
   }
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.divider.withValues(alpha: 0.1)
+      ..strokeWidth = 1;
+
+    const verticalCount = 8;
+    const horizontalCount = 6;
+
+    for (var i = 1; i < verticalCount; i++) {
+      final x = size.width * (i / verticalCount);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+
+    for (var i = 1; i < horizontalCount; i++) {
+      final y = size.height * (i / horizontalCount);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -184,7 +184,7 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.divider),
                   ),
                   child: SingleChildScrollView(
@@ -295,7 +295,7 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                   Container(
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.divider),
                       boxShadow: [
                         BoxShadow(

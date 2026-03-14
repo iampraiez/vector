@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import 'dashboard_layout.dart';
+import 'widgets/dashboard_status_badge.dart';
 
 class DashboardOverviewScreen extends StatefulWidget {
   const DashboardOverviewScreen({super.key});
@@ -225,7 +226,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                 'Overview',
                                 style: TextStyle(
                                   fontSize: 28,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w900,
                                   color: AppColors.textPrimary,
                                   letterSpacing: -0.6,
                                 ),
@@ -350,10 +351,10 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                         2
                                   : double.infinity,
                               child: Container(
-                                padding: const EdgeInsets.all(28),
+                                  padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(14),
                                   border: Border.all(color: AppColors.divider),
                                   boxShadow: [
                                     BoxShadow(
@@ -471,7 +472,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(14),
                                   border: Border.all(color: AppColors.divider),
                                   boxShadow: [
                                     BoxShadow(
@@ -758,7 +759,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(14),
                                   border: Border.all(color: AppColors.divider),
                                   boxShadow: [
                                     BoxShadow(
@@ -930,8 +931,8 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.end,
                                                   children: [
-                                                    _buildStatusBadge(
-                                                      order['status'],
+                                                    DashboardStatusBadge(
+                                                      label: order['status']!,
                                                     ),
                                                     const SizedBox(height: 6),
                                                     Text(
@@ -1285,59 +1286,4 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    Color bgColor;
-
-    switch (status.toLowerCase()) {
-      case 'delivered':
-      case 'completed':
-        color = const Color(0xFF059669);
-        bgColor = const Color(0xFFECFDF5);
-        break;
-      case 'in-progress':
-      case 'in_progress':
-      case 'active':
-        color = const Color(0xFF2563EB);
-        bgColor = const Color(0xFFEFF6FF);
-        break;
-      case 'pending':
-      case 'assigned':
-        color = const Color(0xFFD97706);
-        bgColor = const Color(0xFFFFFBEB);
-        break;
-      default:
-        color = AppColors.textSecondary;
-        bgColor = AppColors.surface;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            status.replaceAll('_', ' ').replaceAll('-', ' ').toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

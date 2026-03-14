@@ -1,5 +1,44 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+class _HoverPopoutCard extends StatefulWidget {
+  final Widget child;
+  const _HoverPopoutCard({required this.child});
+
+  @override
+  State<_HoverPopoutCard> createState() => _HoverPopoutCardState();
+}
+
+class _HoverPopoutCardState extends State<_HoverPopoutCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+        transformAlignment: Alignment.center,
+        decoration: BoxDecoration(
+          boxShadow: [
+            if (_isHovered)
+              BoxShadow(
+                color: const Color(0xFF059669).withValues(alpha: 0.1),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+          ],
+        ),
+        child: widget.child,
+      ),
+    );
+  }
+}
 
 class WebLandingScreen extends StatefulWidget {
   const WebLandingScreen({super.key});
@@ -10,6 +49,10 @@ class WebLandingScreen extends StatefulWidget {
 
 class _WebLandingScreenState extends State<WebLandingScreen> {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _featuresKey = GlobalKey();
+  final GlobalKey _howItWorksKey = GlobalKey();
+  final GlobalKey _pricingKey = GlobalKey();
+
   bool _scrolled = false;
 
   @override
@@ -22,6 +65,17 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
         setState(() => _scrolled = false);
       }
     });
+  }
+
+  void scrollToSection(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(seconds: 1),
+        curve: Curves.easeInOutCubic,
+      );
+    }
   }
 
   @override
@@ -61,30 +115,104 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
 
   PreferredSizeWidget _buildNavBar(BuildContext context, bool isDesktop) {
     return PreferredSize(
-      preferredSize: Size.fromHeight(64),
-      child: AppBar(
-        backgroundColor: Colors.white.withValues(alpha: _scrolled ? 0.95 : 0.0),
-        elevation: 0,
-        title: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () => context.go('/'),
-                  child: Text(
-                    'VECTOR',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+      preferredSize: const Size.fromHeight(64),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: _scrolled ? 0.95 : 0.0),
+          border: Border(
+            bottom: BorderSide(
+              color: _scrolled
+                  ? Colors.black.withValues(alpha: 0.06)
+                  : Colors.transparent,
+            ),
+          ),
+        ),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: _scrolled ? 12 : 0,
+              sigmaY: _scrolled ? 12 : 0,
+            ),
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: true,
+              title: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1440),
+                child: Row(
+                  children: [
+                    // Logo
+                    InkWell(
+                      onTap: () => context.go('/'),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF059669), Color(0xFF047857)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.local_shipping,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'VECTOR',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                              color: Color(0xFF121212),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isDesktop) ...[
+                      const Spacer(),
+                      _navLink('Features', onTap: () => scrollToSection(_featuresKey)),
+                      const SizedBox(width: 32),
+                      _navLink('How it works', onTap: () => scrollToSection(_howItWorksKey)),
+                      const SizedBox(width: 32),
+                      _navLink('Pricing', onTap: () => scrollToSection(_pricingKey)),
+                      const SizedBox(width: 32),
+                      // Desktop CTAs
+                      _buildHeaderButton(
+                        label: 'Sign in',
+                        onPressed: () => context.go('/dashboard/signin'),
+                        isPrimary: false,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildHeaderButton(
+                        label: 'Get started free',
+                        onPressed: () => context.go('/dashboard/signup'),
+                        isPrimary: true,
+                      ),
+                    ],
+                  ],
                 ),
-                if (isDesktop) ...[
-                  const Spacer(),
-                  _navLink('Features'),
-                  const SizedBox(width: 20),
-                  _navLink('Pricing'),
-                  const SizedBox(width: 20),
-                  _navLink('Dashboard', path: '/dashboard'),
-                ],
+              ),
+              automaticallyImplyLeading: false,
+              actions: [
+                if (!isDesktop)
+                  Builder(
+                    builder: (context) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: IconButton(
+                        icon: const Icon(Icons.menu, color: Color(0xFF212121)),
+                        onPressed: () => Scaffold.of(context).openEndDrawer(),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -93,10 +221,50 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _navLink(String label, {String? path}) {
+  Widget _buildHeaderButton({
+    required String label,
+    required VoidCallback onPressed,
+    required bool isPrimary,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: isPrimary ? const Color(0xFF059669) : Colors.transparent,
+          border: isPrimary
+              ? null
+              : Border.all(color: Colors.black.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF059669).withValues(alpha: 0.3),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isPrimary ? Colors.white : const Color(0xFF212121),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navLink(String label, {VoidCallback? onTap, String? path}) {
     return InkWell(
       onTap: () {
-        if (path != null) {
+        if (onTap != null) {
+          onTap();
+        } else if (path != null) {
           context.go(path);
         }
       },
@@ -114,38 +282,47 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
   Widget _buildMobileDrawer(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
+      width: 280,
+      elevation: 0,
       child: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, color: Color(0xFF212121)),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            _mobileNavItem(context, 'Features'),
-            _mobileNavItem(context, 'How it works'),
-            _mobileNavItem(context, 'Pricing'),
-            const Divider(indent: 24, endIndent: 24, height: 40),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
+                  _mobileNavItem(context, 'Features', onTap: () => scrollToSection(_featuresKey)),
+                  const SizedBox(height: 20),
+                  _mobileNavItem(context, 'How it works', onTap: () => scrollToSection(_howItWorksKey)),
+                  const SizedBox(height: 20),
+                  _mobileNavItem(context, 'Pricing', onTap: () => scrollToSection(_pricingKey)),
+                  const SizedBox(height: 12),
+                  const Spacer(),
+                  const Divider(color: Color(0x0F000000), height: 40),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () => context.go('/dashboard/signin'),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Color(0x1F000000)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        foregroundColor: const Color(0xFF212121),
                         textStyle: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -162,7 +339,8 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF059669),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -174,6 +352,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       child: const Text('Get started free'),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -183,10 +362,13 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _mobileNavItem(BuildContext context, String label) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-      title: Text(
+  Widget _mobileNavItem(BuildContext context, String label, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        if (onTap != null) onTap();
+      },
+      child: Text(
         label,
         style: const TextStyle(
           fontSize: 18,
@@ -194,7 +376,6 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
           color: Color(0xFF212121),
         ),
       ),
-      onTap: () => Navigator.pop(context),
     );
   }
 
@@ -203,7 +384,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       padding: EdgeInsets.fromLTRB(24, isDesktop ? 160 : 120, 24, 80),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Wrap(
             spacing: 64,
             runSpacing: 48,
@@ -216,41 +397,6 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        border: Border.all(color: const Color(0x33059669)),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF059669),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'NOW IN OPEN BETA — FREE FOR FLEETS UNDER 5 DRIVERS',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF059669),
-                              letterSpacing: 0.22,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     const SizedBox(height: 28),
                     RichText(
                       text: TextSpan(
@@ -267,6 +413,8 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                             child: ShaderMask(
                               shaderCallback: (bounds) => const LinearGradient(
                                 colors: [Color(0xFF059669), Color(0xFF34D399)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ).createShader(bounds),
                               child: Text(
                                 'Deliver faster.',
@@ -354,11 +502,11 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ],
                     ),
                   ],
-                ),
+                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
               ),
               // Right Visual
               SizedBox(
-                width: isDesktop ? 550 : double.infinity,
+                width: isDesktop ? 650 : double.infinity,
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -505,7 +653,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ),
                     ),
                   ],
-                ),
+                ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideX(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
               ),
             ],
           ),
@@ -543,7 +691,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Wrap(
             spacing: 32,
             runSpacing: 32,
@@ -557,7 +705,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(delay: 400.ms);
   }
 
   Widget _statItem(String value, String label, bool isDesktop) {
@@ -592,10 +740,11 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
 
   Widget _buildFeatures(BuildContext context, bool isDesktop) {
     return Container(
+      key: _featuresKey,
       padding: const EdgeInsets.symmetric(vertical: 100, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Column(
             children: [
               _sectionHeader(
@@ -654,55 +803,65 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
   }
 
   Widget _featureCard(IconData icon, String title, String desc) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFECFDF5),
-              borderRadius: BorderRadius.circular(12),
+    return _HoverPopoutCard(
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(icon, color: const Color(0xFF059669), size: 22),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF121212),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: const Color(0xFF059669), size: 22),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            desc,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF757575),
-              height: 1.6,
+            const SizedBox(height: 18),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF121212),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              desc,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildHowItWorks(BuildContext context, bool isDesktop) {
     return Container(
+      key: _howItWorksKey,
       color: const Color(0xFFF8FAF9),
       padding: const EdgeInsets.symmetric(vertical: 100, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Column(
             children: [
               _sectionHeader(
@@ -746,46 +905,54 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
   }
 
   Widget _stepCard(String number, String title, String desc) {
-    return Container(
-      width: 250,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.07)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            number,
-            style: const TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.w900,
-              color: Color(0x1F059669),
-              letterSpacing: -1.08,
-              height: 1,
+    return _HoverPopoutCard(
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF121212),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              number,
+              style: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFECFDF5),
+                height: 1,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            desc,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF757575),
-              height: 1.65,
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF121212),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              desc,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -795,7 +962,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       padding: const EdgeInsets.symmetric(vertical: 100, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Wrap(
             spacing: 64,
             runSpacing: 48,
@@ -864,6 +1031,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       ),
     );
   }
+
 
   Widget _buildForDrivers(BuildContext context, bool isDesktop) {
     return Container(
@@ -1001,7 +1169,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       padding: const EdgeInsets.symmetric(vertical: 100, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Column(
             children: [
               _sectionHeader(
@@ -1120,7 +1288,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       padding: const EdgeInsets.symmetric(vertical: 100, horizontal: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Column(
             children: [
               _sectionHeader(
@@ -1454,7 +1622,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
       color: const Color(0xFFFAFAFA),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1440),
           child: Column(
             children: [
               Wrap(
@@ -1491,8 +1659,9 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                             const Text(
                               'VECTOR',
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
                                 color: Color(0xFF121212),
                               ),
                             ),

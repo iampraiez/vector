@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
+import 'widgets/dashboard_button.dart';
 
 class DashboardSignUpScreen extends StatefulWidget {
   const DashboardSignUpScreen({super.key});
@@ -120,7 +121,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
                           ),
                         ),
                         const SizedBox(width: 14),
-                        const Text(
+                        Text(
                           'VECTOR',
                           style: TextStyle(
                             fontSize: 18,
@@ -320,6 +321,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
             _FieldLabel('Full name'),
             TextFormField(
               onChanged: (v) => setState(() => _fullName = v),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
               decoration: _inputDeco(
                 hint: 'Alex Rivera',
                 icon: Icons.person_outline,
@@ -331,6 +333,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
             TextFormField(
               onChanged: (v) => setState(() => _email = v),
               keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
               decoration:
                   _inputDeco(
                     hint: 'you@company.com',
@@ -363,6 +366,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
             TextFormField(
               obscureText: !_showPassword,
               onChanged: (v) => setState(() => _password = v),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
               decoration:
                   _inputDeco(
                     hint: 'Minimum 8 characters',
@@ -391,7 +395,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
               ),
             const SizedBox(height: 28),
 
-            _PrimaryBtn(
+            DashboardButton(
               label: 'Continue',
               icon: Icons.arrow_forward,
               enabled: _step1Valid,
@@ -439,6 +443,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
             _FieldLabel('Company name'),
             TextFormField(
               onChanged: (v) => setState(() => _companyName = v),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
               decoration: _inputDeco(
                 hint: 'Acme Deliveries Ltd',
                 icon: Icons.domain,
@@ -485,7 +490,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
             ),
             const SizedBox(height: 28),
 
-            _PrimaryBtn(
+            DashboardButton(
               label: 'Continue',
               icon: Icons.arrow_forward,
               enabled: _step2Valid,
@@ -539,7 +544,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
             ),
             const SizedBox(height: 28),
 
-            _PrimaryBtn(
+            DashboardButton(
               label: 'Launch my fleet dashboard',
               icon: Icons.arrow_forward,
               enabled: true,
@@ -584,7 +589,7 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
       hintText: hint,
       hintStyle: const TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.normal,
         color: AppColors.textMuted,
       ),
       prefixIcon: Padding(
@@ -707,78 +712,7 @@ class _StepBubble extends StatelessWidget {
   }
 }
 
-class _PrimaryBtn extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool enabled;
-  final bool loading;
-  final VoidCallback onTap;
-
-  const _PrimaryBtn({
-    required this.label,
-    required this.icon,
-    required this.enabled,
-    this.loading = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: enabled && !loading
-            ? [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : [],
-      ),
-      child: ElevatedButton(
-        onPressed: enabled && !loading ? onTap : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
-          disabledBackgroundColor: AppColors.divider,
-          disabledForegroundColor: AppColors.textMuted,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 0,
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: AppColors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(icon, size: 18),
-                ],
-              ),
-      ),
-    );
-  }
-}
+// _PrimaryBtn replaced by DashboardButton
 
 class _PlanCard extends StatelessWidget {
   final Map<String, dynamic> plan;

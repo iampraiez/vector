@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import 'dashboard_layout.dart';
+import 'widgets/dashboard_status_badge.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class DashboardDriversScreen extends StatefulWidget {
@@ -151,7 +152,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: AppColors.divider),
                       ),
                       child: Row(
@@ -223,7 +224,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.divider),
                     boxShadow: [
                       BoxShadow(
@@ -253,7 +254,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                         vertical: 14,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
                       ),
                       hintStyle: TextStyle(
@@ -298,7 +299,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(14),
                                   border: Border.all(color: AppColors.border),
                                   boxShadow: [
                                     BoxShadow(
@@ -387,8 +388,10 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                                 ),
                                               ),
                                               const SizedBox(height: 6),
-                                              _buildStatusBadge(
-                                                driver['status'],
+                                              DashboardStatusBadge(
+                                                label: driver['status'],
+                                                type: DashboardStatusBadgeType.status,
+                                                size: DashboardStatusBadgeSize.small,
                                               ),
                                             ],
                                           ),
@@ -404,7 +407,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                         color: AppColors.surface.withValues(
                                           alpha: 0.5,
                                         ),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
                                           color: AppColors.divider,
                                         ),
@@ -476,7 +479,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                               ),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(14),
                                               ),
                                             ),
                                             child: const Text(
@@ -526,7 +529,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.divider),
                       boxShadow: [
                         BoxShadow(
@@ -906,42 +909,6 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
               fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
               letterSpacing: -1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color color = status == 'active' ? AppColors.success : AppColors.textMuted;
-    Color bgColor = status == 'active'
-        ? const Color(0xFFECFDF5)
-        : AppColors.surface;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: 0.5,
             ),
           ),
         ],
