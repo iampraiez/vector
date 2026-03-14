@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
+import '../../shared/widgets/buttons.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,36 +17,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, dynamic>> _steps = [
     {
-      'icon': Icons.local_shipping_outlined,
+      'icon': Icons.directions_car_filled_rounded,
       'title': 'Optimize Every Route',
       'desc':
           'AI-powered algorithms calculate the most efficient delivery routes, saving you time and fuel costs instantly.',
-      'color': const Color(0xFFE0F2F1),
-      'accent': const Color(0xFF00BFA5),
+      'color': const Color(0xFFF0FDF4),
+      'accent': AppColors.primary,
     },
     {
-      'icon': Icons.bolt_outlined,
+      'icon': Icons.bolt_rounded,
       'title': 'Real-Time Updates',
       'desc':
           'Track your progress with precise GPS navigation and automatic route adjustments that adapt on the fly.',
-      'color': const Color(0xFFECEFF1),
-      'accent': const Color(0xFF607D8B),
+      'color': const Color(0xFFEFF6FF),
+      'accent': const Color(0xFF3B82F6),
     },
     {
-      'icon': Icons.my_location_outlined,
-      'title': 'Proof of Delivery',
+      'icon': Icons.map_rounded,
+      'title': 'Live Tracking',
       'desc':
           'Capture signatures and photos instantly. Keep detailed records for every successful delivery with ease.',
-      'color': const Color(0xFFF3E5F5),
-      'accent': const Color(0xFF9C27B0),
-    },
-    {
-      'icon': Icons.security_outlined,
-      'title': 'Built on Privacy',
-      'desc':
-          'Your delivery data is encrypted and secure. We prioritize your privacy at every step of the journey.',
-      'color': const Color(0xFFE8EAF6),
-      'accent': const Color(0xFF3F51B5),
+      'color': const Color(0xFFF5F3FF),
+      'accent': const Color(0xFF8B5CF6),
     },
   ];
 
@@ -55,7 +48,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,16 +56,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           // Background atmospheric glow
           AnimatedContainer(
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 colors: [
-                  _steps[_currentPage]['color'] as Color,
+                  (_steps[_currentPage]['accent'] as Color).withValues(
+                    alpha: 0.08,
+                  ),
                   AppColors.white,
                 ],
-                center: const Alignment(0, -0.3),
-                radius: 1.2,
+                center: const Alignment(0, -0.2),
+                radius: 1.0,
               ),
             ),
           ),
@@ -85,22 +79,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.p6,
-                    vertical: AppSpacing.p2,
+                    vertical: AppSpacing.p4,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      GestureDetector(
-                        onTap: () => context.go('/home'),
-                        child: const Text(
-                          'Skip',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: AppColors.textMuted,
+                      if (_currentPage < _steps.length - 1)
+                        GestureDetector(
+                          onTap: () => context.go('/home'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Skip',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: AppColors.textMuted,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -108,6 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
+                    physics: const BouncingScrollPhysics(),
                     onPageChanged: (index) {
                       setState(() => _currentPage = index);
                     },
@@ -123,8 +130,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           children: [
                             // Icon Illustration
                             TweenAnimationBuilder<double>(
-                              duration: const Duration(milliseconds: 800),
-                              tween: Tween(begin: 0.8, end: 1.0),
+                              duration: const Duration(milliseconds: 600),
+                              tween: Tween(begin: 0.9, end: 1.0),
+                              curve: Curves.elasticOut,
                               builder: (context, value, child) {
                                 return Transform.scale(
                                   scale: value,
@@ -132,28 +140,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 );
                               },
                               child: Container(
-                                width: 160,
-                                height: 160,
+                                width: 180,
+                                height: 180,
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
                                       color: (step['accent'] as Color)
-                                          .withValues(alpha: 0.15),
-                                      blurRadius: 40,
-                                      offset: const Offset(0, 10),
+                                          .withValues(alpha: 0.1),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 15),
                                     ),
                                   ],
                                 ),
                                 child: Icon(
                                   step['icon'] as IconData,
-                                  size: 64,
+                                  size: 72,
                                   color: step['accent'] as Color,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.p12),
+                            const SizedBox(height: 60),
                             // Text Content
                             Text(
                               step['title'] as String,
@@ -162,75 +170,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 fontSize: 32,
                                 fontWeight: FontWeight.w900,
                                 color: AppColors.textPrimary,
-                                letterSpacing: -1,
+                                letterSpacing: -1.2,
                                 height: 1.1,
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.p6),
-                            Text(
-                              step['desc'] as String,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: AppColors.textSecondary,
-                                height: 1.6,
-                                fontFamily: 'Outfit',
+                            const SizedBox(height: 20),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
                               ),
-                            ),
-                            if (index == _steps.length - 1) ...[
-                              const SizedBox(height: AppSpacing.p10),
-                              GestureDetector(
-                                onTap: () => context.go('/home'),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 400),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 48,
-                                    vertical: 18,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        _steps[_currentPage]['accent'] as Color,
-                                        (_steps[_currentPage]['accent'] as Color)
-                                            .withValues(alpha: 0.8),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(100),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: (_steps[_currentPage]['accent']
-                                                as Color)
-                                            .withValues(alpha: 0.3),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 10),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Get Started',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 18,
-                                          letterSpacing: -0.2,
-                                        ),
-                                      ),
-                                      SizedBox(width: 12),
-                                      Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                    ],
-                                  ),
+                              child: Text(
+                                step['desc'] as String,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: AppColors.textSecondary,
+                                  height: 1.6,
+                                  fontFamily: 'Inter',
                                 ),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       );
@@ -238,26 +197,68 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // Bottom Controls (Indicators only)
+                // Bottom Area
                 Padding(
-                  padding: const EdgeInsets.all(AppSpacing.p8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_steps.length, (index) {
-                      final isActive = index == _currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 400),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 6,
-                        width: isActive ? 32 : 6,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? (_steps[_currentPage]['accent'] as Color)
-                              : AppColors.border,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      );
-                    }),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
+                  child: Column(
+                    children: [
+                      // Indicators
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_steps.length, (index) {
+                          final isActive = index == _currentPage;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            height: 6,
+                            width: isActive ? 24 : 6,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? (_steps[_currentPage]['accent'] as Color)
+                                  : const Color(0xFFE5E7EB),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Bottom Button
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _currentPage == _steps.length - 1
+                            ? AppButton(
+                                key: const ValueKey('start'),
+                                label: 'Get Started',
+                                isFullWidth: true,
+                                onPressed: () => context.go('/home'),
+                              )
+                            : SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: TextButton(
+                                  onPressed: () {
+                                    _pageController.nextPage(
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
+                                      curve: Curves.easeInOutCubic,
+                                    );
+                                  },
+                                  child: Text(
+                                    'Continue',
+                                    style: TextStyle(
+                                      color:
+                                          _steps[_currentPage]['accent']
+                                              as Color,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -44,26 +44,51 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
 
   final List<String> _drivers = ['Alex Rivera', 'Sarah Chen', 'Mike Johnson', 'Emma Davis'];
 
-  Map<String, dynamic> _getStatusColor(String status) {
-    switch (status) {
-      case 'unassigned': return {'bg': const Color(0xFFF3F4F6), 'text': const Color(0xFF6B7280)};
-      case 'assigned': return {'bg': const Color(0xFFDBEAFE), 'text': const Color(0xFF1D4ED8)};
-      case 'in-progress': return {'bg': const Color(0xFFD1FAE5), 'text': const Color(0xFF059669)};
-      case 'completed': return {'bg': const Color(0xFFDCFCE7), 'text': const Color(0xFF16A34A)};
-      case 'failed': return {'bg': const Color(0xFFFEE2E2), 'text': const Color(0xFFDC2626)};
-      default: return {'bg': const Color(0xFFF3F4F6), 'text': const Color(0xFF6B7280)};
-    }
-  }
+  Widget _buildStatusBadge(String status) {
+    final colors =
+        {
+          'unassigned': {
+            'bg': const Color(0xFFF3F4F6),
+            'text': const Color(0xFF6B7280),
+          },
+          'assigned': {
+            'bg': const Color(0xFFEFF6FF),
+            'text': const Color(0xFF3B82F6),
+          },
+          'in-progress': {
+            'bg': const Color(0xFFECFDF5),
+            'text': const Color(0xFF10B981),
+          },
+          'completed': {
+            'bg': const Color(0xFFF0FDF4),
+            'text': const Color(0xFF22C55E),
+          },
+          'failed': {
+            'bg': const Color(0xFFFEF2F2),
+            'text': const Color(0xFFEF4444),
+          },
+        }[status] ??
+        {'bg': const Color(0xFFF3F4F6), 'text': const Color(0xFF6B7280)};
 
-  String _getStatusLabel(String status) {
-    switch (status) {
-      case 'unassigned': return 'Unassigned';
-      case 'assigned': return 'Assigned';
-      case 'in-progress': return 'In Progress';
-      case 'completed': return 'Completed';
-      case 'failed': return 'Failed';
-      default: return 'Unknown';
-    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors['bg'],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        status
+            .split('-')
+            .map((s) => s[0].toUpperCase() + s.substring(1))
+            .join(' '),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+          color: colors['text'],
+        ),
+      ),
+    );
   }
 
   @override
@@ -123,18 +148,23 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                 ),
                 const SizedBox(height: 32),
                 Wrap(
-                  spacing: 24, runSpacing: 24,
+                  spacing: 16,
+                  runSpacing: 16,
                   children: [
-                    _buildStatCard('Total Orders', _orders.length),
-                    _buildStatCard('Unassigned', unassignedCount, color: const Color(0xFFF59E0B)),
-                    _buildStatCard('In Progress', inProgressCount, color: const Color(0xFF059669)),
-                    _buildStatCard('Completed', completedCount, color: const Color(0xFF16A34A)),
+                    _buildStatCard('All Orders', _orders.length.toString()),
+                    _buildStatCard('Waiting', unassignedCount.toString()),
+                    _buildStatCard('On Way', inProgressCount.toString()),
+                    _buildStatCard('Delivered', completedCount.toString()),
                   ],
                 ),
                 const SizedBox(height: 24),
                 Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
+                  ),
                   child: Column(
                     children: [
                       TextField(
@@ -179,11 +209,21 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                 else if (isMobile)
                   Column(
                     children: filteredOrders.map((order) {
-                      final statusColors = _getStatusColor(order['status'] as String);
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.divider),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -192,40 +232,147 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Text(order['id'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                    Text(
+                                      order['id'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
                                     if (order['priority'] == 'high')
-                                      Container(margin: const EdgeInsets.only(left: 8), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(4)), child: const Text('Priority', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))))
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF2F2),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'High',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(color: statusColors['bg'] as Color, borderRadius: BorderRadius.circular(6)),
-                                  child: Text(_getStatusLabel(order['status'] as String), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColors['text'] as Color)),
-                                )
+                                _buildStatusBadge(order['status'] as String),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Text(order['customerName'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-                            Text('${order['address']}, ${order['city']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
+                            Text(
+                              order['customerName'],
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on_outlined,
+                                  size: 14,
+                                  color: AppColors.textMuted,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '${order['address']}, ${order['city']}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(children: [Text(order['timeWindow'], style: const TextStyle(fontSize: 11, color: AppColors.textMuted)), const SizedBox(width: 10), Text('${order['packages']} pkg', style: const TextStyle(fontSize: 11, color: AppColors.textMuted))]),
                                 Row(
                                   children: [
-                                    if (order['assignedTo'] != null) Text(order['assignedTo'], style: const TextStyle(fontSize: 11, color: AppColors.textSecondary))
-                                    else DropdownButton<String>(items: _drivers.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 11)))).toList(), onChanged: (v){}, hint: const Text('Assign...', style: TextStyle(fontSize: 11)), underline: const SizedBox(), isDense: true),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.edit, size: 16, color: AppColors.textSecondary)
-                                  ]
-                                )
-                              ]
+                                    const Icon(
+                                      Icons.schedule_rounded,
+                                      size: 14,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      order['timeWindow'],
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.divider,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      '${order['packages']} pkg',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (order['assignedTo'] != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.person_rounded,
+                                          size: 12,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          order['assignedTo'],
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             )
                           ],
                         ),
                       );
-                    }).toList()
+                    }).toList(),
                   )
                 else
                   Container(
@@ -247,44 +394,176 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
                           DataColumn(label: Text('ACTIONS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
                         ],
                         rows: filteredOrders.map((order) {
-                          final statusColors = _getStatusColor(order['status'] as String);
                           return DataRow(
+                            onSelectChanged: (_) {},
                             cells: [
                               DataCell(Column(
-                                mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(order['id'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                    Text(
+                                      order['id'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
                                   if (order['priority'] == 'high')
-                                    Container(margin: const EdgeInsets.only(top: 4), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(4)), child: const Text('Priority', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))))
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF2F2),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'High Priority',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                      )
                                 ],
                               )),
                               DataCell(Column(
-                                mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(order['customerName'], style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
-                                  Text('${order['packages']} package${order['packages'] > 1 ? 's' : ''}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                    Text(
+                                      order['customerName'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${order['packages']} pkg',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
                                 ],
                               )),
                               DataCell(Column(
-                                mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(order['address'], style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                                  Text(order['city'], style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                    Text(
+                                      order['address'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      order['city'],
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
                                 ],
                               )),
-                              DataCell(Text(order['timeWindow'], style: const TextStyle(fontSize: 14, color: AppColors.textSecondary))),
                               DataCell(
-                                order['assignedTo'] != null 
-                                  ? Row(children: [const Icon(Icons.person_outline, size: 14, color: AppColors.textMuted), const SizedBox(width: 4), Text(order['assignedTo'], style: const TextStyle(fontSize: 14, color: AppColors.textPrimary))])
-                                  : DropdownButton<String>(items: _drivers.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 14)))).toList(), onChanged: (v){}, hint: const Text('Assign driver...', style: TextStyle(fontSize: 14)), underline: const SizedBox())
+                                Text(
+                                  order['timeWindow'],
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ),
-                              DataCell(Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: statusColors['bg'] as Color, borderRadius: BorderRadius.circular(4)),
-                                child: Text(_getStatusLabel(order['status'] as String), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColors['text'] as Color)),
+                              DataCell(
+                                order['assignedTo'] != null
+                                    ? Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: const Icon(
+                                              Icons.person_rounded,
+                                              size: 14,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            order['assignedTo'],
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : DropdownButton<String>(
+                                        items: _drivers
+                                            .map(
+                                              (d) => DropdownMenuItem(
+                                                value: d,
+                                                child: Text(
+                                                  d,
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (v) {},
+                                        hint: const Text(
+                                          'Assign driver',
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                        underline: const SizedBox(),
+                                      ),
+                              ),
+                              DataCell(
+                                _buildStatusBadge(order['status'] as String),
+                              ),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(
+                                        Icons.description_outlined,
+                                        size: 18,
+                                      ),
+                                      color: AppColors.textMuted,
+                                      tooltip: 'Details',
+                                    ),
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                      ),
+                                      color: AppColors.textMuted,
+                                      tooltip: 'Edit',
+                                    ),
+                                  ],
                               )),
-                              DataCell(IconButton(onPressed: () {}, icon: const Icon(Icons.edit, size: 16), style: IconButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: const BorderSide(color: AppColors.border))))),
-                            ]
+                            ],
                           );
                         }).toList(),
                       ),
@@ -298,17 +577,44 @@ class _DashboardOrdersScreenState extends State<DashboardOrdersScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, int value, {Color? color}) {
+  Widget _buildStatCard(String label, String value) {
     return Container(
-      width: 160,
+      width: 200,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 4),
-          Text(value.toString(), style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: color ?? AppColors.textPrimary)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.56,
+            ),
+          ),
         ],
       ),
     );

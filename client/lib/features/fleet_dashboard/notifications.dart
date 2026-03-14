@@ -96,7 +96,7 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                 // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
                       child: Column(
@@ -104,77 +104,176 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                         children: [
                           Row(
                             children: [
-                              const Text('Notifications', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.textPrimary, letterSpacing: -0.5)),
+                              const Text(
+                                'Notifications',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                  letterSpacing: -1,
+                                ),
+                              ),
                               if (_unreadCount > 0) ...[
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 14),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                  decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(99)),
-                                  child: Text(_unreadCount.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFFEF4444,
+                                        ).withValues(alpha: 0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    _unreadCount.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 )
                               ]
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          const Text('Stay updated on deliveries, drivers, and system events', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Latest updates across your fleet and system',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Row(
                       children: [
                         if (_unreadCount > 0)
-                          OutlinedButton.icon(
+                          _buildHeaderAction(
+                            label: 'Mark all as read',
+                            icon: Icons.done_all_rounded,
                             onPressed: _markAllRead,
-                            icon: const Icon(Icons.check, size: 14),
-                            label: const Text('Mark all read'),
-                            style: OutlinedButton.styleFrom(foregroundColor: AppColors.textSecondary, side: const BorderSide(color: AppColors.border), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                           ),
                         if (_filtered.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
+                          const SizedBox(width: 12),
+                          _buildHeaderAction(
+                            label: 'Clear',
+                            icon: Icons.delete_sweep_rounded,
                             onPressed: _clearAll,
-                            icon: const Icon(Icons.delete_outline, size: 14),
-                            label: Text('Clear ${_activeCategory != 'all' ? _activeCategory : 'all'}'),
-                            style: OutlinedButton.styleFrom(foregroundColor: AppColors.textSecondary, side: const BorderSide(color: AppColors.border), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                          )
+                          ),
                         ]
                       ],
                     )
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Category Tabs
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: AppColors.surface, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(12)),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: _categories.map((cat) {
-                        final count = cat['key'] == 'all' ? _notifications.where((n) => !n['read']).length : _notifications.where((n) => n['category'] == cat['key'] && !n['read']).length;
-                        final active = _activeCategory == cat['key'];
-                        return InkWell(
-                          onTap: () => setState(() => _activeCategory = cat['key']!),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                            decoration: BoxDecoration(color: active ? Colors.white : Colors.transparent, border: Border.all(color: active ? AppColors.border : Colors.transparent), borderRadius: BorderRadius.circular(8)),
-                            child: Row(
-                              children: [
-                                Text(cat['label']!, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: active ? AppColors.textPrimary : AppColors.textMuted)),
-                                if (count > 0) ...[
-                                  const SizedBox(width: 5),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                    decoration: BoxDecoration(color: active ? const Color(0xFFEF4444) : AppColors.border, borderRadius: BorderRadius.circular(99)),
-                                    constraints: const BoxConstraints(minWidth: 16),
-                                    alignment: Alignment.center,
-                                    child: Text(count.toString(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: active ? Colors.white : AppColors.textMuted)),
+                        final count = cat['key'] == 'all'
+                            ? _notifications.where((n) => !n['read']).length
+                            : _notifications
+                                  .where(
+                                    (n) =>
+                                        n['category'] == cat['key'] &&
+                                        !n['read'],
                                   )
-                                ]
-                              ],
+                                  .length;
+                        final active = _activeCategory == cat['key'];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: InkWell(
+                            onTap: () =>
+                                setState(() => _activeCategory = cat['key']!),
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? AppColors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: active
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.04,
+                                          ),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    cat['label']!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: active
+                                          ? FontWeight.w700
+                                          : FontWeight.w600,
+                                      color: active
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  if (count > 0) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: active
+                                            ? const Color(
+                                                0xFFEF4444,
+                                              ).withValues(alpha: 0.1)
+                                            : AppColors.divider,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        count.toString(),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          color: active
+                                              ? const Color(0xFFEF4444)
+                                              : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -182,18 +281,30 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
                 // Notification List
                 if (_filtered.isEmpty)
                   const EmptyState(
                     title: 'No notifications',
-                    message: 'You\'re all caught up. New notifications will appear here.',
+                    message:
+                        'You\'re all caught up. New notifications will appear here.',
                     icon: Icons.notifications_none,
                   )
                 else
                   Container(
-                    decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.divider),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: Column(
                       children: _filtered.asMap().entries.map((entry) {
@@ -202,27 +313,42 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                         final isLast = idx == _filtered.length - 1;
                         final colors = _colorMap[notif['type']]!;
                         final icon = _iconMap[notif['type']];
+                        final isUnread = !notif['read'];
+
                         return InkWell(
                           onTap: () => _markRead(notif['id']),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                            decoration: BoxDecoration(border: Border(bottom: isLast ? BorderSide.none : const BorderSide(color: AppColors.divider)), color: notif['read'] ? Colors.white : const Color(0x08059669)),
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: isLast
+                                    ? BorderSide.none
+                                    : const BorderSide(
+                                        color: AppColors.divider,
+                                      ),
+                              ),
+                              color: isUnread
+                                  ? AppColors.primary.withValues(alpha: 0.02)
+                                  : Colors.transparent,
+                            ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Unread Dot
-                                SizedBox(
-                                  width: 14,
-                                  child: !notif['read'] ? Container(margin: const EdgeInsets.only(top: 14), width: 5, height: 5, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)) : null,
-                                ),
-
                                 // Icon
                                 Container(
-                                  width: 36, height: 36,
-                                  decoration: BoxDecoration(color: colors['bg'], borderRadius: BorderRadius.circular(10)),
-                                  child: Icon(icon, size: 18, color: colors['icon']),
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: colors['bg'],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    icon,
+                                    size: 20,
+                                    color: colors['icon'],
+                                  ),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 20),
 
                                 // Content
                                 Expanded(
@@ -230,26 +356,75 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Expanded(child: Text(notif['title'], style: TextStyle(fontSize: 13, fontWeight: notif['read'] ? FontWeight.w500 : FontWeight.w600, color: AppColors.textPrimary))),
-                                          Text(notif['time'], style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                if (isUnread) ...[
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                          color:
+                                                              AppColors.primary,
+                                                          shape:
+                                                              BoxShape.circle,
+                                                        ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                ],
+                                                Text(
+                                                  notif['title'],
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: isUnread
+                                                        ? FontWeight.w700
+                                                        : FontWeight.w600,
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            notif['time'],
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textMuted,
+                                            ),
+                                          ),
                                         ],
                                       ),
-                                      const SizedBox(height: 3),
-                                      Text(notif['body'], style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        notif['body'],
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textSecondary,
+                                          height: 1.5,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 20),
 
                                 // Delete Button
                                 IconButton(
                                   onPressed: () => _remove(notif['id']),
-                                  icon: const Icon(Icons.delete_outline, size: 14),
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    size: 18,
+                                  ),
                                   color: AppColors.textMuted,
                                   hoverColor: const Color(0xFFFEF2F2),
-                                  splashRadius: 20,
+                                  splashRadius: 24,
                                   constraints: const BoxConstraints(),
                                 )
                               ],
@@ -271,6 +446,26 @@ class _DashboardNotificationsScreenState extends State<DashboardNotificationsScr
           ),
         ),
       )
+    );
+  }
+
+  Widget _buildHeaderAction({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        backgroundColor: AppColors.white,
+        side: const BorderSide(color: AppColors.divider),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }

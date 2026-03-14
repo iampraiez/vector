@@ -307,34 +307,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         ),
                                       ),
                                     )
-                                  : _companyCodeValid == true
-                                  ? const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 20,
-                                    )
-                                  : _companyCodeValid == false
-                                  ? const Icon(
-                                      Icons.error,
-                                      color: AppColors.error,
-                                      size: 20,
-                                    )
                                   : null,
                               errorText: _companyCodeError,
                             ),
-                            const Padding(
-                              padding: EdgeInsets.only(
-                                top: AppSpacing.p1,
-                                left: AppSpacing.p1,
-                              ),
-                              child: Text(
-                                'Ask your fleet manager for this code',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textHint,
+                            if (_companyCodeValid != null && !_isCheckingCompanyCode)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, left: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _companyCodeValid! ? Icons.check_circle : Icons.error,
+                                      size: 14,
+                                      color: _companyCodeValid! ? AppColors.success : AppColors.error,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _companyCodeValid! ? 'Valid company code' : 'Invalid company code',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: _companyCodeValid! ? AppColors.success : AppColors.error,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (!_isCheckingCompanyCode)
+                              const Padding(
+                                padding: EdgeInsets.only(
+                                  top: AppSpacing.p1,
+                                  left: AppSpacing.p1,
+                                ),
+                                child: Text(
+                                  'Ask your fleet manager for this code',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textHint,
+                                  ),
                                 ),
                               ),
-                            ),
                             const SizedBox(height: AppSpacing.p4),
 
                             Row(

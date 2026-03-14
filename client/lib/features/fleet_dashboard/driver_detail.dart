@@ -115,45 +115,95 @@ class _DashboardDriverDetailScreenState
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: () => context.go('/dashboard/drivers'),
-                    icon: const Icon(Icons.arrow_back, size: 16),
+                    icon: const Icon(Icons.arrow_back_rounded, size: 18),
                     label: const Text('Back to Drivers'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: AppColors.surface,
                       textStyle: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Driver Profile
                 Container(
-                  padding: const EdgeInsets.all(28),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.divider),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(32),
-                          color: AppColors.primary,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.person_outline,
-                          size: 32,
-                          color: AppColors.white,
-                        ),
+                      Stack(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [AppColors.primary, Color(0xFF6366F1)],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.person_rounded,
+                              size: 40,
+                              color: AppColors.white,
+                            ),
+                          ),
+                          if (_driver['status'] == 'active')
+                            Positioned(
+                              bottom: -2,
+                              right: -2,
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.white,
+                                    width: 4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(width: 24),
+                      const SizedBox(width: 32),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,39 +218,39 @@ class _DashboardDriverDetailScreenState
                                     Text(
                                       _driver['name'],
                                       style: const TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
                                         color: AppColors.textPrimary,
+                                        letterSpacing: -0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
+                                        horizontal: 12,
+                                        vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFDCFCE7),
-                                        borderRadius: BorderRadius.circular(4),
+                                        color: AppColors.success.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Row(
+                                      child: const Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFF16A34A),
-                                              shape: BoxShape.circle,
-                                            ),
+                                          Icon(
+                                            Icons.verified_rounded,
+                                            size: 14,
+                                            color: AppColors.success,
                                           ),
-                                          const SizedBox(width: 4),
-                                          const Text(
-                                            'Active',
+                                          SizedBox(width: 6),
+                                          Text(
+                                            'Active Driver',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF16A34A),
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.success,
                                             ),
                                           ),
                                         ],
@@ -208,63 +258,77 @@ class _DashboardDriverDetailScreenState
                                     ),
                                   ],
                                 ),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.star,
-                                      size: 18,
-                                      color: Colors.amber,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _driver['rating'].toString(),
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFFBBF24,
+                                    ).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        size: 20,
+                                        color: Color(0xFFFBBF24),
                                       ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      'avg',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textMuted,
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _driver['rating'].toString(),
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.textPrimary,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'avg',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 24),
                             Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
+                              spacing: 12,
+                              runSpacing: 12,
                               children: [
                                 _buildContactBadge(
-                                  Icons.email_outlined,
+                                  Icons.mail_outline_rounded,
                                   _driver['email'],
                                 ),
                                 _buildContactBadge(
-                                  Icons.phone_outlined,
+                                  Icons.phone_iphone_rounded,
                                   _driver['phone'],
                                 ),
                                 _buildContactBadge(
-                                  Icons.local_shipping_outlined,
+                                  Icons.local_shipping_rounded,
                                   _driver['vehicle'],
                                 ),
                               ],
                             ),
                             const SizedBox(height: 24),
                             Container(
-                              padding: const EdgeInsets.only(top: 24),
+                              padding: const EdgeInsets.only(top: 32),
+                              margin: const EdgeInsets.only(top: 8),
                               decoration: const BoxDecoration(
                                 border: Border(
-                                  top: BorderSide(color: AppColors.border),
+                                  top: BorderSide(color: AppColors.divider),
                                 ),
                               ),
                               child: Wrap(
-                                spacing: 24,
+                                spacing: 48,
                                 runSpacing: 24,
                                 children: [
                                   _buildInfoItem(
@@ -295,29 +359,37 @@ class _DashboardDriverDetailScreenState
                 const SizedBox(height: 24),
 
                 // Stats Cards
-                Wrap(
-                  spacing: 24,
-                  runSpacing: 24,
-                  children: [
-                    _buildStatCard(
-                      'Deliveries Completed',
-                      currentStats['completed'],
-                      Icons.check_circle_outline,
-                      const Color(0xFF16A34A),
-                    ),
-                    _buildStatCard(
-                      'On-Time Deliveries',
-                      currentStats['onTime'],
-                      Icons.schedule,
-                      const Color(0xFF059669),
-                    ),
-                    _buildStatCard(
-                      'Average Rating',
-                      currentStats['rating'],
-                      Icons.star_outline,
-                      const Color(0xFFFBBF24),
-                    ),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final itemWidth = (constraints.maxWidth - (24 * 2)) / 3;
+                    return Wrap(
+                      spacing: 24,
+                      runSpacing: 24,
+                      children: [
+                        _buildStatCard(
+                          'Deliveries Completed',
+                          currentStats['completed'],
+                          Icons.check_circle_rounded,
+                          AppColors.success,
+                          itemWidth,
+                        ),
+                        _buildStatCard(
+                          'On-Time Deliveries',
+                          currentStats['onTime'],
+                          Icons.timer_rounded,
+                          AppColors.primary,
+                          itemWidth,
+                        ),
+                        _buildStatCard(
+                          'Average Rating',
+                          currentStats['rating'],
+                          Icons.star_rounded,
+                          const Color(0xFFF59E0B),
+                          itemWidth,
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -325,8 +397,15 @@ class _DashboardDriverDetailScreenState
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
@@ -339,21 +418,23 @@ class _DashboardDriverDetailScreenState
                               'Delivery History',
                               style: TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
+                                letterSpacing: -0.5,
                               ),
                             ),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.divider),
+                              ),
                               child: Row(
                                 children: [
                                   _buildTimeFilter('today', 'Today'),
-                                  const SizedBox(width: 8),
-                                  _buildTimeFilter('week', 'This Week'),
-                                  const SizedBox(width: 8),
-                                  _buildTimeFilter('month', 'This Month'),
-                                  const SizedBox(width: 8),
-                                  _buildTimeFilter('all', 'All Time'),
+                                  _buildTimeFilter('week', 'Week'),
+                                  _buildTimeFilter('month', 'Month'),
                                 ],
                               ),
                             ),
@@ -367,17 +448,20 @@ class _DashboardDriverDetailScreenState
                           headingRowColor: WidgetStateProperty.all(
                             AppColors.surface,
                           ),
-                          dataRowMinHeight: 60,
-                          dataRowMaxHeight: 60,
+                          dataRowMinHeight: 72,
+                          dataRowMaxHeight: 72,
                           showBottomBorder: true,
+                          horizontalMargin: 24,
+                          columnSpacing: 40,
                           columns: const [
                             DataColumn(
                               label: Text(
                                 'ORDER ID',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -386,8 +470,9 @@ class _DashboardDriverDetailScreenState
                                 'CUSTOMER',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -396,8 +481,9 @@ class _DashboardDriverDetailScreenState
                                 'ADDRESS',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -406,8 +492,9 @@ class _DashboardDriverDetailScreenState
                                 'TIME WINDOW',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -416,8 +503,9 @@ class _DashboardDriverDetailScreenState
                                 'COMPLETED',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -426,8 +514,9 @@ class _DashboardDriverDetailScreenState
                                 'SIG',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary,
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -441,7 +530,7 @@ class _DashboardDriverDetailScreenState
                                         delivery['id'],
                                         style: const TextStyle(
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w700,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
@@ -457,13 +546,15 @@ class _DashboardDriverDetailScreenState
                                             delivery['customerName'],
                                             style: const TextStyle(
                                               fontSize: 14,
+                                              fontWeight: FontWeight.w700,
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
                                           Text(
-                                            '${delivery['packages']} pkg',
+                                            '${delivery['packages']} packages',
                                             style: const TextStyle(
                                               fontSize: 12,
+                                              fontWeight: FontWeight.w600,
                                               color: AppColors.textMuted,
                                             ),
                                           ),
@@ -475,6 +566,7 @@ class _DashboardDriverDetailScreenState
                                         delivery['address'],
                                         style: const TextStyle(
                                           fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                           color: AppColors.textSecondary,
                                         ),
                                       ),
@@ -484,6 +576,7 @@ class _DashboardDriverDetailScreenState
                                         delivery['timeWindow'],
                                         style: const TextStyle(
                                           fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                           color: AppColors.textSecondary,
                                         ),
                                       ),
@@ -493,21 +586,31 @@ class _DashboardDriverDetailScreenState
                                         delivery['completedAt'],
                                         style: const TextStyle(
                                           fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                           color: AppColors.textSecondary,
                                         ),
                                       ),
                                     ),
                                     DataCell(
                                       delivery['signature']
-                                          ? const Icon(
-                                              Icons.check_circle,
-                                              size: 18,
-                                              color: Color(0xFF16A34A),
+                                          ? Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.success
+                                                    .withValues(alpha: 0.1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.check_rounded,
+                                                size: 14,
+                                                color: AppColors.success,
+                                              ),
                                             )
                                           : const Text(
                                               '—',
                                               style: TextStyle(
                                                 fontSize: 12,
+                                                fontWeight: FontWeight.w800,
                                                 color: AppColors.textMuted,
                                               ),
                                             ),
@@ -531,22 +634,23 @@ class _DashboardDriverDetailScreenState
 
   Widget _buildContactBadge(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textMuted),
-          const SizedBox(width: 6),
+          Icon(icon, size: 16, color: AppColors.textSecondary),
+          const SizedBox(width: 10),
           Text(
             text,
             style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -559,15 +663,20 @@ class _DashboardDriverDetailScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          label.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textMuted,
+            letterSpacing: 1.2,
+          ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 8),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
         ),
@@ -580,51 +689,56 @@ class _DashboardDriverDetailScreenState
     dynamic value,
     IconData icon,
     Color color,
+    double width,
   ) {
+    final isDesktop = MediaQuery.of(context).size.width > 900;
     return Container(
-      width: MediaQuery.of(context).size.width > 900
-          ? 300
-          : MediaQuery.of(context).size.width > 600
-          ? 200
-          : double.infinity,
+      width: isDesktop ? width : double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: color.withValues(alpha: 0.15),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: color),
-              ),
-              const SizedBox(width: 16),
               Text(
-                value.toString(),
+                label,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: AppColors.textSecondary,
                 ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: color),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            label,
+            value.toString(),
             style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
             ),
           ),
         ],
@@ -634,24 +748,30 @@ class _DashboardDriverDetailScreenState
 
   Widget _buildTimeFilter(String value, String label) {
     bool active = _timeFilter == value;
-    return InkWell(
+    return GestureDetector(
       onTap: () => setState(() => _timeFilter = value),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: active ? AppColors.primary : AppColors.border,
-          ),
+          color: active ? AppColors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: active ? AppColors.white : AppColors.textSecondary,
+            fontSize: 13,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w700,
+            color: active ? AppColors.textPrimary : AppColors.textSecondary,
           ),
         ),
       ),

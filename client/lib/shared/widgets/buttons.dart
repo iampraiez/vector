@@ -24,9 +24,11 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget buttonChild = Center(
+    Widget buttonChild = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
       child: isLoading
           ? const SizedBox(
+              key: ValueKey('loading'),
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
@@ -35,6 +37,7 @@ class AppButton extends StatelessWidget {
               ),
             )
           : Row(
+              key: const ValueKey('content'),
               mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

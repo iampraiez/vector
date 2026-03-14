@@ -122,46 +122,48 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                 // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Drivers',
+                          'Fleet Drivers',
                           style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
                             color: AppColors.textPrimary,
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Manage your delivery team',
+                          'Monitor and manage your delivery team in real-time',
                           style: TextStyle(
                             fontSize: 14,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.all(3),
+                      height: 44,
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.divider),
                       ),
                       child: Row(
                         children: [
                           _buildViewToggle(
                             'board',
-                            Icons.grid_view_outlined,
+                            Icons.grid_view_rounded,
                             'Board',
                           ),
                           _buildViewToggle(
                             'list',
-                            Icons.format_list_bulleted,
+                            Icons.format_list_bulleted_rounded,
                             'List',
                           ),
                         ],
@@ -169,52 +171,94 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
                 // Stats
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                Row(
                   children: [
-                    _buildStatCard('Total Drivers', '4'),
-                    _buildStatCard('Active Now', '3'),
-                    _buildStatCard('Total Routes', '991'),
-                    _buildStatCard('Avg Rating', '4.8'),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Total Drivers',
+                        '4',
+                        Icons.people_alt_rounded,
+                        AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Active Now',
+                        '3',
+                        Icons.check_circle_rounded,
+                        AppColors.success,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Total Routes',
+                        '991',
+                        Icons.route_rounded,
+                        const Color(0xFF8B5CF6),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Avg Rating',
+                        '4.8',
+                        Icons.star_rounded,
+                        const Color(0xFFF59E0B),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
                 // Search
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: AppColors.divider),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: TextField(
                     onChanged: (v) => setState(() => _searchQuery = v),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                     decoration: InputDecoration(
-                      hintText: 'Search drivers by name or email...',
+                      hintText: 'Search drivers by name, email or vehicle...',
+                      fillColor: AppColors.surface,
+                      filled: true,
                       prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.textMuted,
+                        Icons.search_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 14,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.primary),
+                      hintStyle: TextStyle(
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -247,16 +291,24 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                           24) /
                                       2
                                 : double.infinity,
-                            child: InkWell(
-                              onTap: () =>
-                                  context.go('/dashboard/driver-detail'),
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: AppColors.border),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.02,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
                                 child: Column(
                                   crossAxisAlignment:
@@ -269,14 +321,21 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                         Stack(
                                           children: [
                                             Container(
-                                              width: 48,
-                                              height: 48,
+                                              width: 52,
+                                              height: 52,
                                               decoration: BoxDecoration(
                                                 borderRadius:
-                                                    BorderRadius.circular(24),
-                                                color: AppColors.surface,
+                                                    BorderRadius.circular(14),
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    AppColors.surface,
+                                                    const Color(0xFFF1F5F9),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
                                                 border: Border.all(
-                                                  color: AppColors.border,
+                                                  color: AppColors.divider,
                                                 ),
                                               ),
                                               alignment: Alignment.center,
@@ -286,10 +345,10 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                                     .map((n) => n[0])
                                                     .join(''),
                                                 style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w800,
                                                   color:
-                                                      AppColors.textSecondary,
+                                                      AppColors.textPrimary,
                                                 ),
                                               ),
                                             ),
@@ -298,14 +357,14 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                                 bottom: 0,
                                                 right: 0,
                                                 child: Container(
-                                                  width: 12,
-                                                  height: 12,
+                                                  width: 16,
+                                                  height: 16,
                                                   decoration: BoxDecoration(
                                                     color: AppColors.success,
                                                     shape: BoxShape.circle,
                                                     border: Border.all(
                                                       color: AppColors.white,
-                                                      width: 2,
+                                                      width: 3,
                                                     ),
                                                   ),
                                                 ),
@@ -321,43 +380,15 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                               Text(
                                                 driver['name'],
                                                 style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w800,
                                                   color: AppColors.textPrimary,
+                                                  letterSpacing: -0.4,
                                                 ),
                                               ),
-                                              const SizedBox(height: 4),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      driver['status'] ==
-                                                          'active'
-                                                      ? const Color(0xFFECFDF5)
-                                                      : AppColors.surface,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: Text(
-                                                  driver['status']
-                                                      .toString()
-                                                      .toUpperCase(),
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                    color:
-                                                        driver['status'] ==
-                                                            'active'
-                                                        ? const Color(
-                                                            0xFF10B981,
-                                                          )
-                                                        : AppColors.textMuted,
-                                                  ),
-                                                ),
+                                              const SizedBox(height: 6),
+                                              _buildStatusBadge(
+                                                driver['status'],
                                               ),
                                             ],
                                           ),
@@ -366,79 +397,33 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                     ),
                                     const SizedBox(height: 24),
                                     Container(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 24,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
                                       ),
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          bottom: BorderSide(
-                                            color: AppColors.border,
-                                          ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surface.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: AppColors.divider,
                                         ),
                                       ),
                                       child: Column(
                                         children: [
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.email_outlined,
-                                                size: 16,
-                                                color: AppColors.textMuted,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  driver['email'],
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppColors.textSecondary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
+                                          _buildContactRow(
+                                            Icons.email_outlined,
+                                            driver['email'],
                                           ),
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.phone_outlined,
-                                                size: 16,
-                                                color: AppColors.textMuted,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  driver['phone'],
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppColors.textSecondary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
+                                          const SizedBox(height: 12),
+                                          _buildContactRow(
+                                            Icons.phone_outlined,
+                                            driver['phone'],
                                           ),
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.local_shipping_outlined,
-                                                size: 16,
-                                                color: AppColors.textMuted,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  driver['vehicle'],
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppColors.textSecondary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
+                                          const SizedBox(height: 12),
+                                          _buildContactRow(
+                                            Icons.local_shipping_outlined,
+                                            driver['vehicle'],
                                           ),
                                         ],
                                       ),
@@ -448,138 +433,85 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        Column(
-                                          children: [
-                                            Text(
-                                              driver['todayStops'].toString(),
-                                              style: const TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.textPrimary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            const Text(
-                                              'Today',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                          ],
+                                        _buildMiniStat(
+                                          driver['todayStops'].toString(),
+                                          'Today',
                                         ),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              driver['completedRoutes']
-                                                  .toString(),
-                                              style: const TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.textPrimary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            const Text(
-                                              'Routes',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                          ],
+                                        Container(
+                                          width: 1,
+                                          height: 24,
+                                          color: AppColors.divider,
                                         ),
-                                        Column(
-                                          children: [
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(
-                                                  Icons.star,
-                                                  size: 16,
-                                                  color: Colors.amber,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  driver['rating'].toString(),
-                                                  style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.w600,
-                                                    color:
-                                                        AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            const Text(
-                                              'Rating',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                          ],
+                                        _buildMiniStat(
+                                          driver['completedRoutes'].toString(),
+                                          'Routes',
+                                        ),
+                                        Container(
+                                          width: 1,
+                                          height: 24,
+                                          color: AppColors.divider,
+                                        ),
+                                        _buildMiniStat(
+                                          driver['rating'].toString(),
+                                          'Rating',
+                                          isRating: true,
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 16),
-                                    Container(
-                                      padding: const EdgeInsets.only(top: 16),
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(
-                                            color: AppColors.border,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.schedule,
-                                                size: 14,
-                                                color: AppColors.textMuted,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Last session ${driver['lastSession']}',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          IconButton(
-                                            onPressed: () =>
-                                                _handleRemoveDriver(
-                                                  driver['id'],
-                                                  driver['name'],
-                                                ),
-                                            icon: const Icon(
-                                              Icons.delete_outline,
-                                              size: 14,
-                                              color: AppColors.error,
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () => context.go(
+                                              '/dashboard/driver-detail',
                                             ),
-                                            padding: const EdgeInsets.all(8),
-                                            constraints: const BoxConstraints(),
-                                            style: IconButton.styleFrom(
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                  ),
+                                              side: const BorderSide(
+                                                color: AppColors.divider,
+                                              ),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(4),
-                                                side: const BorderSide(
-                                                  color: AppColors.border,
-                                                ),
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'View Details',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.textPrimary,
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        IconButton(
+                                          onPressed: () => _handleRemoveDriver(
+                                            driver['id'],
+                                            driver['name'],
+                                          ),
+                                          icon: const Icon(
+                                            Icons.delete_outline_rounded,
+                                            size: 20,
+                                            color: AppColors.error,
+                                          ),
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFFFEF2F2,
+                                            ),
+                                            padding: const EdgeInsets.all(12),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -595,7 +527,14 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: AppColors.divider),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: SingleChildScrollView(
@@ -604,17 +543,21 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                         headingRowColor: WidgetStateProperty.all(
                           AppColors.surface,
                         ),
-                        dataRowMinHeight: 60,
-                        dataRowMaxHeight: 60,
+                        dataRowMinHeight: 72,
+                        dataRowMaxHeight: 72,
                         showBottomBorder: true,
+                        horizontalMargin: 24,
+                        columnSpacing: 32,
+                        showCheckboxColumn: false,
                         columns: const [
                           DataColumn(
                             label: Text(
                               'DRIVER',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -623,8 +566,9 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                               'VEHICLE',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -633,8 +577,9 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                               'TODAY',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -643,8 +588,9 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                               'ROUTES',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -653,8 +599,9 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                               'RATING',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -663,8 +610,9 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                               'LAST SEEN',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -682,12 +630,15 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                         Stack(
                                           children: [
                                             Container(
-                                              width: 34,
-                                              height: 34,
+                                              width: 40,
+                                              height: 40,
                                               decoration: BoxDecoration(
                                                 borderRadius:
-                                                    BorderRadius.circular(17),
-                                                color: AppColors.primaryLight,
+                                                    BorderRadius.circular(12),
+                                                color: AppColors.surface,
+                                                border: Border.all(
+                                                  color: AppColors.divider,
+                                                ),
                                               ),
                                               alignment: Alignment.center,
                                               child: Text(
@@ -696,9 +647,9 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                                     .map((n) => n[0])
                                                     .join(''),
                                                 style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.primary,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: AppColors.textPrimary,
                                                 ),
                                               ),
                                             ),
@@ -707,23 +658,21 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                                 bottom: 0,
                                                 right: 0,
                                                 child: Container(
-                                                  width: 10,
-                                                  height: 10,
+                                                  width: 12,
+                                                  height: 12,
                                                   decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xFF10B981,
-                                                    ),
+                                                    color: AppColors.success,
                                                     shape: BoxShape.circle,
                                                     border: Border.all(
                                                       color: AppColors.white,
-                                                      width: 2,
+                                                      width: 2.5,
                                                     ),
                                                   ),
                                                 ),
                                               ),
                                           ],
                                         ),
-                                        const SizedBox(width: 10),
+                                        const SizedBox(width: 12),
                                         Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
@@ -734,15 +683,17 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                               driver['name'],
                                               style: const TextStyle(
                                                 fontSize: 14,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w700,
                                                 color: AppColors.textPrimary,
                                               ),
                                             ),
                                             Text(
                                               driver['email'],
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 12,
-                                                color: AppColors.textMuted,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColors.textSecondary
+                                                    .withValues(alpha: 0.6),
                                               ),
                                             ),
                                           ],
@@ -755,6 +706,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                       driver['vehicle'],
                                       style: const TextStyle(
                                         fontSize: 14,
+                                        fontWeight: FontWeight.w600,
                                         color: AppColors.textSecondary,
                                       ),
                                     ),
@@ -770,14 +722,15 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                           driver['todayStops'].toString(),
                                           style: const TextStyle(
                                             fontSize: 14,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w700,
                                             color: AppColors.textPrimary,
                                           ),
                                         ),
                                         const Text(
-                                          'stops',
+                                          'stops today',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
                                             color: AppColors.textMuted,
                                           ),
                                         ),
@@ -789,7 +742,7 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                       driver['completedRoutes'].toString(),
                                       style: const TextStyle(
                                         fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w700,
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
@@ -798,16 +751,16 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                     Row(
                                       children: [
                                         const Icon(
-                                          Icons.star,
-                                          size: 13,
-                                          color: Colors.amber,
+                                          Icons.star_rounded,
+                                          size: 16,
+                                          color: Color(0xFFF59E0B),
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
                                           driver['rating'].toString(),
                                           style: const TextStyle(
                                             fontSize: 14,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w700,
                                             color: AppColors.textPrimary,
                                           ),
                                         ),
@@ -815,22 +768,13 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                     ),
                                   ),
                                   DataCell(
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.schedule,
-                                          size: 13,
-                                          color: AppColors.textMuted,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          driver['lastSession'],
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      driver['lastSession'],
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
                                     ),
                                   ),
                                   DataCell(
@@ -840,21 +784,12 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
                                         driver['name'],
                                       ),
                                       icon: const Icon(
-                                        Icons.delete_outline,
-                                        size: 14,
-                                        color: AppColors.error,
+                                        Icons.more_vert_rounded,
+                                        size: 20,
+                                        color: AppColors.textMuted,
                                       ),
-                                      padding: const EdgeInsets.all(8),
-                                      constraints: const BoxConstraints(),
                                       style: IconButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          side: const BorderSide(
-                                            color: AppColors.border,
-                                          ),
-                                        ),
+                                        hoverColor: AppColors.surface,
                                       ),
                                     ),
                                   ),
@@ -875,79 +810,199 @@ class _DashboardDriversScreenState extends State<DashboardDriversScreen> {
 
   Widget _buildViewToggle(String mode, IconData icon, String label) {
     bool active = _viewMode == mode;
-    return InkWell(
-      onTap: () => setState(() => _viewMode = mode),
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? AppColors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: active ? AppColors.border : Colors.transparent,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _viewMode = mode),
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: active ? AppColors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
-          boxShadow: active
-              ? [
-                  const BoxShadow(
-                    color: Color(0x0F000000),
-                    blurRadius: 4,
-                    offset: Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: active ? AppColors.textPrimary : AppColors.textMuted,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: active ? AppColors.textPrimary : AppColors.textMuted,
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: active ? AppColors.primary : AppColors.textSecondary,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                  color: active ? AppColors.primary : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String label, String value) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
-      width: 160,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
+              letterSpacing: -1,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color = status == 'active' ? AppColors.success : AppColors.textMuted;
+    Color bgColor = status == 'active'
+        ? const Color(0xFFECFDF5)
+        : AppColors.surface;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: AppColors.textMuted),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniStat(String value, String label, {bool isRating = false}) {
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isRating) ...[
+              const Icon(
+                Icons.star_rounded,
+                size: 16,
+                color: Color(0xFFFBBF24),
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.36,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
     );
   }
 }

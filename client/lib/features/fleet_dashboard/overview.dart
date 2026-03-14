@@ -132,24 +132,6 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
     });
   }
 
-  Map<String, dynamic> _statusStyle(String status) {
-    switch (status) {
-      case 'completed':
-        return {'bg': const Color(0xFFECFDF5), 'color': AppColors.success};
-      case 'in-progress':
-        return {
-          'bg': const Color(0xFFEFF6FF),
-          'color': const Color(0xFF3B82F6),
-        };
-      case 'assigned':
-        return {
-          'bg': const Color(0xFFFEF3C7),
-          'color': const Color(0xFFD97706),
-        };
-      default:
-        return {'bg': AppColors.surface, 'color': AppColors.textSecondary};
-    }
-  }
 
   void _handleSaveOrder() {
     setState(() => _orderSaved = true);
@@ -242,19 +224,32 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                               const Text(
                                 'Overview',
                                 style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textPrimary,
-                                  letterSpacing: -0.48,
+                                  letterSpacing: -0.6,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                _today,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 13,
+                                    color: AppColors.textSecondary.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _today,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -264,57 +259,64 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                             OutlinedButton.icon(
                               onPressed: () =>
                                   context.go('/dashboard/tracking'),
-                              icon: const Icon(
-                                Icons.cell_tower,
-                                size: 16,
-                                color: AppColors.success,
+                              icon: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0x2010B981),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.cell_tower_rounded,
+                                  size: 12,
+                                  color: AppColors.success,
+                                ),
                               ),
                               label: const Text('Live Tracking'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.textPrimary,
-                                side: const BorderSide(color: AppColors.border),
+                                side: const BorderSide(
+                                  color: AppColors.divider,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
-                                  vertical: 14,
+                                  vertical: 16,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 textStyle: const TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                 ),
                                 backgroundColor: AppColors.white,
-                                elevation: 1,
-                                shadowColor: const Color(0x0D000000),
+                                elevation: 0,
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
                             ElevatedButton.icon(
                               onPressed: () =>
                                   setState(() => _showNewOrderModal = true),
                               icon: const Icon(
-                                Icons.add,
-                                size: 16,
+                                Icons.add_rounded,
+                                size: 18,
                                 color: AppColors.white,
                               ),
                               label: const Text('New Order'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: AppColors.white,
+                                elevation: 0,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
+                                  horizontal: 20,
+                                  vertical: 16,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 textStyle: const TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                 ),
-                                elevation: 2,
-                                shadowColor: const Color(0x4D059669),
                               ),
                             ),
                           ],
@@ -323,31 +325,45 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Metrics
                     Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
+                      spacing: 16,
+                      runSpacing: 16,
                       children: _metrics
                           .map(
                             (m) => SizedBox(
-                              width: MediaQuery.of(context).size.width > 900
+                              width: MediaQuery.of(context).size.width > 1200
                                   ? (MediaQuery.of(context).size.width -
-                                            252 -
+                                            250 -
                                             48 -
-                                            36) /
+                                            48) /
                                         4
-                                  : MediaQuery.of(context).size.width > 500
+                                  : MediaQuery.of(context).size.width > 900
+                                  ? (MediaQuery.of(context).size.width -
+                                            250 -
+                                            48 -
+                                            16) /
+                                        2
+                                  : MediaQuery.of(context).size.width > 600
                                   ? (MediaQuery.of(context).size.width -
                                             48 -
-                                            12) /
+                                            16) /
                                         2
                                   : double.infinity,
                               child: Container(
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(28),
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.border),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.divider),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.03,
+                                      ),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,65 +373,78 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Container(
-                                          width: 36,
-                                          height: 36,
+                                          padding: const EdgeInsets.all(10),
                                           decoration: BoxDecoration(
+                                            color: (m['color'] as Color)
+                                                .withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
-                                              10,
+                                              12,
                                             ),
-                                            color: AppColors.primaryLight,
                                           ),
-                                          alignment: Alignment.center,
                                           child: Icon(
                                             m['icon'],
-                                            size: 18,
-                                            color: AppColors.primary,
+                                            size: 20,
+                                            color: m['color'],
                                           ),
                                         ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 7,
-                                            vertical: 3,
+                                            horizontal: 8,
+                                            vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
                                             color: m['trend'] == 'up'
-                                                ? const Color(0xFFECFDF5)
+                                                ? const Color(0xFFF0FDF4)
                                                 : const Color(0xFFFEF2F2),
                                             borderRadius: BorderRadius.circular(
-                                              6,
+                                              30,
                                             ),
                                           ),
-                                          child: Text(
-                                            m['change'],
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: m['trend'] == 'up'
-                                                  ? AppColors.success
-                                                  : AppColors.error,
-                                            ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                m['trend'] == 'up'
+                                                    ? Icons.trending_up_rounded
+                                                    : Icons
+                                                          .trending_down_rounded,
+                                                size: 14,
+                                                color: m['trend'] == 'up'
+                                                    ? AppColors.success
+                                                    : AppColors.error,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                m['change'],
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: m['trend'] == 'up'
+                                                      ? AppColors.success
+                                                      : AppColors.error,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 20),
                                     Text(
-                                      m['label'],
+                                      m['label'].toString(),
                                       style: const TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
                                         color: AppColors.textSecondary,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       m['value'],
                                       style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w800,
                                         color: AppColors.textPrimary,
-                                        letterSpacing: -0.56,
+                                        letterSpacing: -0.8,
                                       ),
                                     ),
                                   ],
@@ -425,7 +454,7 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                           )
                           .toList(),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 32),
 
                     // Content Grid
                     LayoutBuilder(
@@ -442,18 +471,23 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.border),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.divider),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.03,
+                                      ),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
                                 ),
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        20,
-                                        18,
-                                        20,
-                                        14,
-                                      ),
+                                      padding: const EdgeInsets.all(24),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
@@ -465,18 +499,19 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                               const Text(
                                                 'Active Drivers',
                                                 style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w800,
                                                   color: AppColors.textPrimary,
+                                                  letterSpacing: -0.4,
                                                 ),
                                               ),
-                                              const SizedBox(height: 1),
-                                              Text(
-                                                '${_activeDrivers.where((d) => d['status'] == 'active').length} on delivery right now',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color:
-                                                      AppColors.textSecondary,
+                                              const SizedBox(height: 4),
+                                              const Text(
+                                                '12 drivers currently on duty',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.textMuted,
                                                 ),
                                               ),
                                             ],
@@ -489,16 +524,22 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                               foregroundColor:
                                                   AppColors.primary,
                                               textStyle: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
                                               ),
                                             ),
                                             child: const Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Text('View all'),
+                                                Text('Manage'),
+                                                SizedBox(width: 4),
                                                 Icon(
-                                                  Icons.chevron_right,
+                                                  Icons.arrow_forward_rounded,
                                                   size: 14,
                                                 ),
                                               ],
@@ -511,177 +552,197 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                       height: 1,
                                       color: AppColors.divider,
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: _activeDrivers
-                                            .map(
-                                              (driver) => InkWell(
-                                                onTap: () => context.go(
-                                                  '/dashboard/tracking',
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 10,
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.all(16),
+                                      itemCount: _activeDrivers.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 4),
+                                      itemBuilder: (context, index) {
+                                        final driver = _activeDrivers[index];
+                                        return InkWell(
+                                          onTap: () =>
+                                              context.go('/dashboard/tracking'),
+                                          borderRadius:
+                                              BorderRadius.circular(
+                                            12,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 12,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Stack(
+                                                  children: [
+                                                    Container(
+                                                      width: 44,
+                                                      height: 44,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                        color: AppColors
+                                                            .primaryLight,
                                                       ),
-                                                  child: Row(
-                                                    children: [
-                                                      Stack(
-                                                        children: [
-                                                          Container(
-                                                            width: 36,
-                                                            height: 36,
-                                                            decoration: BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    18,
-                                                                  ),
-                                                              color: AppColors
-                                                                  .primaryLight,
-                                                            ),
-                                                            alignment: Alignment
-                                                                .center,
-                                                            child: Text(
-                                                              (driver['name']
-                                                                      as String)
-                                                                  .split(' ')
-                                                                  .map(
-                                                                    (n) => n[0],
-                                                                  )
-                                                                  .join(''),
-                                                              style: const TextStyle(
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                                color: AppColors
-                                                                    .primary,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Positioned(
-                                                            bottom: 0,
-                                                            right: 0,
-                                                            child: Container(
-                                                              width: 10,
-                                                              height: 10,
-                                                              decoration: BoxDecoration(
-                                                                color:
-                                                                    driver['status'] ==
-                                                                        'active'
-                                                                    ? const Color(
-                                                                        0xFF10B981,
-                                                                      )
-                                                                    : AppColors
-                                                                          .warning,
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                                border: Border.all(
-                                                                  color:
-                                                                      AppColors
-                                                                          .white,
-                                                                  width: 2,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      const SizedBox(width: 12),
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              driver['name'],
-                                                              style: const TextStyle(
-                                                                fontSize: 13,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: AppColors
-                                                                    .textPrimary,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                              height: 2,
-                                                            ),
-                                                            Row(
-                                                              children: [
-                                                                const Icon(
-                                                                  Icons
-                                                                      .location_on_outlined,
-                                                                  size: 12,
-                                                                  color: AppColors
-                                                                      .textSecondary,
-                                                                ),
-                                                                Text(
-                                                                  ' ${driver['location']} ',
-                                                                  style: const TextStyle(
-                                                                    fontSize:
-                                                                        12,
-                                                                    color: AppColors
-                                                                        .textSecondary,
-                                                                  ),
-                                                                ),
-                                                                const Text(
-                                                                  '·',
-                                                                  style: TextStyle(
-                                                                    color: AppColors
-                                                                        .border,
-                                                                  ),
-                                                                ),
-                                                                Text(
-                                                                  ' ${driver['stops']} stops',
-                                                                  style: const TextStyle(
-                                                                    fontSize:
-                                                                        12,
-                                                                    color: AppColors
-                                                                        .textSecondary,
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child: Text(
+                                                        driver['name']
+                                                            .split(' ')
+                                                            .map((n) => n[0])
+                                                            .join(''),
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                          color:
+                                                              AppColors.primary,
                                                         ),
                                                       ),
+                                                    ),
+                                                    Positioned(
+                                                      bottom: -1,
+                                                      right: -1,
+                                                      child: Container(
+                                                        width: 14,
+                                                        height: 14,
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              driver['status'] ==
+                                                                  'active'
+                                                              ? const Color(
+                                                                  0xFF10B981,
+                                                                )
+                                                              : const Color(
+                                                                  0xFFF59E0B,
+                                                                ),
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          border: Border.all(
+                                                            color:
+                                                                AppColors.white,
+                                                            width: 2.5,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        driver['name'],
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: AppColors
+                                                              .textPrimary,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
                                                       Row(
                                                         children: [
-                                                          const Icon(
-                                                            Icons.schedule,
-                                                            size: 12,
+                                                          Icon(
+                                                            Icons
+                                                                .location_on_rounded,
+                                                            size: 13,
                                                             color: AppColors
-                                                                .textMuted,
+                                                                .textSecondary
+                                                                .withValues(
+                                                                  alpha: 0.5,
+                                                                ),
                                                           ),
                                                           const SizedBox(
                                                             width: 4,
                                                           ),
                                                           Text(
-                                                            driver['eta'],
+                                                            driver['location'],
                                                             style: const TextStyle(
                                                               fontSize: 12,
+                                                              color: AppColors
+                                                                  .textSecondary,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w500,
-                                                              color: AppColors
-                                                                  .textSecondary,
                                                             ),
+                                                          ),
+                                                          const Padding(
+                                                            padding:
+                                                                EdgeInsets.symmetric(
+                                                                  horizontal: 6,
+                                                                ),
+                                                            child: Text(
+                                                              '•',
+                                                              style: TextStyle(
+                                                                color: AppColors
+                                                                    .divider,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            '${driver['stops']} stops remaining',
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: AppColors
+                                                                      .primary,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
                                                     ],
                                                   ),
                                                 ),
-                                              ),
-                                            )
-                                            .toList(),
-                                      ),
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      driver['eta'],
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        color: AppColors
+                                                            .textPrimary,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      'EST. ARRIVAL',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: AppColors
+                                                            .textSecondary
+                                                            .withValues(
+                                                              alpha: 0.4,
+                                                            ),
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -697,18 +758,23 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.border),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.divider),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.03,
+                                      ),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
                                 ),
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        20,
-                                        18,
-                                        20,
-                                        14,
-                                      ),
+                                      padding: const EdgeInsets.all(24),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
@@ -720,18 +786,19 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                               const Text(
                                                 'Recent Orders',
                                                 style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w700,
                                                   color: AppColors.textPrimary,
+                                                  letterSpacing: -0.4,
                                                 ),
                                               ),
-                                              const SizedBox(height: 1),
-                                              const Text(
-                                                'Latest deliveries and status',
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Latest delivery requests from customers',
                                                 style: TextStyle(
-                                                  fontSize: 12,
-                                                  color:
-                                                      AppColors.textSecondary,
+                                                  fontSize: 13,
+                                                  color: AppColors.textSecondary
+                                                      .withValues(alpha: 0.8),
                                                 ),
                                               ),
                                             ],
@@ -743,16 +810,22 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                               foregroundColor:
                                                   AppColors.primary,
                                               textStyle: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
                                               ),
                                             ),
                                             child: const Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Text('View all'),
+                                                Text('View All'),
+                                                SizedBox(width: 4),
                                                 Icon(
-                                                  Icons.chevron_right,
+                                                  Icons.arrow_forward_rounded,
                                                   size: 14,
                                                 ),
                                               ],
@@ -765,121 +838,122 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                                       height: 1,
                                       color: AppColors.divider,
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: _recentOrders.map((order) {
-                                          var s = _statusStyle(order['status']);
-                                          return InkWell(
-                                            onTap: () =>
-                                                context.go('/dashboard/orders'),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.all(16),
+                                      itemCount: _recentOrders.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 4),
+                                      itemBuilder: (context, index) {
+                                        final order = _recentOrders[index];
+                                        return InkWell(
+                                          onTap: () =>
+                                              context.go('/dashboard/orders'),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 12,
                                             ),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 10,
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 44,
+                                                  height: 44,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.surface,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                   ),
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
-                                                children: [
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              order['id'],
-                                                              style: const TextStyle(
-                                                                fontSize: 13,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: AppColors
-                                                                    .textPrimary,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 8,
-                                                            ),
-                                                            Container(
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        6,
-                                                                    vertical: 2,
-                                                                  ),
-                                                              decoration: BoxDecoration(
-                                                                color:
-                                                                    s['bg']
-                                                                        as Color,
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      5,
-                                                                    ),
-                                                              ),
-                                                              child: Text(
-                                                                order['status'],
-                                                                style: TextStyle(
-                                                                  fontSize: 11,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                  color:
-                                                                      s['color']
-                                                                          as Color,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 3,
-                                                        ),
-                                                        Text(
-                                                          '${order['customer']} — ${order['address']}',
-                                                          style: const TextStyle(
-                                                            fontSize: 12,
-                                                            color: AppColors
-                                                                .textSecondary,
+                                                  child: Icon(
+                                                    order['status'] ==
+                                                            'completed'
+                                                        ? Icons
+                                                              .check_circle_rounded
+                                                        : order['status'] ==
+                                                              'in-progress'
+                                                        ? Icons
+                                                              .local_shipping_rounded
+                                                        : Icons
+                                                              .assignment_rounded,
+                                                    size: 20,
+                                                    color:
+                                                        order['status'] ==
+                                                            'completed'
+                                                        ? AppColors.success
+                                                        : order['status'] ==
+                                                              'in-progress'
+                                                        ? AppColors.primary
+                                                        : const Color(
+                                                            0xFFF59E0B,
                                                           ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ],
-                                                    ),
                                                   ),
-                                                  Row(
+                                                ),
+                                                const SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      const Icon(
-                                                        Icons.schedule,
-                                                        size: 12,
-                                                        color:
-                                                            AppColors.textMuted,
-                                                      ),
-                                                      const SizedBox(width: 4),
                                                       Text(
-                                                        order['time'],
+                                                        order['id'],
                                                         style: const TextStyle(
-                                                          fontSize: 11,
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w800,
                                                           color: AppColors
-                                                              .textMuted,
+                                                              .textPrimary,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        order['customer'],
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: AppColors
+                                                              .textSecondary,
                                                         ),
                                                       ),
                                                     ],
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    _buildStatusBadge(
+                                                      order['status'],
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    Text(
+                                                      order['time'],
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: AppColors
+                                                            .textSecondary
+                                                            .withValues(
+                                                              alpha: 0.4,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
-                                          );
-                                        }).toList(),
-                                      ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -1204,6 +1278,62 @@ class _DashboardOverviewScreenState extends State<DashboardOverviewScreen> {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: AppColors.primary),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color;
+    Color bgColor;
+
+    switch (status.toLowerCase()) {
+      case 'delivered':
+      case 'completed':
+        color = const Color(0xFF059669);
+        bgColor = const Color(0xFFECFDF5);
+        break;
+      case 'in-progress':
+      case 'in_progress':
+      case 'active':
+        color = const Color(0xFF2563EB);
+        bgColor = const Color(0xFFEFF6FF);
+        break;
+      case 'pending':
+      case 'assigned':
+        color = const Color(0xFFD97706);
+        bgColor = const Color(0xFFFFFBEB);
+        break;
+      default:
+        color = AppColors.textSecondary;
+        bgColor = AppColors.surface;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status.replaceAll('_', ' ').replaceAll('-', ' ').toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: 0.5,
             ),
           ),
         ],

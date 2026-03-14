@@ -92,33 +92,114 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
 
                 // KPI Cards
                 Wrap(
-                  spacing: 12, runSpacing: 12,
-                  children: _kpis.map((kpi) => SizedBox(
-                    width: MediaQuery.of(context).size.width > 900 ? (MediaQuery.of(context).size.width - 48 - 36) / 4 : MediaQuery.of(context).size.width > 600 ? (MediaQuery.of(context).size.width - 48 - 12) / 2 : double.infinity,
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(14)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(width: 38, height: 38, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)), child: Icon(kpi['icon'], size: 18, color: AppColors.primary)),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(6)),
-                                child: Row(children: [Icon(kpi['trend'] == 'up' ? Icons.trending_up : Icons.trending_down, size: 12, color: const Color(0xFF059669)), const SizedBox(width: 4), Text(kpi['change'], style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF059669)))]),
-                              )
-                            ],
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: _kpis
+                      .map(
+                        (kpi) => SizedBox(
+                          width: MediaQuery.of(context).size.width > 900
+                              ? (MediaQuery.of(context).size.width -
+                                        252 -
+                                        48 -
+                                        48) /
+                                    4
+                              : MediaQuery.of(context).size.width > 600
+                              ? (MediaQuery.of(context).size.width - 48 - 16) /
+                                    2
+                              : double.infinity,
+                          child: Container(
+                            padding: const EdgeInsets.all(28),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.divider),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      width: 42,
+                                      height: 42,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryLight,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        kpi['icon'],
+                                        size: 20,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFECFDF5),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            kpi['trend'] == 'up'
+                                                ? Icons.trending_up_rounded
+                                                : Icons.trending_down_rounded,
+                                            size: 14,
+                                            color: const Color(0xFF10B981),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            kpi['change'],
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF10B981),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  kpi['label'],
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  kpi['value'],
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                    letterSpacing: -0.56,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(kpi['label'], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary, letterSpacing: 0.5, textBaseline: TextBaseline.alphabetic)),
-                          const SizedBox(height: 4),
-                          Text(kpi['value'], style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary, letterSpacing: -0.5)),
-                        ],
-                      ),
-                    ),
-                  )).toList(),
+                        ),
+                      )
+                      .toList(),
                 ),
                 const SizedBox(height: 16),
 
@@ -150,8 +231,12 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
                     Expanded(
                       flex: 1,
                       child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.all(28),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.divider),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -226,11 +311,78 @@ class _DashboardReportsScreenState extends State<DashboardReportsScreen> {
                           ],
                           rows: _summaryRows.map((row) => DataRow(
                             cells: [
-                              DataCell(Text(row['metric'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary))),
-                              DataCell(Text(row['current'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
-                              DataCell(Text(row['previous'], style: const TextStyle(fontSize: 14, color: AppColors.textSecondary))),
-                              DataCell(Row(children: [Icon(row['positive'] ? Icons.trending_up : Icons.trending_down, size: 14, color: row['positive'] ? const Color(0xFF059669) : const Color(0xFFEF4444)), const SizedBox(width: 4), Text(row['change'], style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: row['positive'] ? const Color(0xFF059669) : const Color(0xFFEF4444)))]))
-                            ]
+                                    DataCell(
+                                      Text(
+                                        row['metric'],
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        row['current'],
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        row['previous'],
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: row['positive']
+                                              ? const Color(0xFFECFDF5)
+                                              : const Color(0xFFFEF2F2),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              row['positive']
+                                                  ? Icons.trending_up_rounded
+                                                  : Icons.trending_down_rounded,
+                                              size: 14,
+                                              color: row['positive']
+                                                  ? const Color(0xFF10B981)
+                                                  : const Color(0xFFEF4444),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              row['change'],
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: row['positive']
+                                                    ? const Color(0xFF10B981)
+                                                    : const Color(0xFFEF4444),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                           )).toList(),
                         ),
                       )

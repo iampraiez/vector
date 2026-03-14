@@ -128,52 +128,67 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Header
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Billing & Subscription',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.5,
-                      ),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Billing',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Manage your plan, payment methods, and invoices',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Manage your plan, payment methods, and invoices',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
+                    _buildHeaderAction(
+                      label: 'Payment Methods',
+                      icon: Icons.credit_card_rounded,
+                      onPressed: () {},
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
                 // Current Plan Banner
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 24,
-                  ),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [AppColors.primary, Color(0xFF047857)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
                   child: Stack(
                     children: [
                       Positioned(
-                        top: -40,
-                        right: -40,
+                        top: -50,
+                        right: -50,
                         child: Container(
-                          width: 120,
-                          height: 120,
+                          width: 150,
+                          height: 150,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withValues(alpha: 0.06),
@@ -182,56 +197,57 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
+                                  horizontal: 12,
+                                  vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(99),
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.check_circle,
-                                      size: 13,
+                                      Icons.auto_awesome_rounded,
+                                      size: 14,
                                       color: Color(0xFFA7F3D0),
                                     ),
-                                    SizedBox(width: 6),
+                                    SizedBox(width: 8),
                                     Text(
-                                      'ACTIVE PLAN',
+                                      'PROFESSIONAL PLAN',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w800,
                                         color: Color(0xFFA7F3D0),
-                                        letterSpacing: 0.5,
+                                        letterSpacing: 1,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 16),
                               const Text(
-                                'Fleet Professional',
+                                'Your fleet is performing great',
                                 style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
                                   color: Colors.white,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
-                                'Next billing date: April 1, 2026',
+                                'Next billing cycle starts on April 1, 2026',
                                 style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.75),
+                                  fontSize: 15,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -244,25 +260,27 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                   const Text(
                                     '\$49',
                                     style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w700,
+                                      fontSize: 44,
+                                      fontWeight: FontWeight.w900,
                                       color: Colors.white,
                                       height: 1,
+                                      letterSpacing: -1,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     'per month',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 14,
                                       color: Colors.white.withValues(
-                                        alpha: 0.65,
+                                        alpha: 0.6,
                                       ),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 32),
                               ElevatedButton(
                                 onPressed: () => setState(
                                   () => _showChangePlan = !_showChangePlan,
@@ -270,23 +288,26 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: AppColors.primary,
+                                  elevation: 0,
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 10,
+                                    horizontal: 24,
+                                    vertical: 16,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  textStyle: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
                                 child: const Row(
                                   children: [
-                                    Text('Change Plan'),
-                                    SizedBox(width: 6),
-                                    Icon(Icons.chevron_right, size: 14),
+                                    Text(
+                                      'Upgrade Plan',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Icon(Icons.arrow_forward_rounded, size: 18),
                                   ],
                                 ),
                               ),
@@ -297,13 +318,13 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // Change Plan Toggle
                 if (_showChangePlan)
                   Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
+                    spacing: 20,
+                    runSpacing: 20,
                     children: _plans
                         .map(
                           (plan) => SizedBox(
@@ -311,24 +332,36 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                 ? (MediaQuery.of(context).size.width -
                                           252 -
                                           48 -
-                                          24) /
+                                          40) /
                                       3
                                 : double.infinity,
                             child: Container(
-                              padding: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: plan['current']
                                       ? AppColors.primary
                                       : plan['highlight']
                                       ? const Color(0xFFF59E0B)
-                                      : AppColors.border,
+                                      : AppColors.divider,
                                   width: plan['current'] || plan['highlight']
                                       ? 2
-                                      : 1,
+                                      : 1.5,
                                 ),
-                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  if (plan['current'] || plan['highlight'])
+                                    BoxShadow(
+                                      color:
+                                          (plan['current']
+                                                  ? AppColors.primary
+                                                  : const Color(0xFFF59E0B))
+                                              .withValues(alpha: 0.08),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                ],
                               ),
                               child: Stack(
                                 children: [
@@ -338,22 +371,22 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                       right: 0,
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
+                                          horizontal: 10,
+                                          vertical: 5,
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary,
                                           borderRadius: BorderRadius.circular(
-                                            99,
+                                            8,
                                           ),
                                         ),
                                         child: const Text(
                                           'CURRENT',
                                           style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
                                             color: Colors.white,
-                                            letterSpacing: 0.5,
+                                            letterSpacing: 1,
                                           ),
                                         ),
                                       ),
@@ -364,37 +397,26 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                       right: 0,
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
+                                          horizontal: 10,
+                                          vertical: 5,
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF59E0B),
                                           borderRadius: BorderRadius.circular(
-                                            99,
+                                            8,
                                           ),
                                         ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.auto_awesome,
-                                              size: 10,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 3),
-                                            Text(
-                                              'POPULAR',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ],
+                                        child: const Text(
+                                          'POPULAR',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: 1,
+                                          ),
                                         ),
                                       ),
                                     ),
-
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -402,12 +424,12 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                       Text(
                                         plan['name'],
                                         style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textSecondary,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 8),
                                       Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.baseline,
@@ -416,50 +438,55 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                           Text(
                                             plan['price'],
                                             style: const TextStyle(
-                                              fontSize: 28,
-                                              fontWeight: FontWeight.w700,
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.w900,
                                               color: AppColors.textPrimary,
+                                              letterSpacing: -1,
                                             ),
                                           ),
+                                          const SizedBox(width: 4),
                                           Text(
                                             plan['period'],
                                             style: const TextStyle(
-                                              fontSize: 13,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
                                               color: AppColors.textMuted,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
                                       Text(
                                         plan['desc'],
                                         style: const TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
                                           color: AppColors.textSecondary,
+                                          height: 1.4,
                                         ),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 20),
                                       ...((plan['features'] as List<String>)
                                           .map(
                                             (f) => Padding(
                                               padding: const EdgeInsets.only(
-                                                bottom: 8,
+                                                bottom: 10,
                                               ),
                                               child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   const Icon(
-                                                    Icons.check_circle,
-                                                    size: 14,
+                                                    Icons.check_circle_rounded,
+                                                    size: 16,
                                                     color: AppColors.primary,
                                                   ),
-                                                  const SizedBox(width: 8),
+                                                  const SizedBox(width: 10),
                                                   Expanded(
                                                     child: Text(
                                                       f,
                                                       style: const TextStyle(
-                                                        fontSize: 12,
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w500,
                                                         color: AppColors
                                                             .textSecondary,
                                                       ),
@@ -470,29 +497,38 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                             ),
                                           )),
                                       if (!plan['current']) ...[
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 20),
                                         SizedBox(
                                           width: double.infinity,
+                                          height: 48,
                                           child: ElevatedButton(
                                             onPressed: () {},
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: plan['highlight']
                                                   ? const Color(0xFFF59E0B)
-                                                  : AppColors.primary,
-                                              foregroundColor: Colors.white,
-                                              padding: const EdgeInsets.all(12),
+                                                  : AppColors.surface,
+                                              foregroundColor: plan['highlight']
+                                                  ? Colors.white
+                                                  : AppColors.textPrimary,
+                                              elevation: 0,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(8),
+                                                    BorderRadius.circular(12),
+                                                side: plan['highlight']
+                                                    ? BorderSide.none
+                                                    : const BorderSide(
+                                                        color:
+                                                            AppColors.divider,
+                                                      ),
                                               ),
                                             ),
                                             child: Text(
                                               plan['highlight']
-                                                  ? 'Upgrade to Enterprise'
-                                                  : 'Downgrade',
+                                                  ? 'Upgrade Now'
+                                                  : 'Switch to Plan',
                                               style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w800,
                                               ),
                                             ),
                                           ),
@@ -507,7 +543,7 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                         )
                         .toList(),
                   ),
-                if (_showChangePlan) const SizedBox(height: 20),
+                if (_showChangePlan) const SizedBox(height: 24),
 
                 // Payment and Usage
                 Row(
@@ -515,11 +551,11 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(14),
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.divider),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,18 +563,18 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                             const Text(
                               'Payment Method',
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 20),
                             Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
-                                border: Border.all(color: AppColors.border),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.divider),
                               ),
                               child: Row(
                                 mainAxisAlignment:
@@ -547,8 +583,8 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                   Row(
                                     children: [
                                       Container(
-                                        width: 44,
-                                        height: 32,
+                                        width: 48,
+                                        height: 34,
                                         decoration: BoxDecoration(
                                           color: AppColors.primary,
                                           borderRadius: BorderRadius.circular(
@@ -557,12 +593,12 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                         ),
                                         alignment: Alignment.center,
                                         child: const Icon(
-                                          Icons.credit_card,
+                                          Icons.credit_card_rounded,
                                           size: 20,
                                           color: Colors.white,
                                         ),
                                       ),
-                                      const SizedBox(width: 14),
+                                      const SizedBox(width: 16),
                                       const Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -570,61 +606,57 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                                           Text(
                                             '•••• •••• •••• 4242',
                                             style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
+                                          SizedBox(height: 2),
                                           Text(
-                                            'Expires 12/2027',
+                                            'Visa Card • Expires 12/2027',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textMuted,
                                             ),
                                           ),
                                         ],
                                       ),
                                     ],
                                   ),
-                                  TextButton.icon(
+                                  TextButton(
                                     onPressed: () {},
-                                    icon: const Text('Update'),
-                                    label: const Icon(
-                                      Icons.open_in_new,
-                                      size: 12,
-                                    ),
                                     style: TextButton.styleFrom(
                                       foregroundColor: AppColors.primary,
                                       textStyle: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
+                                    child: const Text('Edit'),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             SizedBox(
                               width: double.infinity,
-                              child: OutlinedButton(
+                              height: 52,
+                              child: OutlinedButton.icon(
                                 onPressed: () {},
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: const Text('Add payment method'),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.all(12),
+                                  foregroundColor: AppColors.textSecondary,
                                   side: const BorderSide(
-                                    color: AppColors.border,
-                                    style: BorderStyle.solid,
+                                    color: AppColors.divider,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  foregroundColor: AppColors.textSecondary,
-                                ),
-                                child: const Text(
-                                  '+ Add payment method',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
@@ -633,14 +665,14 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 24),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(14),
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.divider),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,107 +680,55 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                             const Text(
                               'Usage This Month',
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            ..._usageItems.map((item) {
-                              final pct =
-                                  (item['used'] as int) /
-                                  (item['total'] as int);
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 14),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          item['label'],
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${item['used']} / ${item['total']}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    LinearProgressIndicator(
-                                      value: pct,
-                                      backgroundColor: AppColors.surface,
-                                      color: item['color'] as Color,
-                                      minHeight: 6,
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      '${(pct * 100).round()}% used',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textMuted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
+                            const SizedBox(height: 24),
+                            ..._usageItems.map(
+                              (item) => _buildUsageItem(
+                                label: item['label'] as String,
+                                used: item['used'] as int,
+                                total: item['total'] as int,
+                                color: item['color'] as Color,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 // Billing History
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: AppColors.border),
-                    borderRadius: BorderRadius.circular(14),
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 18,
-                        ),
+                        padding: const EdgeInsets.all(24),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Billing History',
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            TextButton.icon(
+                            _buildHeaderAction(
+                              label: 'Download all',
+                              icon: Icons.download_rounded,
                               onPressed: () {},
-                              icon: const Icon(Icons.download, size: 14),
-                              label: const Text('Download all'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.textSecondary,
-                                textStyle: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
                             ),
                           ],
                         ),
@@ -756,143 +736,161 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
                       const Divider(height: 1, color: AppColors.divider),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          headingRowColor: WidgetStateProperty.all(
-                            AppColors.surface,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: MediaQuery.of(context).size.width - 300,
                           ),
-                          dataRowMinHeight: 52,
-                          dataRowMaxHeight: 52,
-                          columns: const [
-                            DataColumn(
-                              label: Text(
-                                'DATE',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 0.5,
+                          child: DataTable(
+                            headingRowColor: WidgetStateProperty.all(
+                              AppColors.surface,
+                            ),
+                            dataRowMinHeight: 64,
+                            dataRowMaxHeight: 64,
+                            horizontalMargin: 24,
+                            columnSpacing: 24,
+                            headingRowHeight: 48,
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  'DATE',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'DESCRIPTION',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 0.5,
+                              DataColumn(
+                                label: Text(
+                                  'DESCRIPTION',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'AMOUNT',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 0.5,
+                              DataColumn(
+                                label: Text(
+                                  'AMOUNT',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'STATUS',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 0.5,
+                              DataColumn(
+                                label: Text(
+                                  'STATUS',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'INVOICE',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 0.5,
+                              DataColumn(
+                                label: Text(
+                                  'ACTION',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                          rows: _invoices
-                              .map(
-                                (inv) => DataRow(
-                                  cells: [
-                                    DataCell(
-                                      Text(
-                                        inv['date'],
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: AppColors.textSecondary,
-                                        ),
+                            ],
+                            rows: _invoices.map((inv) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      inv['date'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
-                                    DataCell(
-                                      Text(
-                                        inv['description'],
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      inv['description'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    DataCell(
-                                      Text(
-                                        inv['amount'],
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      inv['amount'],
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    DataCell(
-                                      Row(
-                                        children: const [
+                                  ),
+                                  DataCell(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFECFDF5),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
                                           Icon(
-                                            Icons.check_circle,
-                                            size: 13,
+                                            Icons.check_circle_rounded,
+                                            size: 12,
                                             color: Color(0xFF059669),
                                           ),
-                                          SizedBox(width: 5),
+                                          SizedBox(width: 6),
                                           Text(
                                             'Paid',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: FontWeight.w800,
                                               color: Color(0xFF059669),
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    DataCell(
-                                      TextButton.icon(
-                                        onPressed: () {},
-                                        icon: const Icon(
-                                          Icons.download,
-                                          size: 13,
-                                        ),
-                                        label: const Text('PDF'),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor:
-                                              AppColors.textSecondary,
-                                          textStyle: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                  ),
+                                  DataCell(
+                                    TextButton.icon(
+                                      onPressed: () {},
+                                      icon: const Icon(
+                                        Icons.download_rounded,
+                                        size: 16,
+                                      ),
+                                      label: const Text('Invoice'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.primary,
+                                        textStyle: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              )
-                              .toList(),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ],
@@ -901,13 +899,17 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
 
                 // Cancel Subscription
                 Padding(
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: TextButton(
                       onPressed: () {},
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.textMuted,
-                        textStyle: const TextStyle(fontSize: 13),
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                       child: const Text('Cancel subscription'),
                     ),
@@ -917,6 +919,100 @@ class _DashboardBillingScreenState extends State<DashboardBillingScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderAction({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        backgroundColor: AppColors.white,
+        side: const BorderSide(color: AppColors.divider),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Widget _buildUsageItem({
+    required String label,
+    required int used,
+    required int total,
+    required Color color,
+  }) {
+    final pct = used / total;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                '$used / $total',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            height: 10,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: pct,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${(pct * 100).round()}% of your monthly limit',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
       ),
     );
   }

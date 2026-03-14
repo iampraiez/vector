@@ -82,10 +82,10 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
           children: [
             // Top Nav
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 40),
               decoration: const BoxDecoration(
                 color: AppColors.white,
-                border: Border(bottom: BorderSide(color: AppColors.border)),
+                border: Border(bottom: BorderSide(color: AppColors.divider)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -95,30 +95,37 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 30,
-                          height: 30,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [AppColors.primary, Color(0xFF047857)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           alignment: Alignment.center,
                           child: const Icon(
-                            Icons.local_shipping,
-                            size: 16,
+                            Icons.local_shipping_rounded,
+                            size: 20,
                             color: AppColors.white,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 14),
                         const Text(
                           'VECTOR',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.16,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
                             color: AppColors.textPrimary,
                           ),
                         ),
@@ -127,13 +134,13 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
                   ),
                   TextButton.icon(
                     onPressed: () => context.go('/'),
-                    icon: const Icon(Icons.arrow_back, size: 14),
+                    icon: const Icon(Icons.arrow_back_rounded, size: 16),
                     label: const Text('Back to home'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                       textStyle: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -159,54 +166,60 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
                           children: [
                             _StepBubble(
                               num: 1,
-                              label: 'Account',
+                              label: 'ACCOUNT',
                               isCurrent: _step == _Step.account,
                               isDone: currentStepIndex > 0,
                             ),
                             Container(
                               width: 60,
                               height: 2,
-                              margin: const EdgeInsets.only(bottom: 20),
-                              color: currentStepIndex > 0
-                                  ? AppColors.primary
-                                  : AppColors.border,
+                              margin: const EdgeInsets.only(bottom: 24),
+                              decoration: BoxDecoration(
+                                color: currentStepIndex > 0
+                                    ? AppColors.primary
+                                    : AppColors.divider,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
                             ),
                             _StepBubble(
                               num: 2,
-                              label: 'Company',
+                              label: 'COMPANY',
                               isCurrent: _step == _Step.company,
                               isDone: currentStepIndex > 1,
                             ),
                             Container(
                               width: 60,
                               height: 2,
-                              margin: const EdgeInsets.only(bottom: 20),
-                              color: currentStepIndex > 1
-                                  ? AppColors.primary
-                                  : AppColors.border,
+                              margin: const EdgeInsets.only(bottom: 24),
+                              decoration: BoxDecoration(
+                                color: currentStepIndex > 1
+                                    ? AppColors.primary
+                                    : AppColors.divider,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
                             ),
                             _StepBubble(
                               num: 3,
-                              label: 'Plan',
+                              label: 'PLAN',
                               isCurrent: _step == _Step.plan,
                               isDone: currentStepIndex > 2,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 48),
 
                         // Card
                         Container(
-                          padding: const EdgeInsets.all(40),
+                          padding: const EdgeInsets.all(48),
                           decoration: BoxDecoration(
                             color: AppColors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border),
-                            boxShadow: const [
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppColors.divider),
+                            boxShadow: [
                               BoxShadow(
-                                color: Color(0x0F000000),
-                                offset: Offset(0, 4),
-                                blurRadius: 24,
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 40,
+                                offset: const Offset(0, 16),
                               ),
                             ],
                           ),
@@ -569,21 +582,34 @@ class _DashboardSignUpScreenState extends State<DashboardSignUpScreen> {
   InputDecoration _inputDeco({required String hint, required IconData icon}) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon, size: 16, color: AppColors.textHint),
+      hintStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textMuted,
+      ),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Icon(icon, size: 20, color: AppColors.textMuted),
+      ),
+      prefixIconConstraints: const BoxConstraints(minWidth: 40),
       filled: true,
-      fillColor: AppColors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.divider),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error),
       ),
     );
   }
@@ -625,39 +651,55 @@ class _StepBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          width: 32,
-          height: 32,
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: isDone || isCurrent ? AppColors.primary : AppColors.white,
+            color: isDone
+                ? AppColors.primary
+                : isCurrent
+                ? AppColors.white
+                : AppColors.surface,
             shape: BoxShape.circle,
             border: Border.all(
               color: isDone || isCurrent
                   ? AppColors.primary
-                  : const Color(0x1F000000),
+                  : AppColors.divider,
               width: 2,
             ),
+            boxShadow: isCurrent
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
           ),
           alignment: Alignment.center,
           child: isDone
-              ? const Icon(Icons.check, size: 14, color: AppColors.white)
+              ? const Icon(Icons.check_rounded, size: 20, color: AppColors.white)
               : Text(
                   '$num',
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isCurrent ? AppColors.white : AppColors.textHint,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: isCurrent ? AppColors.primary : AppColors.textMuted,
                   ),
                 ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: isDone || isCurrent ? AppColors.primary : AppColors.textHint,
-            letterSpacing: 0.4,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: isDone || isCurrent
+                ? AppColors.primary
+                : AppColors.textMuted,
+            letterSpacing: 1,
           ),
         ),
       ],
@@ -682,39 +724,58 @@ class _PrimaryBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: enabled ? onTap : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        disabledBackgroundColor: const Color(0x0F000000),
-        disabledForegroundColor: const Color(0xFFBDBDBD),
-        padding: const EdgeInsets.all(13),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: enabled ? 2 : 0,
-      ),
-      child: loading
-          ? const SizedBox(
-              width: 15,
-              height: 15,
-              child: CircularProgressIndicator(
-                color: AppColors.white,
-                strokeWidth: 2,
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: enabled && !loading
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-                const SizedBox(width: 8),
-                Icon(icon, size: 15),
-              ],
-            ),
+              ]
+            : [],
+      ),
+      child: ElevatedButton(
+        onPressed: enabled && !loading ? onTap : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
+          disabledBackgroundColor: AppColors.divider,
+          disabledForegroundColor: AppColors.textMuted,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 0,
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: AppColors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(icon, size: 18),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -734,42 +795,59 @@ class _PlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF0FDF4) : AppColors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.white : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0x1A000000),
-            width: 1.5,
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 2 : 1.5,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : [],
         ),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             if (plan['highlight'] == true)
               Positioned(
-                top: -26,
+                top: -36,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 2,
+                      horizontal: 14,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(99),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: const Text(
                       'MOST POPULAR',
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.white,
-                        letterSpacing: 0.6,
+                        letterSpacing: 1,
                       ),
                     ),
                   ),
@@ -778,64 +856,55 @@ class _PlanCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      plan['name'],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        plan['name'],
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      plan['drivers'],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
+                      const SizedBox(height: 4),
+                      Text(
+                        plan['drivers'],
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 Row(
                   children: [
                     Text(
                       plan['price'],
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 20),
                     Container(
-                      width: 20,
-                      height: 20,
+                      width: 24,
+                      height: 24,
                       decoration: BoxDecoration(
                         color: isSelected ? AppColors.primary : AppColors.white,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected
                               ? AppColors.primary
-                              : const Color(0x26000000),
-                          width: 2,
+                              : AppColors.divider,
+                          width: isSelected ? 7 : 2,
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child: isSelected
-                          ? Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            )
-                          : null,
                     ),
                   ],
                 ),
