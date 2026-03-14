@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
-import '../../shared/widgets/buttons.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -39,6 +38,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           'Capture signatures and photos instantly. Keep detailed records for every successful delivery with ease.',
       'color': const Color(0xFFF5F3FF),
       'accent': const Color(0xFF8B5CF6),
+    },
+    {
+      'icon': Icons.rocket_launch_rounded,
+      'title': 'Ready to Deliver?',
+      'desc':
+          'Your dashboard is set up. Start your first route and experience a smarter way to manage deliveries today.',
+      'color': const Color(0xFFF0FDF4),
+      'accent': AppColors.primary,
     },
   ];
 
@@ -227,30 +234,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: _currentPage == _steps.length - 1
-                            ? AppButton(
-                                key: const ValueKey('start'),
-                                label: 'Get Started',
-                                isFullWidth: true,
-                                onPressed: () => context.go('/home'),
+                            ? AnimatedContainer(
+                                key: const ValueKey('get-started'),
+                                duration: const Duration(milliseconds: 300),
+                                width: double.infinity,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: _steps[_currentPage]['accent'] as Color,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (_steps[_currentPage]['accent'] as Color).withValues(alpha: 0.3),
+                                      offset: const Offset(0, 4),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () => context.go('/home'),
+                                    child: const Center(
+                                      child: Text(
+                                        'Get Started',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               )
                             : SizedBox(
+                                key: const ValueKey('continue'),
                                 width: double.infinity,
                                 height: 52,
                                 child: TextButton(
                                   onPressed: () {
                                     _pageController.nextPage(
-                                      duration: const Duration(
-                                        milliseconds: 500,
-                                      ),
+                                      duration: const Duration(milliseconds: 500),
                                       curve: Curves.easeInOutCubic,
                                     );
                                   },
                                   child: Text(
                                     'Continue',
                                     style: TextStyle(
-                                      color:
-                                          _steps[_currentPage]['accent']
-                                              as Color,
+                                      color: _steps[_currentPage]['accent'] as Color,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
                                     ),

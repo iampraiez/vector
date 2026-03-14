@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -128,10 +129,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-                decoration: const BoxDecoration(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                decoration: BoxDecoration(
                   color: AppColors.white,
-                  border: Border(bottom: BorderSide(color: AppColors.border)),
+                  border: const Border(bottom: BorderSide(color: AppColors.border)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      offset: const Offset(0, 4),
+                      blurRadius: 12,
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -142,9 +150,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Text(
                           'History',
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 26,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: -0.44,
+                            letterSpacing: -0.6,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         SizedBox(height: 2),
@@ -158,33 +167,36 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: const [
-                          Icon(
-                            Icons.download_outlined,
-                            size: 15,
-                            color: AppColors.textSecondary,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'Export',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                    GestureDetector(
+                      onTap: () => _showExportModal(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(
+                              Icons.download_outlined,
+                              size: 15,
                               color: AppColors.textSecondary,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 6),
+                            Text(
+                              'Export',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -850,6 +862,79 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
+
+  void _showExportModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Export History',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Select a time range for your report',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _ExportFormatOption(
+                icon: Icons.calendar_today_outlined,
+                title: 'This Week',
+                subtitle: 'Export data for the current week',
+                onTap: () => _handleExport(context, 'week'),
+              ),
+              const SizedBox(height: 12),
+              _ExportFormatOption(
+                icon: Icons.calendar_month_outlined,
+                title: 'This Month',
+                subtitle: 'Export data for the current month',
+                onTap: () => _handleExport(context, 'month'),
+              ),
+              const SizedBox(height: 12),
+              _ExportFormatOption(
+                icon: Icons.date_range_outlined,
+                title: 'Custom Range',
+                subtitle: 'Select specific dates to export',
+                onTap: () => _handleExport(context, 'custom'),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleExport(BuildContext context, String range) {
+    context.pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Export report will be sent to your email'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -901,6 +986,72 @@ class _SummaryCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ExportFormatOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ExportFormatOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }

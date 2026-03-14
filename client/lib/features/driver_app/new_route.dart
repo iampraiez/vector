@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/inputs.dart';
 import '../../shared/widgets/buttons.dart';
@@ -41,23 +42,48 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
     bool canCreate = _nameController.text.isNotEmpty && _stops.any((s) => s['address'].isNotEmpty);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Maps to PageBackground
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        title: Text('Create route', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700)),
-        centerTitle: false,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: Theme.of(context).colorScheme.outline, height: 1),
-        ),
-      ),
+      backgroundColor: const Color(0xFFF8FAF9),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Unified Header
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: const Border(bottom: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    'Create route',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Expanded(
+              child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.p4),
           child: Center(
             child: ConstrainedBox(
@@ -65,14 +91,14 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Add stops manually or import from a file', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  Text('Add stops manually or import from a file', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
                   const SizedBox(height: AppSpacing.p4),
 
                   // Tab switcher
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color: const Color(0xFFF0F0F0),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -83,16 +109,16 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: _isManualTab ? Theme.of(context).colorScheme.surface : Colors.transparent,
+                                color: _isManualTab ? AppColors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: _isManualTab ? const [BoxShadow(color: Color(0x0F000000), offset: Offset(0, 2), blurRadius: 4)] : null,
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.location_on_outlined, size: 18, color: _isManualTab ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
+                                  Icon(Icons.location_on_outlined, size: 18, color: _isManualTab ? AppColors.primary : AppColors.textSecondary),
                                   const SizedBox(width: 8),
-                                  Text('Manual Entry', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _isManualTab ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                  Text('Manual Entry', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _isManualTab ? AppColors.primary : AppColors.textSecondary)),
                                 ],
                               ),
                             ),
@@ -104,16 +130,16 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: !_isManualTab ? Theme.of(context).colorScheme.surface : Colors.transparent,
+                                color: !_isManualTab ? AppColors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: !_isManualTab ? const [BoxShadow(color: Color(0x0F000000), offset: Offset(0, 2), blurRadius: 4)] : null,
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.upload_file, size: 18, color: !_isManualTab ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
+                                  Icon(Icons.upload_file, size: 18, color: !_isManualTab ? AppColors.primary : AppColors.textSecondary),
                                   const SizedBox(width: 8),
-                                  Text('Import File', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: !_isManualTab ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                  Text('Import File', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: !_isManualTab ? AppColors.primary : AppColors.textSecondary)),
                                 ],
                               ),
                             ),
@@ -127,7 +153,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
 
                   if (_isManualTab) ...[
                     // Route Name
-                    Text('ROUTE NAME', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 0.5)),
+                    const Text('ROUTE NAME', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.7)),
                     const SizedBox(height: AppSpacing.p2),
                     AppTextField(controller: _nameController, hintText: 'e.g., Downtown Deliveries', onChanged: (_) => setState(() {})),
                     
@@ -137,11 +163,12 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('STOPS (${_stops.length})', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 0.5)),
+                        Text('STOPS (${_stops.length})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.7)),
                         TextButton.icon(
                           onPressed: _addStop,
                           icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Add stop'),
+                          label: const Text('Add stop', style: TextStyle(fontWeight: FontWeight.w600)),
+                          style: TextButton.styleFrom(foregroundColor: AppColors.primary),
                         )
                       ],
                     ),
@@ -153,24 +180,24 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: AppSpacing.p3),
                         padding: const EdgeInsets.all(AppSpacing.p4),
-                        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outline)),
+                        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
                         child: Column(
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
                                   alignment: Alignment.center,
-                                  child: Text('${idx + 1}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onPrimary)),
+                                  child: Text('${idx + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
                                 ),
                                 const SizedBox(width: AppSpacing.p3),
-                                Expanded(child: Text('STOP ${idx + 1}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 0.5))),
+                                Expanded(child: Text('STOP ${idx + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5))),
                                 if (_stops.length > 1)
                                   IconButton(
-                                    icon: Icon(Icons.close, size: 16),
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                    icon: const Icon(Icons.close, size: 18),
+                                    color: AppColors.textHint,
                                     onPressed: () => _removeStop(idx),
                                   )
                               ],
@@ -184,22 +211,22 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                             const SizedBox(height: AppSpacing.p2),
                             Row(
                               children: [
-                                Icon(Icons.inventory_2_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                SizedBox(width: AppSpacing.p2),
-                                Expanded(child: Text('Packages', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurfaceVariant))),
+                                const Icon(Icons.inventory_2_outlined, size: 16, color: AppColors.textSecondary),
+                                const SizedBox(width: AppSpacing.p2),
+                                const Expanded(child: Text('Packages', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary))),
                                 IconButton(
-                                  icon: Icon(Icons.remove_circle_outline),
-                                  color: s['packages'] > 1 ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.outline,
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  color: s['packages'] > 1 ? AppColors.textSecondary : AppColors.border,
                                   onPressed: s['packages'] > 1 ? () => setState(() => _stops[idx]['packages']--) : null,
                                 ),
                                 Container(
                                   width: 40,
                                   alignment: Alignment.center,
-                                  child: Text('${s['packages']}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                  child: Text('${s['packages']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.add_circle_outline),
-                                  color: Theme.of(context).colorScheme.primary,
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  color: AppColors.primary,
                                   onPressed: () => setState(() => _stops[idx]['packages']++),
                                 ),
                               ],
@@ -214,21 +241,21 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     // Optimize toggle
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.p4),
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(16)),
                       child: Row(
                         children: [
                           Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-                            child: Icon(Icons.autorenew, color: Theme.of(context).colorScheme.onPrimary, size: 20),
+                            width: 36, height: 36,
+                            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.autorenew, color: AppColors.white, size: 18),
                           ),
                           const SizedBox(width: AppSpacing.p3),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Auto-optimize route', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                                Text('AI will calculate the best order', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8))),
+                              children: const [
+                                Text('Auto-optimize route', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                                Text('AI will calculate the best order', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500)),
                               ],
                             ),
                           )
@@ -247,23 +274,23 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 2), // Dashed border not natively supported simply in bare Boxdecoration
+                        border: Border.all(color: AppColors.border, width: 1.5), // Clean solid border
                       ),
                       alignment: Alignment.center,
                       child: Column(
                         children: [
                           Container(
                             width: 64, height: 64,
-                            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle),
-                            child: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: 28),
+                            decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                            child: const Icon(Icons.upload_file, color: AppColors.primary, size: 28),
                           ),
                           const SizedBox(height: AppSpacing.p4),
-                          Text('Upload CSV or Excel file', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-                          SizedBox(height: AppSpacing.p2),
-                          Text('Drag and drop or click to browse', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                          SizedBox(height: AppSpacing.p4),
+                          const Text('Upload CSV or Excel file', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                          const SizedBox(height: AppSpacing.p2),
+                          const Text('Drag and drop or click to browse', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                          const SizedBox(height: AppSpacing.p4),
                           AppButton(label: 'Choose file', variant: ButtonVariant.outline, onPressed: () {})
                         ],
                       ),
@@ -271,21 +298,21 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     const SizedBox(height: AppSpacing.p6),
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.p5),
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outline)),
+                      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: [
-                              Icon(Icons.description_outlined, color: Theme.of(context).colorScheme.primary, size: 20),
+                            children: const [
+                              Icon(Icons.description_outlined, color: AppColors.primary, size: 20),
                               SizedBox(width: AppSpacing.p3),
-                              Text('File format', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                              Text('File format', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                             ],
                           ),
-                          SizedBox(height: AppSpacing.p3),
-                          Text(
+                          const SizedBox(height: AppSpacing.p3),
+                          const Text(
                             'Your file should include columns for:\n• Address\n• Package count\n• (Optional) Customer name',
-                            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.6),
+                            style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.6),
                           )
                         ],
                       ),
@@ -295,6 +322,9 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
               ),
             ),
           ),
+        ),
+      ),
+          ],
         ),
       ),
     );

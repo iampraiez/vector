@@ -64,9 +64,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/landing_page.jpeg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Gradient Overlay for readability
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.5),
+                    Colors.white.withValues(alpha: 0.90),
+                    Colors.white,
+                  ],
+                  stops: const [0.0, 0.4, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // Main Content
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
@@ -362,6 +389,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

@@ -12,14 +12,12 @@ class ProofDeliveryScreen extends StatefulWidget {
 
 class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
   bool _photo = false;
-  bool _signature = false;
+  bool _qrScanned = false;
   final TextEditingController _notesController = TextEditingController();
   bool _submitting = false;
 
-  final List<Offset?> _points = [];
-
   void _handleSubmit() {
-    if (!_photo || !_signature) return;
+    if (!_photo || !_qrScanned) return;
     setState(() => _submitting = true);
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
@@ -28,26 +26,29 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
     });
   }
 
-  void _clearSignature() {
-    setState(() {
-      _points.clear();
-      _signature = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    bool isComplete = _photo && _signature;
+    bool isComplete = _photo && _qrScanned;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF8FAF9),
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
-              color: Theme.of(context).colorScheme.surface,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: const Border(bottom: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -57,24 +58,21 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                         onPressed: () => context.pop(),
                         icon: const Icon(Icons.arrow_back),
                         style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor,
+                          backgroundColor: AppColors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
+                            side: const BorderSide(color: AppColors.border),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
+                      const SizedBox(width: 16),
+                      const Text(
                         'Proof of Delivery',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
                         ),
                       ),
                     ],
@@ -87,25 +85,25 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                      children: const [
                         Text(
                           'Delivering to',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: AppColors.primary,
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           'Jane Smith',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: AppColors.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -115,9 +113,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                           '456 Market Street, Downtown',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -145,13 +141,11 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                           horizontal: 20,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
+                          color: AppColors.white,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: CustomPaint(
-                          painter: _DashedBorderPainter(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+                          painter: _DashedBorderPainter(color: AppColors.border),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               vertical: 40,
@@ -162,37 +156,31 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                                 Container(
                                   width: 64,
                                   height: 64,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primaryContainer,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primaryLight,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.camera_alt_rounded,
                                     size: 32,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: AppColors.primary,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                Text(
+                                const Text(
                                   'Take a photo',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
+                                const Text(
                                   'Capture delivered package',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -205,11 +193,9 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                        border: Border.all(color: AppColors.border),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
@@ -224,38 +210,31 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 32),
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withValues(alpha: 0.2),
+                              color: AppColors.successLight,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
-                              children: [
+                              children: const [
                                 Icon(
                                   Icons.check_circle_rounded,
                                   size: 64,
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color: AppColors.primary,
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 Text(
                                   'Photo Captured',
                                   style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
+                                    color: AppColors.textPrimary,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Text(
                                   'Package evidence saved',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -267,11 +246,9 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                             icon: const Icon(Icons.refresh_rounded, size: 20),
                             label: const Text('Retake Photo'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              side: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(
+                                color: AppColors.primary,
                                 width: 1.5,
                               ),
                               shape: RoundedRectangleBorder(
@@ -292,18 +269,16 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
 
                   // Signature Section
                   _SectionHeader(
-                    title: 'Customer Signature',
-                    isDone: _signature,
+                    title: 'Scan QR Code',
+                    isDone: _qrScanned,
                   ),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+                      border: Border.all(color: AppColors.border),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.05),
@@ -315,89 +290,108 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Ask customer to sign below',
+                        const Text(
+                          'Scan Customer QR Code',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Container(
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: _signature
-                                ? Theme.of(context).colorScheme.surface
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
+                        if (!_qrScanned)
+                          InkWell(
+                            onTap: () => setState(() => _qrScanned = true),
                             borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: CustomPaint(
-                            painter: _DashedBorderPainter(
-                              color: _signature
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.outline,
-                            ),
-                            child: Stack(
-                              children: [
-                                GestureDetector(
-                                  onPanUpdate: (details) {
-                                    setState(() {
-                                      _points.add(details.localPosition);
-                                      _signature = true;
-                                    });
-                                  },
-                                  onPanEnd: (details) {
-                                    _points.add(null);
-                                  },
-                                  child: CustomPaint(
-                                    painter: _SignaturePainter(_points),
-                                    size: Size.infinite,
-                                  ),
-                                ),
-                                if (!_signature)
-                                  IgnorePointer(
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.gesture_rounded,
-                                            size: 40,
-                                            color: Colors.grey.withValues(alpha: 0.5),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Sign here',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color:
-                                                  Colors.grey.withValues(alpha: 0.5),
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                            child: Container(
+                              width: double.infinity,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryLight,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.qr_code_scanner_rounded,
+                                      size: 28,
+                                      color: AppColors.primary,
                                     ),
                                   ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Tap to Scan',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Customer has receiving QR code',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            decoration: BoxDecoration(
+                              color: AppColors.successLight,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              children: const [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 48,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'QR Code Scanned',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Verified delivery recipient',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ),
-                        if (_signature) ...[
+                        if (_qrScanned) ...[
                           const SizedBox(height: 12),
                           TextButton.icon(
-                            onPressed: _clearSignature,
-                            icon: const Icon(Icons.clear_rounded, size: 18),
-                            label: const Text('Clear Signature'),
+                            onPressed: () => setState(() => _qrScanned = false),
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: const Text('Rescan QR Code'),
                             style: TextButton.styleFrom(
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.error,
+                              foregroundColor: AppColors.primary,
                               minimumSize: const Size.fromHeight(48),
                               textStyle: const TextStyle(
                                 fontWeight: FontWeight.w600,
@@ -412,10 +406,10 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                   const SizedBox(height: 32),
 
                   // Notes section
-                  Text(
+                  const Text(
                     'Delivery Notes',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -423,11 +417,9 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                   const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: TextField(
                       controller: _notesController,
@@ -436,14 +428,12 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                       decoration: InputDecoration(
                         hintText:
                             "Add any delivery notes (e.g., 'Left at front door')",
-                        hintStyle: TextStyle(
+                        hintStyle: const TextStyle(
                           fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: AppColors.textSecondary,
                         ),
                         filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
+                        fillColor: const Color(0xFFF9FAFB),
                         contentPadding: const EdgeInsets.all(16),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -461,7 +451,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
       bottomSheet: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: AppColors.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -478,11 +468,11 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
             onPressed: isComplete && !_submitting ? _handleSubmit : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: isComplete
-                  ? Theme.of(context).colorScheme.primary
+                  ? AppColors.primary
                   : Colors.grey[300],
               foregroundColor: Colors.white,
               elevation: isComplete ? 4 : 0,
-              shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+              shadowColor: AppColors.primary.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -535,8 +525,8 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.5,
@@ -546,23 +536,23 @@ class _SectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              children: [
+              children: const [
                 Icon(
                   Icons.check_circle_rounded,
                   size: 14,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: AppColors.primary,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   'DONE',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppColors.primary,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -574,30 +564,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _SignaturePainter extends CustomPainter {
-  List<Offset?> points;
-  _SignaturePainter(this.points);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = AppColors.primary
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 4.0 // Slightly thicker
-      ..isAntiAlias = true;
-
-    for (int i = 0; i < points.length - 1; i++) {
-      if (points[i] != null && points[i + 1] != null) {
-        canvas.drawLine(points[i]!, points[i + 1]!, paint);
-      } else if (points[i] != null && points[i + 1] == null) {
-        canvas.drawPoints(ui.PointMode.points, [points[i]!], paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SignaturePainter oldDelegate) => true;
-}
 
 class _DashedBorderPainter extends CustomPainter {
   final Color color;

@@ -56,13 +56,20 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   // Header
                   Container(
-                    color: AppColors.white,
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.p5,
-                      AppSpacing.p5,
-                      AppSpacing.p5,
-                      AppSpacing.p4,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      border: const Border(
+                        bottom: BorderSide(color: AppColors.border),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          offset: const Offset(0, 4),
+                          blurRadius: 12,
+                        ),
+                      ],
                     ),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -82,9 +89,9 @@ class HomeScreen extends StatelessWidget {
                             Text(
                               '$greeting, Alex',
                               style: const TextStyle(
-                                fontSize: 22,
+                                fontSize: 26,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: -0.44,
+                                letterSpacing: -0.6,
                                 color: AppColors.textPrimary,
                               ),
                             ),
@@ -110,17 +117,25 @@ class HomeScreen extends StatelessWidget {
                                   color: AppColors.textSecondary,
                                 ),
                                 Positioned(
-                                  top: 9,
-                                  right: 9,
+                                  top: 6,
+                                  right: 6,
                                   child: Container(
-                                    width: 7,
-                                    height: 7,
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: AppColors.error,
-                                      shape: BoxShape.circle,
+                                      borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
                                         color: AppColors.white,
                                         width: 1.5,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      '3',
+                                      style: TextStyle(
+                                        color: AppColors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1,
                                       ),
                                     ),
                                   ),
@@ -436,9 +451,9 @@ class HomeScreen extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: _ActionCard(
-                                icon: Icons.bar_chart,
-                                label: 'History',
-                                onTap: () => context.push('/history'),
+                                icon: Icons.settings_outlined,
+                                label: 'Settings',
+                                onTap: () => context.push('/settings'),
                               ),
                             ),
                           ],

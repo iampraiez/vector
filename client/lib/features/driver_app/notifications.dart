@@ -130,10 +130,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                decoration: BoxDecoration(
                   color: AppColors.white,
-                  border: Border(bottom: BorderSide(color: AppColors.border)),
+                  border: const Border(bottom: BorderSide(color: AppColors.border)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      offset: const Offset(0, 4),
+                      blurRadius: 12,
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -144,16 +151,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           children: [
                             IconButton(
                               onPressed: () => context.pop(),
-                              icon: const Icon(Icons.close),
+                              icon: const Icon(Icons.arrow_back),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
+                            const SizedBox(width: 16),
+                            const Text(
                               'Notifications',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                             if (unreadCount > 0)
@@ -161,7 +170,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 margin: const EdgeInsets.only(left: 8),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
-                                  vertical: 2,
+                                  vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryLight,
@@ -209,7 +218,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               ),
                               foregroundColor: AppColors.primary,
                               textStyle: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

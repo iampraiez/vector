@@ -11,6 +11,55 @@ class _HoverPopoutCard extends StatefulWidget {
   State<_HoverPopoutCard> createState() => _HoverPopoutCardState();
 }
 
+class _FooterItem {
+  final String label;
+  final String? path;
+  final VoidCallback? onTap;
+
+  _FooterItem(this.label, {this.path, this.onTap});
+}
+
+class _FooterLink extends StatefulWidget {
+  final _FooterItem item;
+  const _FooterLink({required this.item});
+
+  @override
+  State<_FooterLink> createState() => _FooterLinkState();
+}
+
+class _FooterLinkState extends State<_FooterLink> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: () {
+          if (widget.item.onTap != null) {
+            widget.item.onTap!();
+          } else if (widget.item.path != null) {
+            context.go(widget.item.path!);
+          }
+        },
+        borderRadius: BorderRadius.circular(4),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 200),
+          style: TextStyle(
+            fontSize: 14,
+            color: _isHovered
+                ? const Color(0xFF059669)
+                : const Color(0xFF757575),
+            fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w400,
+          ),
+          child: Text(widget.item.label),
+        ),
+      ),
+    );
+  }
+}
+
 class _HoverPopoutCardState extends State<_HoverPopoutCard> {
   bool _isHovered = false;
 
@@ -22,7 +71,11 @@ class _HoverPopoutCardState extends State<_HoverPopoutCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+        transform: Matrix4.diagonal3Values(
+          _isHovered ? 1.02 : 1.0,
+          _isHovered ? 1.02 : 1.0,
+          1.0,
+        ),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
           boxShadow: [
@@ -193,7 +246,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ),
                       const SizedBox(width: 12),
                       _buildHeaderButton(
-                        label: 'Get started free',
+                        label: 'Get started',
                         onPressed: () => context.go('/dashboard/signup'),
                         isPrimary: true,
                       ),
@@ -308,10 +361,15 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                   _mobileNavItem(context, 'How it works', onTap: () => scrollToSection(_howItWorksKey)),
                   const SizedBox(height: 20),
                   _mobileNavItem(context, 'Pricing', onTap: () => scrollToSection(_pricingKey)),
-                  const SizedBox(height: 12),
-                  const Spacer(),
-                  const Divider(color: Color(0x0F000000), height: 40),
-                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Divider(color: Color(0x0F000000)),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
@@ -349,10 +407,9 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      child: const Text('Get started free'),
+                      child: const Text('Get started'),
                     ),
                   ),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -381,6 +438,16 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
 
   Widget _buildHero(BuildContext context, bool isDesktop) {
     return Container(
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment(-0.5, -0.5),
+          radius: 1.5,
+          colors: [
+            Color(0x14059669), // 8% opacity emerald
+            Colors.white,
+          ],
+        ),
+      ),
       padding: EdgeInsets.fromLTRB(24, isDesktop ? 160 : 120, 24, 80),
       child: Center(
         child: ConstrainedBox(
@@ -439,56 +506,77 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
+                            Flex(
+                              direction: isDesktop
+                                  ? Axis.horizontal
+                                  : Axis.vertical,
+                              mainAxisSize: MainAxisSize.min,
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: () => context.go('/dashboard/signup'),
-                          icon: const Text(
-                            'Start free trial',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          label: const Icon(Icons.arrow_forward, size: 16),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF059669),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 28,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 4,
-                            shadowColor: const Color(0x4D059669),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => context.go('/driver'),
-                          icon: const Icon(Icons.local_shipping, size: 16),
-                          label: const Text('Driver app'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF212121),
-                            side: BorderSide(
-                              color: Colors.black.withValues(alpha: 0.12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 28,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                                SizedBox(
+                                  width: isDesktop ? null : double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () =>
+                                        context.go('/dashboard/signup'),
+                                    icon: const Text(
+                                      'Get started',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    label: const Icon(
+                                      Icons.arrow_forward,
+                                      size: 16,
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF059669),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 28,
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      elevation: 4,
+                                      shadowColor: const Color(0x4D059669),
+                                    ),
+                                  ),
+                                ),
+                                if (!isDesktop)
+                                  const SizedBox(height: 12)
+                                else
+                                  const SizedBox(width: 12),
+                                SizedBox(
+                                  width: isDesktop ? null : double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => context.go('/driver'),
+                                    icon: const Icon(
+                                      Icons.local_shipping,
+                                      size: 16,
+                                    ),
+                                    label: const Text('Driver app'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF212121),
+                                      side: BorderSide(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 28,
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                       ],
                     ),
                     const SizedBox(height: 40),
@@ -753,45 +841,58 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                 'From route planning to proof of delivery, VECTOR handles the full delivery lifecycle so you can focus on growth.',
               ),
               const SizedBox(height: 64),
-              GridView.count(
-                crossAxisCount: isDesktop
-                    ? 3
-                    : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 24,
-                crossAxisSpacing: 24,
-                childAspectRatio: 1.3,
+              Wrap(
+                spacing: 24,
+                runSpacing: 24,
+                alignment: WrapAlignment.center,
                 children: [
-                  _featureCard(
-                    Icons.bolt,
-                    'AI Route Optimization',
-                    'Our engine calculates the fastest routes across hundreds of stops in seconds, saving up to 40% in drive time.',
+                  SizedBox(
+                    width: isDesktop ? 380 : double.infinity,
+                    child: _featureCard(
+                      Icons.bolt,
+                      'AI Route Optimization',
+                      'Our engine calculates the fastest routes across hundreds of stops in seconds, saving up to 40% in drive time.',
+                    ),
                   ),
-                  _featureCard(
-                    Icons.location_on,
-                    'Live GPS Tracking',
-                    'Track every driver on a live map. See ETAs, position, and delivery status updated in real time.',
+                  SizedBox(
+                    width: isDesktop ? 380 : double.infinity,
+                    child: _featureCard(
+                      Icons.location_on,
+                      'Live GPS Tracking',
+                      'Track every driver on a live map. See ETAs, position, and delivery status updated in real time.',
+                    ),
                   ),
-                  _featureCard(
-                    Icons.assignment_turned_in,
-                    'Proof of Delivery',
-                    'Drivers capture photos and signatures at each stop. Every delivery is verified and timestamped.',
+                  SizedBox(
+                    width: isDesktop ? 380 : double.infinity,
+                    child: _featureCard(
+                      Icons.assignment_turned_in,
+                      'Proof of Delivery',
+                      'Drivers capture photos and signatures at each stop. Every delivery is verified and timestamped.',
+                    ),
                   ),
-                  _featureCard(
-                    Icons.notifications_active,
-                    'Customer Notifications',
-                    'Automatically send customers a tracking link so they know exactly when to expect their delivery.',
+                  SizedBox(
+                    width: isDesktop ? 380 : double.infinity,
+                    child: _featureCard(
+                      Icons.notifications_active,
+                      'Customer Notifications',
+                      'Automatically send customers a tracking link so they know exactly when to expect their delivery.',
+                    ),
                   ),
-                  _featureCard(
-                    Icons.bar_chart,
-                    'Fleet Analytics',
-                    'Deep reports on performance, fuel cost, on-time rates, and driver efficiency — all in one dashboard.',
+                  SizedBox(
+                    width: isDesktop ? 380 : double.infinity,
+                    child: _featureCard(
+                      Icons.bar_chart,
+                      'Fleet Analytics',
+                      'Deep reports on performance, fuel cost, on-time rates, and driver efficiency — all in one dashboard.',
+                    ),
                   ),
-                  _featureCard(
-                    Icons.people,
-                    'Simple Driver Onboarding',
-                    'Drivers join using your unique company code. No admin overhead. They\'re ready to go in under 2 minutes.',
+                  SizedBox(
+                    width: isDesktop ? 380 : double.infinity,
+                    child: _featureCard(
+                      Icons.people,
+                      'Simple Driver Onboarding',
+                      'Drivers get started in seconds with a company code. No complex training or onboarding required.',
+                    ),
                   ),
                 ],
               ),
@@ -805,7 +906,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
   Widget _featureCard(IconData icon, String title, String desc) {
     return _HoverPopoutCard(
       child: Container(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -879,21 +980,25 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                     '01',
                     'Create your fleet account',
                     'Sign up in minutes. Get your unique company code and configure your first fleet.',
+                    isDesktop: isDesktop,
                   ),
                   _stepCard(
                     '02',
                     'Add drivers instantly',
                     'Share your company code with drivers. They download the app, enter the code, and they\'re on your fleet.',
+                    isDesktop: isDesktop,
                   ),
                   _stepCard(
                     '03',
                     'Build & assign routes',
                     'Create a route, add stops, optimise with one click, then assign it to any driver from the dashboard.',
+                    isDesktop: isDesktop,
                   ),
                   _stepCard(
                     '04',
                     'Track, verify & improve',
                     'Monitor deliveries live, receive proof-of-delivery photos, and use analytics to sharpen your operations.',
+                    isDesktop: isDesktop,
                   ),
                 ],
               ),
@@ -904,11 +1009,19 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _stepCard(String number, String title, String desc) {
+  Widget _stepCard(
+    String number,
+    String title,
+    String desc, {
+    bool isDesktop = true,
+  }) {
     return _HoverPopoutCard(
       child: Container(
-        width: 280,
-        padding: const EdgeInsets.all(32),
+        width: isDesktop ? 280 : double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 32 : 16,
+          vertical: isDesktop ? 32 : 24,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1054,13 +1167,6 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                   horizontal: 16,
                   vertical: 5,
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  borderRadius: BorderRadius.circular(99),
-                ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1104,50 +1210,61 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 36),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
+              Flex(
+                direction: isDesktop ? Axis.horizontal : Axis.vertical,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () => context.go('/driver'),
-                    icon: const Text(
-                      'Open driver app',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                  SizedBox(
+                    width: isDesktop ? null : double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.go('/driver'),
+                      icon: const Icon(Icons.local_shipping, size: 18),
+                      label: const Text(
+                        'Open driver app',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    label: const Icon(Icons.open_in_new, size: 16),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF34D399),
-                      foregroundColor: const Color(0xFF064E3B),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF34D399),
+                        foregroundColor: const Color(0xFF064E3B),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
                       ),
                     ),
                   ),
-                  OutlinedButton(
-                    onPressed: () => context.go('/driver'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white24),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 12,
+                  if (!isDesktop)
+                    const SizedBox(height: 12)
+                  else
+                    const SizedBox(width: 16),
+                  SizedBox(
+                    width: isDesktop ? null : double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => context.go('/driver'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white24),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      child: const Text('Sign up as driver'),
                     ),
-                    child: const Text('Sign up as driver'),
                   ),
                 ],
               ),
@@ -1305,34 +1422,31 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                 children: [
                   _pricingCard(
                     'Starter',
-                    '29',
-                    '/mo',
-                    'Up to 5 drivers',
+                    '0',
+                    'forever',
+                    'Up to 3 drivers',
                     [
-                      'Route optimization',
-                      'Live GPS tracking',
+                      'AI Route optimization',
+                      'Real-time tracking',
                       'Proof of delivery',
+                    ],
+                    'Choose plan',
+                    false,
+                    isDesktop: isDesktop,
+                  ),
+                  _pricingCard(
+                    'Pro',
+                    '49',
+                    'per month',
+                    'Up to 10 drivers',
+                    [
+                      'Everything in Starter',
                       'Customer tracking links',
                       'Email support',
                     ],
-                    'Start free trial',
+                    'Choose plan',
                     false,
-                  ),
-                  _pricingCard(
-                    'Growth',
-                    '89',
-                    '/mo',
-                    'Up to 20 drivers',
-                    [
-                      'Everything in Starter',
-                      'Advanced analytics',
-                      'Priority routing',
-                      'SMS notifications',
-                      'Priority support',
-                      'API access',
-                    ],
-                    'Start free trial',
-                    true,
+                    isDesktop: isDesktop,
                   ),
                   _pricingCard(
                     'Enterprise',
@@ -1340,15 +1454,14 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                     '',
                     'Unlimited drivers',
                     [
-                      'Everything in Growth',
+                      'Everything in Pro',
                       'Dedicated manager',
                       'Custom integrations',
                       'SLA guarantee',
-                      'On-site onboarding',
-                      'White-label option',
                     ],
                     'Contact sales',
                     false,
+                    isDesktop: isDesktop,
                   ),
                 ],
               ),
@@ -1367,10 +1480,16 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     List<String> features,
     String cta,
     bool highlighted,
+    {
+    bool isDesktop = true,
+  }
   ) {
     return Container(
-      width: 320,
-      padding: const EdgeInsets.all(32),
+      width: isDesktop ? 320 : double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 32 : 16,
+        vertical: isDesktop ? 32 : 24,
+      ),
       decoration: BoxDecoration(
         color: highlighted ? const Color(0xFF059669) : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1560,51 +1679,60 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 36),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.center,
+                Flex(
+                  direction: isDesktop ? Axis.horizontal : Axis.vertical,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () => context.go('/dashboard/signup'),
-                      icon: const Text(
-                        'Start free trial',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                    SizedBox(
+                      width: isDesktop ? null : double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.go('/dashboard/signup'),
+                        icon: const Text(
+                          'Get started',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      label: const Icon(Icons.arrow_forward, size: 16),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF059669),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        label: const Icon(Icons.arrow_forward, size: 18),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF059669),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
                         ),
                       ),
                     ),
-                    OutlinedButton(
-                      onPressed: () => context.go('/dashboard/signin'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF059669),
-                        side: const BorderSide(color: Color(0x4D059669)),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 14,
+                    if (!isDesktop)
+                      const SizedBox(height: 12)
+                    else
+                      const SizedBox(width: 16),
+                    SizedBox(
+                      width: isDesktop ? null : double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => context.go('/dashboard/signin'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF059669),
+                          side: const BorderSide(color: Color(0x4D059669)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        child: const Text(
+                          'Sign in to dashboard',
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      child: const Text('Sign in to dashboard'),
                     ),
                   ],
                 ),
@@ -1680,36 +1808,51 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
                     ),
                   ),
                   _footerColumn('Product', [
-                    'Features',
-                    'Pricing',
-                    'How it works',
-                    'Changelog',
+                    _FooterItem(
+                      'Features',
+                      onTap: () => scrollToSection(_featuresKey),
+                    ),
+                    _FooterItem(
+                      'How it works',
+                      onTap: () => scrollToSection(_howItWorksKey),
+                    ),
+                    _FooterItem(
+                      'Pricing',
+                      onTap: () => scrollToSection(_pricingKey),
+                    ),
+                    _FooterItem('Driver App', path: '/driver'),
                   ]),
-                  _footerColumn('Drivers', [
-                    'Driver app',
-                    'Driver sign in',
-                    'Driver sign up',
-                    'Track a delivery',
+                  _footerColumn('Resources', [
+                    _FooterItem('Documentation', path: '/docs'),
+                    _FooterItem('API Reference', path: '/api'),
+                    _FooterItem('Support', path: '/support'),
+                    _FooterItem('Contact', path: '/contact'),
                   ]),
-                  _footerColumn('Fleet owners', [
-                    'Dashboard',
-                    'Sign in',
-                    'Get started',
-                    'Contact sales',
+                  _footerColumn('Company', [
+                    _FooterItem('About Us', path: '/about'),
+                    _FooterItem('Careers', path: '/careers'),
+                    _FooterItem('Press', path: '/press'),
+                    _FooterItem('Security', path: '/security'),
                   ]),
                 ],
               ),
               const SizedBox(height: 48),
               const Divider(),
               const SizedBox(height: 24),
-              Row(
+              Flex(
+                direction: isDesktop ? Axis.horizontal : Axis.vertical,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '© 2026 VECTOR. All rights reserved.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    textAlign: isDesktop ? TextAlign.left : TextAlign.center,
                   ),
+                  if (!isDesktop) const SizedBox(height: 16),
                   Row(
+                    mainAxisAlignment: isDesktop
+                        ? MainAxisAlignment.end
+                        : MainAxisAlignment.center,
                     children: [
                       _footerLink('Privacy'),
                       const SizedBox(width: 20),
@@ -1727,7 +1870,7 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
     );
   }
 
-  Widget _footerColumn(String title, List<String> items) {
+  Widget _footerColumn(String title, List<_FooterItem> items) {
     return SizedBox(
       width: 150,
       child: Column(
@@ -1738,18 +1881,15 @@ class _WebLandingScreenState extends State<WebLandingScreen> {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.grey,
+              color: Color.fromARGB(255, 243, 235, 235),
               letterSpacing: 0.6,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           ...items.map(
             (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Text(
-                item,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF757575)),
-              ),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _FooterLink(item: item),
             ),
           ),
         ],

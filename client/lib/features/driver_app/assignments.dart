@@ -65,22 +65,30 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             children: [
               // Header
               Container(
-                color: AppColors.white,
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.p5,
-                  AppSpacing.p5,
-                  AppSpacing.p5,
-                  AppSpacing.p4,
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  border: const Border(
+                    bottom: BorderSide(color: AppColors.border),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      offset: const Offset(0, 4),
+                      blurRadius: 12,
+                    ),
+                  ],
                 ),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
                       'Assignments',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.44,
+                        letterSpacing: -0.6,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     SizedBox(height: 2),

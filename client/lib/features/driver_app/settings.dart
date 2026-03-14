@@ -44,21 +44,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     IconButton(
                       onPressed: () => context.pop(),
-                      icon: const Icon(Icons.arrow_back),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: AppColors.border),
-                        ),
-                      ),
+                      icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     const Text(
                       'Settings',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
                       ),
                     ),
                   ],
@@ -119,13 +114,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _SelectItem(
                           icon: Icons.language,
                           label: 'Language',
-                          value: _preferences['language']!,
+                          value: 'English (Only option for now)',
                         ),
                         const Divider(height: 1, indent: 16, endIndent: 16),
                         _SelectItem(
                           icon: Icons.location_on,
                           label: 'Distance units',
-                          value: _preferences['units']!,
+                          value: 'Metric',
                         ),
                       ],
                     ),
@@ -146,10 +141,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _ToggleItem(
                           icon: Icons.volume_up,
                           label: 'Voice guidance',
-                          sublabel: 'Turn-by-turn audio instructions',
-                          value: _preferences['voiceGuidance']!,
-                          onChanged: (v) =>
-                              setState(() => _preferences['voiceGuidance'] = v),
+                          sublabel: 'Coming soon',
+                          value: false,
+                          disabled: true,
+                          onChanged: (v) {},
                         ),
                       ],
                     ),
@@ -158,9 +153,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const _SectionHeader(title: 'Danger Zone', isDanger: true),
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFFEE2E2)),
+                        border: Border.all(color: const Color(0xFFFCA5A5)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,17 +163,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _DangerBtn(
                             label: 'Clear all data',
                             sublabel: 'Remove all routes and history',
+                            icon: Icons.delete_sweep_outlined,
                             onTap: () {},
                           ),
                           const Divider(
                             height: 1,
                             indent: 16,
                             endIndent: 16,
-                            color: AppColors.border,
+                            color: Color(0xFFFECACA),
                           ),
                           _DangerBtn(
                             label: 'Delete account',
                             sublabel: 'Permanently delete your account',
+                            icon: Icons.person_remove_outlined,
                             onTap: () => context.go('/'),
                           ),
                         ],
@@ -250,6 +247,7 @@ class _ToggleItem extends StatelessWidget {
   final String label, sublabel;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool disabled;
 
   const _ToggleItem({
     required this.icon,
@@ -257,6 +255,7 @@ class _ToggleItem extends StatelessWidget {
     required this.sublabel,
     required this.value,
     required this.onChanged,
+    this.disabled = false,
   });
 
   @override
@@ -298,11 +297,12 @@ class _ToggleItem extends StatelessWidget {
           ),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: disabled ? null : onChanged,
             activeThumbColor: Colors.white,
             activeTrackColor: AppColors.primary,
             inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFD1D5DB),
+            inactiveTrackColor: const Color(0xFFE5E7EB),
+            trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
           ),
         ],
       ),
@@ -373,11 +373,13 @@ class _SelectItem extends StatelessWidget {
 
 class _DangerBtn extends StatelessWidget {
   final String label, sublabel;
+  final IconData icon;
   final VoidCallback onTap;
 
   const _DangerBtn({
     required this.label,
     required this.sublabel,
+    required this.icon,
     required this.onTap,
   });
 
@@ -387,21 +389,36 @@ class _DangerBtn extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.error,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
               ),
+              child: Icon(icon, color: AppColors.error, size: 24),
             ),
-            const SizedBox(height: 2),
-            Text(
-              sublabel,
-              style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.error,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    sublabel,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -487,7 +504,6 @@ class _ThemeSelector extends StatelessWidget {
     ThemeMode mode,
   ) {
     final active = value == mode;
-    final theme = Theme.of(context);
 
     return Expanded(
       child: GestureDetector(
@@ -495,7 +511,7 @@ class _ThemeSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? theme.colorScheme.surface : Colors.transparent,
+            color: active ? AppColors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: active
                 ? [
@@ -513,8 +529,8 @@ class _ThemeSelector extends StatelessWidget {
                 icon,
                 size: 18,
                 color: active
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
               const SizedBox(height: 4),
               Text(
@@ -523,8 +539,8 @@ class _ThemeSelector extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                   color: active
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
