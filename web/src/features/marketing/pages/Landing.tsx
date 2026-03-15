@@ -1,0 +1,863 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import clsx from "clsx";
+import {
+  MapPinIcon,
+  BoltIcon,
+  ChartBarIcon,
+  TruckIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+  Bars3Icon,
+  XMarkIcon,
+  BellAlertIcon,
+  UsersIcon,
+  DocumentCheckIcon,
+  ArrowTrendingUpIcon,
+} from "@heroicons/react/24/outline";
+import {
+  CheckCircleIcon as CheckSolid,
+  StarIcon as StarSolid,
+} from "@heroicons/react/24/solid";
+
+const DELIVERY_IMAGE =
+  "https://images.unsplash.com/photo-1753535865713-02e0d579b7ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZWxpdmVyeSUyMGRyaXZlciUyMHZhbiUyMGxvZ2lzdGljcyUyMHJvdXRlJTIwY2l0eXxlbnwxfHx8fDE3NzI3ODQyODN8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const MAP_IMAGE =
+  "https://images.unsplash.com/photo-1620662892011-f5c2d523fae2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb3V0ZSUyMG9wdGltaXphdGlvbiUyMG1hcCUyMHBpbnMlMjBhZXJpYWwlMjBjaXR5fGVufDF8fHx8MTc3Mjc4NDI4Nnww&ixlib=rb-4.1.0&q=80&w=1080";
+
+const features = [
+  {
+    icon: BoltIcon,
+    title: "AI Route Optimization",
+    desc: "Our engine calculates the fastest routes across hundreds of stops in seconds, saving up to 40% in drive time.",
+  },
+  {
+    icon: MapPinIcon,
+    title: "Live GPS Tracking",
+    desc: "Track every driver on a live map. See ETAs, position, and delivery status updated in real time.",
+  },
+  {
+    icon: DocumentCheckIcon,
+    title: "Proof of Delivery",
+    desc: "Drivers capture photos and signatures at each stop. Every delivery is verified and timestamped.",
+  },
+  {
+    icon: BellAlertIcon,
+    title: "Customer Notifications",
+    desc: "Automatically send customers a tracking link so they know exactly when to expect their delivery.",
+  },
+  {
+    icon: ChartBarIcon,
+    title: "Fleet Analytics",
+    desc: "Deep reports on performance, fuel cost, on-time rates, and driver efficiency — all in one dashboard.",
+  },
+  {
+    icon: UsersIcon,
+    title: "Simple Driver Onboarding",
+    desc: "Drivers join using your unique company code. No admin overhead. They're ready to go in under 2 minutes.",
+  },
+];
+
+const steps = [
+  {
+    number: "01",
+    title: "Create your fleet account",
+    desc: "Sign up in minutes. Get your unique company code and configure your first fleet.",
+  },
+  {
+    number: "02",
+    title: "Add drivers instantly",
+    desc: "Share your company code with drivers. They download the app, enter the code, and they're on your fleet.",
+  },
+  {
+    number: "03",
+    title: "Build & assign routes",
+    desc: "Create a route, add stops, optimise with one click, then assign it to any driver from the dashboard.",
+  },
+  {
+    number: "04",
+    title: "Track, verify & improve",
+    desc: "Monitor deliveries live, receive proof-of-delivery photos, and use analytics to sharpen your operations.",
+  },
+];
+
+const testimonials = [
+  {
+    name: "Marcus Webb",
+    role: "Operations Manager",
+    company: "SwiftBox Courier",
+    rating: 5,
+    text: "VECTOR cut our average delivery time by 35%. The dashboard is incredibly intuitive — our dispatchers were up to speed in a day.",
+  },
+  {
+    name: "Priya Nair",
+    role: "Founder",
+    company: "GreenRun Logistics",
+    rating: 5,
+    text: "We scaled from 3 to 22 drivers without hiring an extra dispatcher. The company code system made onboarding painless.",
+  },
+  {
+    name: "James Okoye",
+    role: "Fleet Director",
+    company: "CityLink Deliveries",
+    rating: 5,
+    text: "The proof-of-delivery feature alone saved us countless disputes. Customers love the real-time tracking link.",
+  },
+];
+
+const plans = [
+  {
+    name: "Starter",
+    price: "29",
+    period: "/mo",
+    desc: "Perfect for small local fleets",
+    drivers: "Up to 5 drivers",
+    features: [
+      "Route optimization",
+      "Live GPS tracking",
+      "Proof of delivery",
+      "Customer tracking links",
+      "Email support",
+    ],
+    cta: "Start free trial",
+    highlighted: false,
+  },
+  {
+    name: "Growth",
+    price: "89",
+    period: "/mo",
+    desc: "For growing delivery operations",
+    drivers: "Up to 20 drivers",
+    features: [
+      "Everything in Starter",
+      "Advanced analytics",
+      "Priority routing",
+      "SMS notifications",
+      "Priority support",
+      "API access",
+    ],
+    cta: "Start free trial",
+    highlighted: true,
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    desc: "For large fleets & enterprises",
+    drivers: "Unlimited drivers",
+    features: [
+      "Everything in Growth",
+      "Dedicated account manager",
+      "Custom integrations",
+      "SLA guarantee",
+      "On-site onboarding",
+      "White-label option",
+    ],
+    cta: "Contact sales",
+    highlighted: false,
+  },
+];
+
+export function WebLanding() {
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div className="bg-white min-h-screen overflow-x-hidden">
+      {/* ── Navigation ─────────────────────────────────────────────── */}
+      <nav
+        className={clsx(
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+          scrolled
+            ? "bg-white/95 backdrop-blur-md border-b border-black/5"
+            : "bg-transparent",
+        )}
+      >
+        <div className="max-w-300 mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <div
+            className="flex items-center gap-2.5 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
+            <div className="w-8 h-8 bg-linear-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
+              <TruckIcon className="w-4.5 h-4.5 text-white" />
+            </div>
+            <span className="text-[17px] font-bold tracking-tight text-[#121212]">
+              VECTOR
+            </span>
+          </div>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-8">
+            {["Features", "How it works", "Pricing"].map((item) => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase().replace(" ", "-")}`}
+                className="text-sm font-medium text-gray-500 hover:text-[#121212] transition-colors duration-200 no-underline"
+              >
+                {item}
+              </a>
+            ))}
+          </div>
+
+          {/* Desktop CTAs */}
+          <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard/signin")}
+              className="px-4.5 py-2 bg-transparent border border-black/12 rounded-lg text-sm font-semibold text-[#212121] cursor-pointer transition-all duration-200 hover:border-emerald-600 hover:text-emerald-600"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => navigate("/dashboard/signup")}
+              className="px-4.5 py-2 bg-emerald-600 border-none rounded-lg text-sm font-semibold text-white cursor-pointer transition-all duration-200 shadow-[0_1px_3px_rgba(5,150,105,0.3)] hover:bg-emerald-700 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(5,150,105,0.35)]"
+            >
+              Get started free
+            </button>
+          </div>
+
+          {/* Mobile Hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden bg-none border-none cursor-pointer p-1"
+          >
+            <Bars3Icon className="w-6 h-6 text-[#212121]" />
+          </button>
+        </div>
+
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-100 flex justify-end">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="relative w-70 max-w-[80vw] bg-white h-full flex flex-col shadow-[-8px_0_24px_rgba(0,0,0,0.1)] animate-slide-left">
+              <div className="p-5 px-6 flex justify-end">
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="bg-none border-none cursor-pointer p-1"
+                >
+                  <XMarkIcon className="w-6 h-6 text-[#212121]" />
+                </button>
+              </div>
+              <div className="px-6 pb-6 flex flex-col gap-5">
+                {["Features", "How it works", "Pricing"].map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase().replace(" ", "-")}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-lg font-semibold text-[#212121] no-underline"
+                  >
+                    {item}
+                  </a>
+                ))}
+                <div className="h-px bg-black/5 my-3" />
+                <button
+                  onClick={() => {
+                    navigate("/dashboard/signin");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="p-3.5 rounded-xl border border-black/12 bg-transparent text-base font-semibold text-[#212121] cursor-pointer"
+                >
+                  Sign in
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/dashboard/signup");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="p-3.5 rounded-xl bg-emerald-600 border-none text-base font-semibold text-white cursor-pointer"
+                >
+                  Get started free
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* ── Hero ───────────────────────────────────────────────────── */}
+      <section className="pt-30 pb-20 max-w-300 mx-auto px-6">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-600/20 rounded-full px-3.5 py-1.25 mb-7 animate-fade-in">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          <span className="text-xs font-semibold text-emerald-600 tracking-wide uppercase">
+            NOW IN OPEN BETA — FREE FOR FLEETS UNDER 5 DRIVERS
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          {/* Left: Copy */}
+          <div className="animate-slide-up">
+            <h1 className="text-[clamp(36px,5vw,60px)] font-extrabold leading-[1.08] tracking-tight text-[#121212] mb-6">
+              Route smarter.{" "}
+              <span className="bg-linear-to-br from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
+                Deliver faster.
+              </span>
+            </h1>
+
+            <p className="text-lg leading-relaxed text-gray-500 mb-10 max-w-120">
+              VECTOR is the all-in-one fleet management platform that optimises
+              routes, tracks drivers live, and keeps customers informed — built
+              for local delivery businesses.
+            </p>
+
+            <div className="flex gap-3 flex-wrap mb-10">
+              <button
+                onClick={() => navigate("/dashboard/signup")}
+                className="flex items-center gap-2 px-7 py-3.5 bg-emerald-600 border-none rounded-xl text-[15px] font-bold text-white cursor-pointer shadow-[0_4px_16px_rgba(5,150,105,0.3)] transition-all duration-250 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-emerald-700 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(5,150,105,0.35)] tap-scale"
+              >
+                Start free trial
+                <ArrowRightIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => navigate("/driver")}
+                className="flex items-center gap-2 px-7 py-3.5 bg-transparent border border-black/12 rounded-xl text-[15px] font-semibold text-[#212121] cursor-pointer transition-all duration-250 hover:border-emerald-600 hover:text-emerald-600"
+              >
+                <TruckIcon className="w-4 h-4" />
+                Driver app
+              </button>
+            </div>
+
+            {/* Trust signals */}
+            <div className="flex items-center gap-5 flex-wrap">
+              {[
+                "No credit card required",
+                "14-day free trial",
+                "Cancel anytime",
+              ].map((text) => (
+                <div key={text} className="flex items-center gap-1.5">
+                  <CheckSolid className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="text-[13px] text-gray-500 font-medium">
+                    {text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Visual */}
+          <div className="relative">
+            <div className="rounded-[20px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.12)] border border-black/6 aspect-4/3">
+              <img
+                src={DELIVERY_IMAGE}
+                alt="Delivery fleet on city route"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Floating stat cards */}
+            <div className="absolute -bottom-4 -left-4 bg-white rounded-[14px] p-3.5 px-4.5 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/6">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <ArrowTrendingUpIcon className="w-4.5 h-4.5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-extrabold text-[#121212] leading-none">
+                    40%
+                  </p>
+                  <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                    Faster deliveries
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute top-5 -right-4 bg-white rounded-[14px] p-3 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/6">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_0_3px_rgba(5,150,105,0.2)]" />
+                <span className="text-[13px] font-bold text-[#121212] tracking-tight">
+                  8 active drivers
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats Bar ──────────────────────────────────────────────── */}
+      {/* ── Stats Bar ──────────────────────────────────────────────── */}
+      <section className="border-t border-b border-black/6 bg-gray-50 py-10 px-6">
+        <div className="max-w-250 mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[
+            { value: "10,000+", label: "Deliveries optimised daily" },
+            { value: "40%", label: "Average time saved" },
+            { value: "99.9%", label: "Platform uptime" },
+            { value: "500+", label: "Active fleet accounts" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <p className="text-[clamp(28px,4vw,36px)] font-extrabold text-[#121212] tracking-tight leading-none mb-1.5">
+                {stat.value}
+              </p>
+              <p className="text-sm text-gray-400 font-medium">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Features ───────────────────────────────────────────────── */}
+      <section id="features" className="py-24 max-w-300 mx-auto px-6">
+        <div className="text-center mb-16">
+          <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
+            Features
+          </div>
+          <h2 className="text-[clamp(28px,4vw,42px)] font-extrabold tracking-tight text-[#121212] mb-4">
+            Everything your fleet needs
+          </h2>
+          <p className="text-[17px] text-gray-500 max-w-135 mx-auto leading-relaxed">
+            From route planning to proof of delivery, VECTOR handles the full
+            delivery lifecycle so you can focus on growth.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {features.map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <div
+                key={i}
+                className="bg-white border border-black/8 rounded-2xl p-7 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-default hover:shadow-2xl hover:shadow-black/10 hover:-translate-y-0.5 hover:border-emerald-600/20"
+              >
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center mb-4.5">
+                  <Icon className="w-5.5 h-5.5 text-emerald-600" />
+                </div>
+                <h3 className="text-base font-bold text-[#121212] mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── How it Works ───────────────────────────────────────────── */}
+      <section
+        id="how-it-works"
+        className="bg-[#F8FAF9] py-24 px-6 border-t border-b border-black/5"
+      >
+        <div className="max-w-275 mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
+              How it works
+            </div>
+            <h2 className="text-[clamp(28px,4vw,42px)] font-extrabold tracking-tight text-[#121212] mb-4">
+              Up and running in minutes
+            </h2>
+            <p className="text-[17px] text-gray-500 max-w-120 mx-auto leading-relaxed">
+              No complex setup. No IT team required. Your fleet is live and
+              optimised in under an hour.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {steps.map((step, i) => (
+              <div key={i} className="relative">
+                <div className="bg-white border border-black/7 rounded-2xl p-7 h-full shadow-sm">
+                  <div className="text-4xl font-black text-emerald-600/12 tracking-tighter mb-4 leading-none">
+                    {step.number}
+                  </div>
+                  <h3 className="text-base font-bold text-[#121212] mb-2.5">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {step.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Dashboard Preview ──────────────────────────────────────── */}
+      <section className="py-24 max-w-300 mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          <div>
+            <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-5">
+              Fleet Dashboard
+            </div>
+            <h2 className="text-[clamp(26px,4vw,38px)] font-extrabold tracking-tight text-[#121212] mb-4.5">
+              Complete visibility over your entire fleet
+            </h2>
+            <p className="text-base text-gray-500 leading-relaxed mb-7">
+              One clean dashboard to manage routes, monitor drivers live, review
+              analytics, and handle billing — without switching between a dozen
+              tools.
+            </p>
+            <div className="flex flex-col gap-3.5">
+              {[
+                "Assign routes to drivers in seconds",
+                "View live GPS positions on a map",
+                "Review delivery proof photos & signatures",
+                "Export detailed reports for any date range",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2.5">
+                  <CheckSolid className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-500 leading-snug">
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-[20px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.1)] border border-black/5 animate-fade-in [animation-delay:300ms]">
+            <img
+              src={MAP_IMAGE}
+              alt="Route optimization map"
+              className="w-full aspect-4/3 object-cover block"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── For Drivers Section ────────────────────────────────────── */}
+      <section className="bg-linear-to-br from-emerald-900 via-emerald-800 to-emerald-700 py-20 px-6 overflow-hidden">
+        <div className="max-w-225 mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-white/12 border border-white/15 rounded-full px-4 py-1.25 mb-6">
+            <TruckIcon className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs font-bold text-emerald-400 tracking-widest uppercase">
+              For Drivers
+            </span>
+          </div>
+          <h2 className="text-[clamp(26px,4vw,40px)] font-extrabold tracking-tight text-white mb-4">
+            Drivers love the mobile app
+          </h2>
+          <p className="text-[17px] text-white/70 leading-relaxed mb-9 max-w-140 mx-auto">
+            Turn-by-turn navigation, offline mode, proof-of-delivery capture,
+            and instant communication with dispatch — all in one app.
+          </p>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={() => navigate("/driver")}
+              className="flex items-center gap-2 px-7 py-3 bg-emerald-400 border-none rounded-xl text-[15px] font-bold text-emerald-900 cursor-pointer transition-all duration-250 hover:bg-emerald-300 hover:-translate-y-0.5 tap-scale"
+            >
+              <TruckIcon className="w-4 h-4" />
+              Open driver app
+            </button>
+            <button
+              onClick={() => navigate("/driver")}
+              className="px-7 py-3 bg-transparent border border-white/25 rounded-xl text-[15px] font-semibold text-white cursor-pointer transition-all duration-250 hover:border-white/60 hover:bg-white/10 tap-scale"
+            >
+              Sign up as driver
+            </button>
+          </div>
+          <p className="text-xs text-white/45 mt-6">
+            Drivers register using a company code provided by their fleet
+            manager
+          </p>
+        </div>
+      </section>
+
+      {/* ── Testimonials ───────────────────────────────────────────── */}
+      <section className="py-24 max-w-275 mx-auto px-6">
+        <div className="text-center mb-14">
+          <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
+            Customer stories
+          </div>
+          <h2 className="text-[clamp(26px,4vw,40px)] font-extrabold tracking-tight text-[#121212]">
+            Trusted by delivery teams worldwide
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {testimonials.map((t, i) => (
+            <div
+              key={i}
+              className="bg-white border border-black/8 rounded-2xl p-7 shadow-sm transition-all duration-300 hover:border-emerald-600/20 hover:shadow-md"
+            >
+              <div className="flex gap-1 mb-4">
+                {[...Array(t.rating)].map((_, s) => (
+                  <StarSolid key={s} className="w-3.5 h-3.5 text-amber-400" />
+                ))}
+              </div>
+              <p className="text-[15px] text-gray-700 leading-relaxed mb-5 italic">
+                "{t.text}"
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-9.5 h-9.5 rounded-full bg-linear-to-br from-emerald-600 to-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
+                  <span className="text-white text-[13px] font-bold uppercase">
+                    {t.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#121212]">{t.name}</p>
+                  <p className="text-[12px] text-gray-400 font-medium">
+                    {t.role}, {t.company}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Pricing ────────────────────────────────────────────────── */}
+      <section
+        id="pricing"
+        className="bg-[#F8FAF9] py-24 px-6 border-t border-black/5"
+      >
+        <div className="max-w-275 mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
+              Pricing
+            </div>
+            <h2 className="text-[clamp(26px,4vw,40px)] font-extrabold tracking-tight text-[#121212] mb-3.5">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-[17px] text-gray-500">
+              Start free, scale as you grow. No hidden fees.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            {plans.map((plan, i) => (
+              <div
+                key={i}
+                className={`rounded-[20px] p-8 relative transition-all duration-300 ${
+                  plan.highlighted
+                    ? "bg-emerald-600 border-none shadow-[0_20px_60px_rgba(5,150,105,0.3)] scale-[1.03] z-10"
+                    : "bg-white border border-black/8 shadow-sm"
+                }`}
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-400 text-emerald-900 px-4 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest whitespace-nowrap">
+                    Most popular
+                  </div>
+                )}
+                <div className="mb-6">
+                  <p
+                    className={`text-sm font-bold uppercase tracking-widest mb-1.5 ${
+                      plan.highlighted ? "text-white/80" : "text-gray-400"
+                    }`}
+                  >
+                    {plan.name}
+                  </p>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    {plan.price !== "Custom" && (
+                      <span
+                        className={`text-base font-semibold ${
+                          plan.highlighted ? "text-white/70" : "text-gray-400"
+                        }`}
+                      >
+                        $
+                      </span>
+                    )}
+                    <span
+                      className={`text-[42px] font-black tracking-tighter leading-none ${
+                        plan.highlighted ? "text-white" : "text-[#121212]"
+                      }`}
+                    >
+                      {plan.price}
+                    </span>
+                    {plan.period && (
+                      <span
+                        className={`text-sm ${
+                          plan.highlighted ? "text-white/60" : "text-gray-400"
+                        }`}
+                      >
+                        {plan.period}
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`text-[13px] ${
+                      plan.highlighted ? "text-white/70" : "text-gray-400"
+                    }`}
+                  >
+                    {plan.drivers}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => navigate("/dashboard/signup")}
+                  className={`w-full py-3 rounded-xl text-sm font-bold cursor-pointer mb-6 transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 tap-scale ${
+                    plan.highlighted
+                      ? "bg-white text-emerald-600"
+                      : "bg-emerald-600 text-white"
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+
+                <div className="flex flex-col gap-2.5">
+                  {plan.features.map((feature) => (
+                    <div key={feature} className="flex items-center gap-2">
+                      <CheckCircleIcon
+                        className={`w-3.75 h-3.75 shrink-0 ${
+                          plan.highlighted
+                            ? "text-emerald-300"
+                            : "text-emerald-600"
+                        }`}
+                      />
+                      <span
+                        className={`text-[13px] font-medium ${
+                          plan.highlighted ? "text-white/85" : "text-gray-600"
+                        }`}
+                      >
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA Banner ─────────────────────────────────────────────── */}
+      <section className="py-24 max-w-225 mx-auto px-6 text-center">
+        <div className="bg-linear-to-br from-emerald-50 to-emerald-100 border border-emerald-600/15 rounded-3xl py-16 px-10 shadow-sm">
+          <h2 className="text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-emerald-900 mb-4">
+            Ready to optimise your fleet?
+          </h2>
+          <p className="text-[17px] text-emerald-800 leading-relaxed mb-9 max-w-125 mx-auto">
+            Join hundreds of delivery businesses already saving time and money
+            with VECTOR. Set up your fleet in under 10 minutes.
+          </p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <button
+              onClick={() => navigate("/dashboard/signup")}
+              className="flex items-center gap-2 px-8 py-3.5 bg-emerald-600 border-none rounded-xl text-base font-bold text-white cursor-pointer shadow-[0_4px_16px_rgba(5,150,105,0.3)] transition-all duration-250 hover:bg-emerald-700 hover:-translate-y-0.5 tap-scale"
+            >
+              Start free trial
+              <ArrowRightIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate("/dashboard/signin")}
+              className="px-8 py-3.5 bg-transparent border border-emerald-600/30 rounded-xl text-base font-semibold text-emerald-600 cursor-pointer transition-all duration-250 hover:bg-emerald-600/5 tap-scale"
+            >
+              Sign in to dashboard
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ─────────────────────────────────────────────────── */}
+      <footer className="border-t border-black/7 py-15 px-6 bg-gray-50">
+        <div className="max-w-300 mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-12">
+            {/* Brand */}
+            <div className="col-span-2 lg:col-span-2">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-7 h-7 bg-linear-to-br from-emerald-600 to-emerald-800 rounded-lg flex items-center justify-center shadow-sm">
+                  <TruckIcon className="w-3.5 h-3.5 text-white" />
+                </div>
+                <span className="text-[15px] font-extrabold text-[#121212] tracking-tighter">
+                  VECTOR
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed max-w-50">
+                Smart route optimisation for modern delivery fleets.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4.5">
+                Product
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {["Features", "Pricing", "How it works", "Changelog"].map(
+                  (item) => (
+                    <a
+                      key={item}
+                      href="#"
+                      className="text-sm text-gray-500 hover:text-[#121212] transition-colors"
+                    >
+                      {item}
+                    </a>
+                  ),
+                )}
+              </div>
+            </div>
+
+            {/* Drivers */}
+            <div>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4.5">
+                Drivers
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { label: "Driver app", path: "/driver" },
+                  { label: "Driver sign in", path: "/signin" },
+                  { label: "Driver sign up", path: "/signup" },
+                  { label: "Track a delivery", path: "/track" },
+                ].map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.path}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(item.path);
+                    }}
+                    className="text-sm text-gray-500 hover:text-[#121212] transition-colors cursor-pointer"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Fleet */}
+            <div>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4.5">
+                Fleet owners
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { label: "Dashboard", path: "/dashboard" },
+                  { label: "Sign in", path: "/dashboard/signin" },
+                  { label: "Get started", path: "/dashboard/signup" },
+                  { label: "Contact sales", path: "/dashboard/signup" },
+                ].map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.path}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(item.path);
+                    }}
+                    className="text-sm text-gray-500 hover:text-[#121212] transition-colors cursor-pointer"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-black/7 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 gap-y-4">
+            <p className="text-[13px] text-gray-300">
+              © 2026 VECTOR. All rights reserved.
+            </p>
+            <div className="flex gap-5">
+              {["Privacy", "Terms", "Security"].map((item) => (
+                <a
+                  key={item}
+                  href="#"
+                  className="text-[13px] text-gray-300 hover:text-gray-500 transition-colors"
+                >
+                  {item}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
