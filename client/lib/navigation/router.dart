@@ -1,11 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-
-// Marketing Site
-import '../features/marketing_site/web_landing.dart';
-
-// Customer Tracking
-import '../features/customer_tracking/customer_tracking.dart';
 
 // Driver App
 import '../features/driver_app/welcome.dart';
@@ -25,51 +18,9 @@ import '../features/driver_app/profile.dart';
 import '../features/driver_app/settings.dart' as driver_settings;
 import '../features/driver_app/notifications.dart' as driver_notifications;
 
-// Fleet Dashboard
-import '../features/fleet_dashboard/sign_in.dart' as fleet_signin;
-import '../features/fleet_dashboard/sign_up.dart' as fleet_signup;
-import '../features/fleet_dashboard/forgot_password.dart' as fleet_forgot_password;
-import '../features/fleet_dashboard/overview.dart';
-import '../features/fleet_dashboard/drivers.dart';
-import '../features/fleet_dashboard/driver_detail.dart';
-import '../features/fleet_dashboard/orders.dart';
-import '../features/fleet_dashboard/tracking.dart';
-import '../features/fleet_dashboard/billing.dart';
-import '../features/fleet_dashboard/settings.dart' as fleet_settings;
-import '../features/fleet_dashboard/reports.dart';
-import '../features/fleet_dashboard/notifications.dart' as fleet_notifications;
-
 final GoRouter appRouter = GoRouter(
-  initialLocation: kIsWeb ? '/' : '/driver',
-  redirect: (context, state) {
-    final location = state.uri.toString();
-
-    // Web-only paths
-    final isWebPath =
-        location == '/' ||
-        location.startsWith('/dashboard') ||
-        location == '/track';
-
-    if (kIsWeb) {
-      // On Web, if trying to access driver app paths, redirect to landing
-      if (!isWebPath) return '/';
-    } else {
-      // On Mobile, if trying to access web-only paths, redirect to driver welcome
-      if (isWebPath) return '/driver';
-    }
-
-    return null;
-  },
+  initialLocation: '/driver',
   routes: <RouteBase>[
-    // Web Landing (public marketing page)
-    GoRoute(path: '/', builder: (context, state) => const WebLandingScreen()),
-
-    // Customer Tracking (public)
-    GoRoute(
-      path: '/track',
-      builder: (context, state) => const CustomerTrackingScreen(),
-    ),
-
     // Driver App - Welcome & Auth
     GoRoute(
       path: '/driver',
@@ -140,59 +91,6 @@ final GoRouter appRouter = GoRouter(
       path: '/notifications',
       builder: (context, state) =>
           const driver_notifications.NotificationsScreen(),
-    ),
-
-    // Fleet Dashboard
-    GoRoute(
-      path: '/dashboard/signin',
-      builder: (context, state) => const fleet_signin.DashboardSignInScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/signup',
-      builder: (context, state) => const fleet_signup.DashboardSignUpScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/forgot-password',
-      builder: (context, state) =>
-          const fleet_forgot_password.DashboardForgotPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard',
-      builder: (context, state) => const DashboardOverviewScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/drivers',
-      builder: (context, state) => const DashboardDriversScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/driver-detail',
-      builder: (context, state) => const DashboardDriverDetailScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/orders',
-      builder: (context, state) => const DashboardOrdersScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/tracking',
-      builder: (context, state) => const DashboardTrackingScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/billing',
-      builder: (context, state) => const DashboardBillingScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/settings',
-      builder: (context, state) =>
-          const fleet_settings.DashboardSettingsScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/reports',
-      builder: (context, state) => const DashboardReportsScreen(),
-    ),
-    GoRoute(
-      path: '/dashboard/notifications',
-      builder: (context, state) =>
-          const fleet_notifications.DashboardNotificationsScreen(),
     ),
   ],
 );
