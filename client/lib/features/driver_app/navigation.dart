@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/colors.dart';
 import '../../main.dart' show RouteProgressScope;
 
@@ -144,7 +145,6 @@ class _NavigationScreenState extends State<NavigationScreen>
                                 backgroundColor: AppColors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: const BorderSide(color: AppColors.border),
                                 ),
                               ),
                             ),
@@ -158,7 +158,7 @@ class _NavigationScreenState extends State<NavigationScreen>
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.border),
+                                  border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
                                 ),
                                 child: Row(
                                   children: [
@@ -228,7 +228,7 @@ class _NavigationScreenState extends State<NavigationScreen>
                           decoration: BoxDecoration(
                             color: AppColors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -274,9 +274,9 @@ class _NavigationScreenState extends State<NavigationScreen>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: Colors.black.withValues(alpha: 0.05),
                       offset: const Offset(0, -4),
-                      blurRadius: 20,
+                      blurRadius: 24,
                     ),
                   ],
                 ),
@@ -301,15 +301,16 @@ class _NavigationScreenState extends State<NavigationScreen>
                           const SizedBox(height: 16),
                           _buildPackageInfo(currentData),
                           const SizedBox(height: 20),
-                          _buildActionButtons(),
+                          _buildActionButtons(currentData),
                           const SizedBox(height: 20),
                           _buildArriveButton(context),
-                          if (remainingData.isNotEmpty) ...[
-                            const SizedBox(height: 24),
-                            const Divider(),
-                            const SizedBox(height: 24),
-                            _buildUpcomingStops(remainingData),
-                          ],
+                          const SizedBox(height: 24),
+                          const Divider(),
+                          const SizedBox(height: 24),
+                          if (remainingData.isNotEmpty)
+                            _buildUpcomingStops(remainingData)
+                          else
+                            _buildNoMoreStops(),
                         ],
                       ),
                     ),
@@ -430,18 +431,28 @@ class _NavigationScreenState extends State<NavigationScreen>
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(Map<String, dynamic> currentData) {
     return Row(
       children: [
         Expanded(
-          child: _ActionBtn(icon: Icons.phone, label: 'Call', onTap: () {}),
+          child: _ActionBtn(
+            icon: Icons.phone, 
+            label: 'Call', 
+            onTap: () async {
+              final uri = Uri.parse('tel:${currentData['phone']}');
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            }
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _ActionBtn(
             icon: Icons.message,
             label: 'Message',
-            onTap: () {},
+            onTap: () async {
+              final uri = Uri.parse('sms:${currentData['phone']}');
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            },
           ),
         ),
       ],
@@ -450,22 +461,17 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   Widget _buildArriveButton(BuildContext context) {
     return InkWell(
-      onTap: () => context.push('/proof-delivery'),
+      onTap: () => context.push('/proof-delivery?fromNav=true'),
       borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primary, Theme.of(context).colorScheme.primary],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0x40059669),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
               offset: const Offset(0, 4),
               blurRadius: 12,
             ),
@@ -474,18 +480,53 @@ class _NavigationScreenState extends State<NavigationScreen>
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 22),
-            SizedBox(width: 10),
             Text(
               'Mark as Arrived',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
+                letterSpacing: 0.3,
               ),
             ),
+            SizedBox(width: 10),
+            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNoMoreStops() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryLight),
+      ),
+      child: Column(
+        children: const [
+          Icon(Icons.flag_circle_rounded, color: AppColors.primary, size: 48),
+          SizedBox(height: 12),
+          Text(
+            'Final Stop',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'This is the last delivery on your current route.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -504,16 +545,14 @@ class _NavigationScreenState extends State<NavigationScreen>
           ),
         ),
         const SizedBox(height: 12),
-        ...remainingStops.asMap().entries.map((e) {
-          final i = e.key;
-          final s = e.value;
+        ...remainingStops.map((s) {
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
             ),
             child: Row(
               children: [
@@ -524,13 +563,13 @@ class _NavigationScreenState extends State<NavigationScreen>
                     color: AppColors.white,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors.border,
+                      color: AppColors.border.withValues(alpha: 0.1),
                       width: 2,
                     ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    '${_currentStop + i + 2}',
+                    '${s['id']}',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -562,11 +601,7 @@ class _NavigationScreenState extends State<NavigationScreen>
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
+                // Removed the pointy arrow/chevron to keep it simple since it's un-tappable
               ],
             ),
           );
@@ -597,8 +632,8 @@ class _ActionBtn extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary,
-            width: 2,
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            width: 1.5,
           ),
         ),
         child: Column(

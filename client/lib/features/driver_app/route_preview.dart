@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/theme/colors.dart';
 import '../../shared/widgets/buttons.dart';
 class RoutePreviewScreen extends StatelessWidget {
@@ -67,39 +68,62 @@ class RoutePreviewScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Container(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.fromLTRB(12, 16, 20, 16),
+              decoration: const BoxDecoration(
                 color: AppColors.white,
-                border: const Border(bottom: BorderSide(color: AppColors.border)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    offset: const Offset(0, 4),
-                    blurRadius: 12,
-                  ),
-                ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(),
-                        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                      ),
-                      Container(
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Downtown Route',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        Text(
+                          dateStr,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Share.share(
+                          'Check out my delivery route for $dateStr: 5 stops, 18.4 km total.',
+                          subject: 'Vector Delivery Route',
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.white,
                           border: Border.all(
-                            color: AppColors.border,
+                            color: AppColors.border.withValues(alpha: 0.15),
                           ),
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -110,7 +134,7 @@ class RoutePreviewScreen extends StatelessWidget {
                             Text(
                               'Share',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
                               ),
@@ -118,24 +142,6 @@ class RoutePreviewScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Downtown Route',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.6,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    dateStr,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -358,12 +364,12 @@ class RoutePreviewScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           border: Border(
-            top: BorderSide(color: Theme.of(context).colorScheme.outline),
+            top: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
           ),
           boxShadow: [
             BoxShadow(
-              color: Color(0x0D000000),
-              offset: Offset(0, -4),
+              color: Colors.black.withValues(alpha: 0.05),
+              offset: const Offset(0, -4),
               blurRadius: 12,
             ),
           ],

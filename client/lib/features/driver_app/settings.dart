@@ -24,6 +24,135 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'voiceGuidance': true,
   };
 
+  void _showClearDataConfirmation() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear All Data?'),
+        content: const Text(
+          'Confirming this will clear all local app data. A full activity report will be sent to your fleet manager.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Data cleared and report sent.')),
+              );
+            },
+            child: const Text('Clear Data', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountFlow() {
+    // Step 1: Initial Confirmation
+    showDialog(
+      context: context,
+      builder: (ctx1) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'Are you sure you want to delete your account? A final report will be sent to the fleet owner.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx1),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx1);
+              _showEmailVerificationDialog();
+            },
+            child: const Text('Proceed', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEmailVerificationDialog() {
+    final codeController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx2) => AlertDialog(
+        title: const Text('Verify Identity'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('A 6-digit code has been sent to your email. Enter it below to confirm deletion.'),
+            const SizedBox(height: 20),
+            TextField(
+              controller: codeController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
+              decoration: InputDecoration(
+                counterText: '',
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
+                ),
+                hintText: '000000',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx2),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (codeController.text.length == 6) {
+                Navigator.pop(ctx2);
+                _showFinalDeletionNotice();
+              }
+            },
+            child: const Text('Verify'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFinalDeletionNotice() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx3) => AlertDialog(
+        title: const Text('Account Scheduled for Deletion'),
+        content: const Text(
+          'Your account is now scheduled for deletion in 7 days. You will be logged out now.\n\nNote: If you sign back in within the next 7 days, you will need to re-verify your email to cancel the deletion process.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx3);
+              context.go('/driver');
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,9 +165,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Header
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.white,
-                  border: Border(bottom: BorderSide(color: AppColors.border)),
+                  border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.15))),
                 ),
                 child: Row(
                   children: [
@@ -164,7 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             label: 'Clear all data',
                             sublabel: 'Remove all routes and history',
                             icon: Icons.delete_sweep_outlined,
-                            onTap: () {},
+                            onTap: _showClearDataConfirmation,
                           ),
                           const Divider(
                             height: 1,
@@ -176,7 +305,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             label: 'Delete account',
                             sublabel: 'Permanently delete your account',
                             icon: Icons.person_remove_outlined,
-                            onTap: () => context.go('/'),
+                            onTap: _showDeleteAccountFlow,
                           ),
                         ],
                       ),
@@ -235,7 +364,7 @@ class _CardGroup extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
       ),
       child: Column(children: children),
     );

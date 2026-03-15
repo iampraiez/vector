@@ -17,6 +17,8 @@ dependencies:
   shared_preferences: ^2.3.5
   country_picker: ^2.0.27
   flutter_animate: ^4.5.2
+  url_launcher: ^6.3.1
+  share_plus: ^10.1.4
 
   # ── PoD: Photo capture ──────────────────────────────────────────────────
   # API-ready: swap onTap stub with ImagePicker().pickImage(source: ImageSource.camera)

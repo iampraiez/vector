@@ -119,7 +119,10 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/proof-delivery',
-      builder: (context, state) => const ProofDeliveryScreen(),
+      builder: (context, state) {
+        final fromNav = state.uri.queryParameters['fromNav'] == 'true';
+        return ProofDeliveryScreen(fromNav: fromNav);
+      },
     ),
     GoRoute(
       path: '/history',
