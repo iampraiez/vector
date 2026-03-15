@@ -264,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
 
                     InkWell(
-                      onTap: () => context.go('/'),
+                      onTap: () => context.go('/driver'),
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),

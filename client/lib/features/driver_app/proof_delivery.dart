@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui' as ui;
 import '../../core/theme/colors.dart';
+import '../../main.dart' show RouteProgressScope;
 
 class ProofDeliveryScreen extends StatefulWidget {
   const ProofDeliveryScreen({super.key});
@@ -16,14 +17,58 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
   final TextEditingController _notesController = TextEditingController();
   bool _submitting = false;
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (!_photo || !_qrScanned) return;
     setState(() => _submitting = true);
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        context.go('/assignments'); // Typically back to route or home
-      }
-    });
+
+    final progress = RouteProgressScope.of(context);
+
+    // Small delay to mimic upload (swap with real API call in production)
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+
+    // Mark current stop as complete, advance index
+    final routeComplete = progress.completeCurrentStop(
+      photoPath: 'mock_photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      qrCode: 'MOCK-QR-SCANNED',
+      deliveryNotes: _notesController.text,
+    );
+
+    if (!mounted) return;
+
+    if (routeComplete) {
+      // ── ALL STOPS DONE: celebrate + go to assignments ─────────────────
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            '🎉 Route complete! All deliveries done.',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      context.go('/assignments');
+    } else {
+      // ── MORE STOPS: pop back to navigation for next stop ──────────────
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ Stop delivered! Navigating to stop ${progress.currentIndex + 1}.',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      context.pop(); // Pop PoD → back to NavigationScreen (which auto-updates from provider)
+    }
   }
 
   @override

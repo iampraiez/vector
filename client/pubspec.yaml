@@ -18,6 +18,24 @@ dependencies:
   country_picker: ^2.0.27
   flutter_animate: ^4.5.2
 
+  # ── PoD: Photo capture ──────────────────────────────────────────────────
+  # API-ready: swap onTap stub with ImagePicker().pickImage(source: ImageSource.camera)
+  image_picker: ^1.1.2
+
+  # ── PoD: QR code scanning ───────────────────────────────────────────────
+  # API-ready: replace simulated tap with MobileScannerController
+  mobile_scanner: ^5.2.3
+
+  # ── Local storage: save PoD photo to temp dir ────────────────────────────
+  path_provider: ^2.1.4
+
+  # ── API: HTTP client for backend endpoints ───────────────────────────────
+  # Swap MockRouteService calls with Dio requests
+  dio: ^5.7.0
+
+  # ── Auth: secure JWT token storage ──────────────────────────────────────
+  flutter_secure_storage: ^9.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

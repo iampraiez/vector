@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
+import '../../main.dart' show RouteProgressScope;
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
@@ -70,12 +71,44 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_currentStop >= _stops.length) {
-      return const Scaffold(body: Center(child: Text('Route Complete')));
+    // ── Read from shared RouteProgressProvider (rebuilds on advance) ──────
+    final progress = RouteProgressScope.of(context);
+    final currentStop = progress.currentStop;
+    final upcomingStops = progress.upcomingStops;
+
+    if (currentStop == null || progress.isRouteComplete) {
+      // All stops done — this handles back-navigation edge case
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/assignments');
+      });
+      return const Scaffold(
+        body: Center(
+          child: Text('Route Complete! Heading back...'),
+        ),
+      );
     }
 
-    final currentData = _stops[_currentStop];
-    final remainingStops = _stops.sublist(_currentStop + 1);
+    // Adapter: map StopModel fields to the Map shape used by child widgets
+    final currentData = {
+      'id': progress.currentIndex + 1,
+      'customer': currentStop.customerName,
+      'address': currentStop.address,
+      'phone': currentStop.phone,
+      'eta': currentStop.eta,
+      'distance': currentStop.distance,
+      'packages': currentStop.packages,
+    };
+    final remainingData = upcomingStops
+        .map((s) => {
+              'id': progress.allStops.indexOf(s) + 1,
+              'customer': s.customerName,
+              'address': s.address,
+              'phone': s.phone,
+              'eta': s.eta,
+              'distance': s.distance,
+              'packages': s.packages,
+            })
+        .toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -271,11 +304,11 @@ class _NavigationScreenState extends State<NavigationScreen>
                           _buildActionButtons(),
                           const SizedBox(height: 20),
                           _buildArriveButton(context),
-                          if (remainingStops.isNotEmpty) ...[
+                          if (remainingData.isNotEmpty) ...[
                             const SizedBox(height: 24),
                             const Divider(),
                             const SizedBox(height: 24),
-                            _buildUpcomingStops(remainingStops),
+                            _buildUpcomingStops(remainingData),
                           ],
                         ],
                       ),
@@ -338,7 +371,7 @@ class _NavigationScreenState extends State<NavigationScreen>
           ),
           alignment: Alignment.center,
           child: Text(
-            '${_currentStop + 1}',
+            '${currentData['id']}',
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,

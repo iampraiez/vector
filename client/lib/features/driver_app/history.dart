@@ -953,7 +953,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       dateStr = ' for this month';
     }
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
