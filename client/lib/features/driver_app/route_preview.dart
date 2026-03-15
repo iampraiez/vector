@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
-import '../../core/theme/spacing.dart';
 import '../../shared/widgets/buttons.dart';
-
 class RoutePreviewScreen extends StatelessWidget {
   const RoutePreviewScreen({super.key});
 
@@ -65,14 +63,24 @@ class RoutePreviewScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF8FAF9),
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
-              color: Theme.of(context).colorScheme.surface,
-              padding: const EdgeInsets.all(AppSpacing.p5),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: const Border(bottom: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -81,18 +89,7 @@ class RoutePreviewScreen extends StatelessWidget {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: const Icon(Icons.arrow_back),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
-                        ),
+                        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -100,21 +97,22 @@ class RoutePreviewScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).scaffoldBackgroundColor,
+                          color: AppColors.white,
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.outline,
+                            color: AppColors.border,
                           ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           children: const [
-                            Icon(Icons.share_outlined, size: 16),
+                            Icon(Icons.share_outlined, size: 16, color: AppColors.textPrimary),
                             SizedBox(width: 6),
                             Text(
                               'Share',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -123,20 +121,21 @@ class RoutePreviewScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Downtown Route',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     dateStr,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -177,21 +176,21 @@ class RoutePreviewScreen extends StatelessWidget {
                             child: Container(
                               width: 44,
                               height: 44,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x19000000),
-                                    offset: Offset(0, 2),
-                                    blurRadius: 8,
+                                decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.border,
                                   ),
-                                ],
-                              ),
-                              child: Icon(Icons.fullscreen),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x19000000),
+                                      offset: Offset(0, 2),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.fullscreen, color: AppColors.textPrimary),
                             ),
                           ),
                         ),
@@ -205,9 +204,9 @@ class RoutePreviewScreen extends StatelessWidget {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
+                              color: AppColors.white,
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
+                              boxShadow: const [
                                 BoxShadow(
                                   color: Color(0x26000000),
                                   offset: Offset(0, 4),
@@ -221,40 +220,32 @@ class RoutePreviewScreen extends StatelessWidget {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                                    color: AppColors.primaryLight,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.trending_up,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
+                                    color: AppColors.primary,
                                     size: 16,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                                  children: const [
                                     Text(
                                       'Route optimized',
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
+                                        color: AppColors.primary,
                                       ),
                                     ),
                                     Text(
                                       'Saved 24 min',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -402,30 +393,30 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+          Icon(icon, size: 18, color: AppColors.primary),
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -445,9 +436,9 @@ class _StopCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,25 +448,17 @@ class _StopCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               gradient: isFirst
-                  ? LinearGradient(
+                  ? const LinearGradient(
                       colors: [
-                        Theme.of(context).colorScheme.primary,
+                        AppColors.primary,
                         Color(0xFF047857),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
                   : null,
-              color: isFirst
-                  ? null
-                  : Theme.of(context).colorScheme.primaryContainer,
+              color: isFirst ? null : AppColors.primaryLight,
               borderRadius: BorderRadius.circular(12),
-              border: isFirst
-                  ? null
-                  : Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -484,8 +467,8 @@ class _StopCard extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: isFirst
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.primary,
+                    ? AppColors.white
+                    : AppColors.primary,
               ),
             ),
           ),
@@ -499,9 +482,10 @@ class _StopCard extends StatelessWidget {
                   children: [
                     Text(
                       stop['customer'],
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     if (isFirst)
@@ -511,15 +495,15 @@ class _StopCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
+                          color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(
+                        child: const Text(
                           'START',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -528,40 +512,40 @@ class _StopCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   stop['address'],
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: AppColors.textSecondary,
                     height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.schedule,
                       size: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: AppColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       stop['eta'],
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(
+                    const Icon(
                       Icons.inventory_2_outlined,
                       size: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: AppColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${stop['packages']} pkg',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],

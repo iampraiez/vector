@@ -923,11 +923,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  void _handleExport(BuildContext context, String range) {
+  Future<void> _handleExport(BuildContext context, String range) async {
     context.pop();
+
+    String dateStr = '';
+    if (range == 'custom') {
+      final DateTimeRange? picked = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2020),
+        lastDate: DateTime.now(),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppColors.primary,
+                onPrimary: Colors.white,
+                onSurface: AppColors.textPrimary,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+      if (picked == null) return;
+      dateStr = ' for ${picked.start.toString().split(' ')[0]} to ${picked.end.toString().split(' ')[0]}';
+    } else if (range == 'week') {
+      dateStr = ' for this week';
+    } else if (range == 'month') {
+      dateStr = ' for this month';
+    }
+
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Export report will be sent to your email'),
+        content: Text('Export report$dateStr will be sent to your email'),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

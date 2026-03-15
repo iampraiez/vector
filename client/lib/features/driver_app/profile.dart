@@ -140,15 +140,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     InkWell(
                       onTap: _openEditSheet,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
-                            SizedBox(width: 6),
-                            Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                          ],
-                        ),
+                        child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
                       ),
                     )
                   ],
@@ -236,10 +230,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white12)),
+                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.2))),
                             child: Row(
                               children: [
-                                Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF34D399), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x4D34D399), spreadRadius: 2)])),
+                                Container(width: 7, height: 7, decoration: BoxDecoration(color: const Color(0xFF6EE7B7), shape: BoxShape.circle, boxShadow: [BoxShadow(color: const Color(0xFF6EE7B7).withValues(alpha: 0.4), spreadRadius: 2)])),
                                 const SizedBox(width: 6),
                                 const Text('Active', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
                               ],
@@ -254,11 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _SectionCard(
                       label: 'Account',
                       children: [
-                        _MenuItem(icon: Icons.local_shipping_outlined, label: 'Vehicle Details', sub: 'Ford Transit · ABC 1234'),
-                        const Divider(height: 1, indent: 66),
                         _MenuItem(icon: Icons.notifications_none, label: 'Notifications', sub: 'Push, email, SMS', onTap: () => context.push('/notifications')),
-                        const Divider(height: 1, indent: 66),
-                        _MenuItem(icon: Icons.credit_card, label: 'Payment Method', sub: '···· 4242'),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -266,8 +256,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _SectionCard(
                       label: 'Support',
                       children: [
-                        _MenuItem(icon: Icons.description_outlined, label: 'Export Reports', sub: 'Download your data', onTap: () => context.push('/history')),
-                        const Divider(height: 1, indent: 66),
                         _MenuItem(icon: Icons.help_outline, label: 'Help Centre', sub: 'FAQs and guides'),
                         const Divider(height: 1, indent: 66),
                         _MenuItem(icon: Icons.security, label: 'Privacy & Security', sub: 'Manage your data', onTap: () => context.push('/settings')),

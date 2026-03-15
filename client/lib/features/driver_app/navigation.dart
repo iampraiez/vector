@@ -104,23 +104,15 @@ class _NavigationScreenState extends State<NavigationScreen>
                       children: [
                         Row(
                           children: [
-                            InkWell(
-                              onTap: () => context.go('/assignments'),
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  shape: BoxShape.circle,
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x26000000),
-                                      offset: Offset(0, 2),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
+                            IconButton(
+                              onPressed: () => context.go('/assignments'),
+                              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppColors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: const BorderSide(color: AppColors.border),
                                 ),
-                                child: const Icon(Icons.close),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -131,15 +123,9 @@ class _NavigationScreenState extends State<NavigationScreen>
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x26000000),
-                                      offset: Offset(0, 4),
-                                      blurRadius: 12,
-                                    ),
-                                  ],
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.border),
                                 ),
                                 child: Row(
                                   children: [
@@ -207,15 +193,9 @@ class _NavigationScreenState extends State<NavigationScreen>
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
+                            color: AppColors.white,
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x26000000),
-                                offset: Offset(0, 4),
-                                blurRadius: 12,
-                              ),
-                            ],
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -314,9 +294,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+        color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -500,9 +478,9 @@ class _NavigationScreenState extends State<NavigationScreen>
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
               children: [
@@ -510,20 +488,20 @@ class _NavigationScreenState extends State<NavigationScreen>
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
+                    color: AppColors.white,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
+                      color: AppColors.border,
                       width: 2,
                     ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '${_currentStop + i + 2}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),

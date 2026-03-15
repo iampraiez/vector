@@ -31,8 +31,9 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
     bool isComplete = _photo && _qrScanned;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             // Header
@@ -56,14 +57,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: const Icon(Icons.arrow_back),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: AppColors.border),
-                          ),
-                        ),
+                        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                       ),
                       const SizedBox(width: 16),
                       const Text(
@@ -73,6 +67,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.6,
+                          
                         ),
                       ),
                     ],
@@ -124,10 +119,12 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
             ),
 
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-                children: [
-                  // Photo Section
+              child: Container(
+                color: const Color(0xFFF8FAF9),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                  children: [
+                    // Photo Section
                   _SectionHeader(title: 'Photo Evidence', isDone: _photo),
                   const SizedBox(height: 12),
                   if (!_photo)
@@ -445,10 +442,11 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      bottomSheet: Container(
+    ),
+    bottomSheet: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         decoration: BoxDecoration(
           color: AppColors.white,
