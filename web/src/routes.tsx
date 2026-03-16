@@ -19,57 +19,65 @@ import { Terms } from "./features/marketing/pages/Terms";
 import { DashboardLayout } from "./features/dashboard/components/DashboardLayout";
 import { AuthGuard } from "./features/auth/guards/AuthGuard";
 import { GuestGuard } from "./features/auth/guards/GuestGuard";
+import { ErrorPage } from "./features/errors/pages/ErrorPage";
+import { NotFound } from "./features/errors/pages/NotFound";
 
 export const router = createBrowserRouter([
-  { path: "/", Component: Landing },
-
-  // ── Marketing & Public Pages ──────────────────────────────
-  { path: "/track", Component: TrackingPage },
-  { path: "/privacy", Component: Privacy },
-  { path: "/terms", Component: Terms },
-
   {
-    path: "/dashboard/signin",
-    element: (
-      <GuestGuard>
-        <SignIn />
-      </GuestGuard>
-    ),
-  },
-  {
-    path: "/dashboard/signup",
-    element: (
-      <GuestGuard>
-        <SignUp />
-      </GuestGuard>
-    ),
-  },
-  {
-    path: "/dashboard/forgot-password",
-    element: (
-      <GuestGuard>
-        <ForgotPassword />
-      </GuestGuard>
-    ),
-  },
-
-  {
-    path: "/dashboard",
-    element: (
-      <AuthGuard>
-        <DashboardLayout />
-      </AuthGuard>
-    ),
+    errorElement: <ErrorPage />,
     children: [
-      { index: true, Component: Overview },
-      { path: "drivers", Component: Drivers },
-      { path: "driver-detail", Component: DriverDetail },
-      { path: "orders", Component: Orders },
-      { path: "tracking", Component: Tracking },
-      { path: "billing", Component: Billing },
-      { path: "settings", Component: Settings },
-      { path: "reports", Component: Reports },
-      { path: "notifications", Component: Notifications },
+      { path: "/", Component: Landing },
+
+      // ── Marketing & Public Pages ──────────────────────────────
+      { path: "/track", Component: TrackingPage },
+      { path: "/privacy", Component: Privacy },
+      { path: "/terms", Component: Terms },
+
+      {
+        path: "/dashboard/signin",
+        element: (
+          <GuestGuard>
+            <SignIn />
+          </GuestGuard>
+        ),
+      },
+      {
+        path: "/dashboard/signup",
+        element: (
+          <GuestGuard>
+            <SignUp />
+          </GuestGuard>
+        ),
+      },
+      {
+        path: "/dashboard/forgot-password",
+        element: (
+          <GuestGuard>
+            <ForgotPassword />
+          </GuestGuard>
+        ),
+      },
+
+      {
+        path: "/dashboard",
+        element: (
+          <AuthGuard>
+            <DashboardLayout />
+          </AuthGuard>
+        ),
+        children: [
+          { index: true, Component: Overview },
+          { path: "drivers", Component: Drivers },
+          { path: "driver-detail", Component: DriverDetail },
+          { path: "orders", Component: Orders },
+          { path: "tracking", Component: Tracking },
+          { path: "billing", Component: Billing },
+          { path: "settings", Component: Settings },
+          { path: "reports", Component: Reports },
+          { path: "notifications", Component: Notifications },
+        ],
+      },
+      { path: "*", Component: NotFound },
     ],
   },
 ]);
