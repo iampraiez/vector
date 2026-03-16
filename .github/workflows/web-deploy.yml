@@ -58,4 +58,4 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          npx wrangler@latest pages deploy dist --project-name vector-web --branch main
+          npx wrangler@latest pages deploy build --project-name vector-web --branch main
