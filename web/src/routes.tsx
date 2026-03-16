@@ -17,6 +17,8 @@ import { Privacy } from "./features/marketing/pages/Privacy";
 import { Terms } from "./features/marketing/pages/Terms";
 
 import { DashboardLayout } from "./features/dashboard/components/DashboardLayout";
+import { AuthGuard } from "./features/auth/guards/AuthGuard";
+import { GuestGuard } from "./features/auth/guards/GuestGuard";
 
 export const router = createBrowserRouter([
   { path: "/", Component: Landing },
@@ -26,13 +28,38 @@ export const router = createBrowserRouter([
   { path: "/privacy", Component: Privacy },
   { path: "/terms", Component: Terms },
 
-  { path: "/dashboard/signin", Component: SignIn },
-  { path: "/dashboard/signup", Component: SignUp },
-  { path: "/dashboard/forgot-password", Component: ForgotPassword },
+  {
+    path: "/dashboard/signin",
+    element: (
+      <GuestGuard>
+        <SignIn />
+      </GuestGuard>
+    ),
+  },
+  {
+    path: "/dashboard/signup",
+    element: (
+      <GuestGuard>
+        <SignUp />
+      </GuestGuard>
+    ),
+  },
+  {
+    path: "/dashboard/forgot-password",
+    element: (
+      <GuestGuard>
+        <ForgotPassword />
+      </GuestGuard>
+    ),
+  },
 
   {
     path: "/dashboard",
-    Component: DashboardLayout,
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
     children: [
       { index: true, Component: Overview },
       { path: "drivers", Component: Drivers },
