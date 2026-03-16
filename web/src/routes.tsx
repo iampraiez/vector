@@ -12,6 +12,7 @@ import { DashboardReports as Reports } from "./features/dashboard/pages/Reports"
 import { DashboardSignIn as SignIn } from "./features/auth/pages/SignIn";
 import { DashboardSignUp as SignUp } from "./features/auth/pages/SignUp";
 import { ForgotPassword } from "./features/auth/pages/ForgotPassword";
+import { VerifyEmail } from "./features/auth/pages/VerifyEmail";
 import { DashboardNotifications as Notifications } from "./features/dashboard/pages/Notifications";
 import { Privacy } from "./features/marketing/pages/Privacy";
 import { Terms } from "./features/marketing/pages/Terms";
@@ -54,6 +55,14 @@ export const router = createBrowserRouter([
         element: (
           <GuestGuard>
             <ForgotPassword />
+          </GuestGuard>
+        ),
+      },
+      {
+        path: "/dashboard/verify-email",
+        element: (
+          <GuestGuard>
+            <VerifyEmail />
           </GuestGuard>
         ),
       },

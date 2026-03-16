@@ -20,6 +20,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   RefreshTokenDto,
+  ResendVerificationDto,
 } from './dto/auth.dto';
 import { JwtPayload, UserWithCompany } from './interfaces/auth.interface';
 
@@ -248,6 +249,27 @@ export class AuthService {
     });
 
     return { message: 'Email verified successfully.' };
+  }
+
+  async resendVerification(dto: ResendVerificationDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      // Quietly return even if user not found for security
+      return { message: 'If an account exists, a new code has been sent.' };
+    }
+
+    if (user.email_verified) {
+      throw new ConflictException('Email is already verified');
+    }
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.redis.set(`verify:${user.email}`, token, 3600);
+    await this.emailQueue.add('sendVerification', { email: user.email, token });
+
+    return { message: 'A new verification code has been sent to your inbox.' };
   }
 
   async refresh(dto: RefreshTokenDto) {

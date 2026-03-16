@@ -54,6 +54,19 @@ export function DashboardSignIn() {
       const error = err as AxiosError<{ message?: string }>;
       if (error.response?.data?.message) {
         setGlobalError(error.response.data.message);
+
+        // If error message indicates unverified email, redirect to verify-email
+        if (
+          error.response.data.message
+            .toLowerCase()
+            .includes("verify your email")
+        ) {
+          setTimeout(() => {
+            navigate(
+              `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
+            );
+          }, 2000);
+        }
       } else {
         setGlobalError("Failed to sign in. Please check your credentials.");
       }

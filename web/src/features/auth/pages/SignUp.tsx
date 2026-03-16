@@ -105,7 +105,9 @@ export function DashboardSignUp() {
 
       setSuccessMessage(res.data.message || "Account created successfully.");
       setTimeout(() => {
-        navigate("/dashboard/signin");
+        navigate(
+          `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
+        );
       }, 3000);
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
@@ -135,7 +137,7 @@ export function DashboardSignUp() {
           </h2>
           <p className="text-gray-500">{successMessage}</p>
           <p className="text-sm text-gray-400 mt-6">
-            Redirecting to sign in...
+            Redirecting to verification...
           </p>
         </div>
       </div>
