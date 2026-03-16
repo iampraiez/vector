@@ -71,7 +71,7 @@ export function DashboardSignIn() {
       </nav>
 
       {/* Main Form Area */}
-      <main className="flex-1 flex items-center justify-center p-6 md:p-12">
+      <main className="flex-1 flex flex-col items-center justify-start p-6 md:p-12 pt-12 md:pt-16">
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
           {/* Form Card */}
           <div className="bg-white border border-black/8 rounded-2xl p-8 md:p-10 shadow-xl shadow-black/5">

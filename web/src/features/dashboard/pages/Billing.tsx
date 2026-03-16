@@ -43,50 +43,46 @@ const invoices = [
 
 const plans = [
   {
-    id: "starter",
-    name: "Starter",
-    price: "$19",
+    id: "free",
+    name: "Free",
+    price: "$0",
     period: "/mo",
-    desc: "For small teams getting started",
+    desc: "For small teams and starters",
     features: [
-      "Up to 5 drivers",
-      "500 deliveries/month",
-      "Basic analytics",
+      "Up to 2 active drivers",
+      "Basic tracking",
+      "Standard orders",
       "Email support",
     ],
     current: false,
     highlight: false,
   },
   {
-    id: "professional",
-    name: "Professional",
-    price: "$49",
+    id: "starter",
+    name: "Starter",
+    price: "$29",
     period: "/mo",
     desc: "For growing delivery operations",
     features: [
-      "Up to 25 drivers",
-      "Unlimited deliveries",
+      "Up to 5 active drivers",
+      "Unlimited orders",
       "Advanced analytics",
       "Priority support",
-      "API access",
-      "Custom branding",
     ],
     current: true,
     highlight: false,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "$199",
+    id: "growth",
+    name: "Growth",
+    price: "$89",
     period: "/mo",
     desc: "For large-scale fleet operations",
     features: [
-      "Unlimited drivers",
-      "Dedicated account manager",
-      "Custom integrations",
+      "Up to 20 active drivers",
+      "Custom branding",
+      "API access",
       "SLA guarantee",
-      "SSO / SAML",
-      "White-label option",
     ],
     current: false,
     highlight: true,
@@ -95,6 +91,7 @@ const plans = [
 
 export function DashboardBilling() {
   const [showChangePlan, setShowChangePlan] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const usageItems = [
     { label: "Active Drivers", used: 12, total: 25, color: "bg-emerald-500" },
@@ -236,15 +233,31 @@ export function DashboardBilling() {
 
               {!plan.current && (
                 <button
-                  className={`w-full py-4 rounded-2xl text-[14px] font-bold transition-all ${
+                  onClick={() => {
+                    const planId = plan.id;
+                    setLoadingPlan(planId);
+                    setTimeout(() => setLoadingPlan(null), 1500);
+                  }}
+                  disabled={!!loadingPlan}
+                  className={`w-full py-4 rounded-2xl text-[14px] font-bold transition-all flex items-center justify-center gap-2 ${
                     plan.id === "enterprise"
                       ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
                       : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-black/5"
-                  } cursor-pointer`}
+                  } cursor-pointer disabled:opacity-70`}
                 >
-                  {plan.id === "enterprise"
-                    ? "Upgrade to Enterprise"
-                    : "Switch to this Plan"}
+                  {loadingPlan === plan.id ? (
+                    <div
+                      className={`w-5 h-5 border-2 rounded-full animate-spin ${
+                        plan.id === "enterprise"
+                          ? "border-white/30 border-t-white"
+                          : "border-emerald-600/30 border-t-emerald-600"
+                      }`}
+                    />
+                  ) : plan.id === "enterprise" ? (
+                    "Upgrade to Enterprise"
+                  ) : (
+                    "Switch to this Plan"
+                  )}
                 </button>
               )}
             </div>

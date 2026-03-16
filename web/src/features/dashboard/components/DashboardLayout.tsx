@@ -41,6 +41,7 @@ function DashboardSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setOpenMobile, isMobile } = useSidebar();
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const navItems = [
     { path: "/dashboard", icon: Squares2X2Icon, label: "Overview" },
@@ -67,6 +68,13 @@ function DashboardSidebar() {
     if (isMobile) {
       setOpenMobile(false);
     }
+  };
+
+  const handleSignOut = () => {
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      navigate("/dashboard/signin");
+    }, 1000);
   };
 
   return (
@@ -132,11 +140,16 @@ function DashboardSidebar() {
             </div>
             {/* Sign out icon button */}
             <button
-              onClick={() => handleNav("/dashboard/signin")}
+              onClick={handleSignOut}
+              disabled={isLoggingOut}
               title="Sign out"
-              className="shrink-0 p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200 cursor-pointer"
+              className="shrink-0 p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowRightStartOnRectangleIcon className="w-4.5 h-4.5" />
+              {isLoggingOut ? (
+                <div className="w-4.5 h-4.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ArrowRightStartOnRectangleIcon className="w-4.5 h-4.5" />
+              )}
             </button>
           </div>
         </div>

@@ -113,7 +113,7 @@ export function DashboardSignUp() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center py-10 px-6 md:px-12">
+      <main className="flex-1 flex flex-col items-center justify-start p-6 md:p-12 pt-12 md:pt-16">
         <div className="w-full max-w-md">
           {/* Progress Indicator */}
           <div className="flex items-center justify-between mb-10 px-4 relative">
@@ -199,7 +199,7 @@ export function DashboardSignUp() {
                             ? "border-emerald-500 ring-4 ring-emerald-600/5"
                             : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
                         }`}
-                        placeholder="you@company.com"
+                        placeholder="alexrivera@company.com"
                       />
                       {emailValid && (
                         <CheckCircleIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-emerald-600 animate-in zoom-in" />
@@ -220,7 +220,7 @@ export function DashboardSignUp() {
                           setFormData({ ...formData, password: e.target.value })
                         }
                         className="w-full h-12 pl-11 pr-12 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
-                        placeholder="Min. 8 characters"
+                        placeholder="********"
                       />
                       <button
                         type="button"

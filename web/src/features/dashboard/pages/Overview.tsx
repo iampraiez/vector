@@ -7,19 +7,11 @@ import {
   ArrowTrendingUpIcon,
   BanknotesIcon,
   MapPinIcon,
-  ClockIcon,
   SignalIcon,
   ChevronRightIcon,
-  PlusIcon,
-  CheckCircleIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../../../components/ui/dialog";
+import { NewOrderModal } from "../components/NewOrderModal";
 
 const today = new Date().toLocaleDateString("en-US", {
   weekday: "long",
@@ -32,14 +24,6 @@ export function DashboardOverview() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
-  const [newOrder, setNewOrder] = useState({
-    customer: "",
-    address: "",
-    packages: "1",
-    timeWindow: "",
-    notes: "",
-  });
-  const [orderSaved, setOrderSaved] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 600);
@@ -153,18 +137,7 @@ export function DashboardOverview() {
   };
 
   const handleSaveOrder = () => {
-    setOrderSaved(true);
-    setTimeout(() => {
-      setOrderSaved(false);
-      setShowNewOrderModal(false);
-      setNewOrder({
-        customer: "",
-        address: "",
-        packages: "1",
-        timeWindow: "",
-        notes: "",
-      });
-    }, 1200);
+    setShowNewOrderModal(false);
   };
 
   if (loading) {
@@ -201,13 +174,6 @@ export function DashboardOverview() {
             >
               <SignalIcon className="w-4 h-4 text-emerald-600" />
               Live Tracking
-            </button>
-            <button
-              onClick={() => setShowNewOrderModal(true)}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-[13px] font-bold transition-all duration-200 shadow-xl shadow-emerald-600/10 hover:bg-emerald-700 active:scale-95 cursor-pointer"
-            >
-              <PlusIcon className="w-4 h-4" />
-              New Order
             </button>
           </div>
         </div>
@@ -377,131 +343,12 @@ export function DashboardOverview() {
           </div>
         </div>
       </div>
-      {/* New Order Modal */}
-      <Dialog
+      <NewOrderModal
         open={showNewOrderModal}
-        onOpenChange={(open) => !open && setShowNewOrderModal(false)}
-      >
-        <DialogContent className="max-w-lg p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
-          <DialogHeader className="p-6 md:p-8 border-b border-gray-100 bg-white">
-            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
-              New Order
-            </DialogTitle>
-            <p className="text-[13px] text-gray-500 mt-1">
-              Create a delivery order and assign it later
-            </p>
-          </DialogHeader>
-
-          <div className="p-6 md:p-8 space-y-5 bg-white overflow-y-auto max-h-[60vh]">
-            {[
-              {
-                label: "Customer Name",
-                key: "customer",
-                placeholder: "e.g. Acme Corporation",
-                type: "text",
-              },
-              {
-                label: "Delivery Address",
-                key: "address",
-                placeholder: "e.g. 123 Main St, Springfield, IL",
-                type: "text",
-              },
-              {
-                label: "Time Window",
-                key: "timeWindow",
-                placeholder: "e.g. 9:00 AM – 11:00 AM",
-                type: "text",
-              },
-            ].map(({ label, key, placeholder, type }) => (
-              <div key={key}>
-                <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
-                  {label}
-                </label>
-                <input
-                  type={type}
-                  placeholder={placeholder}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  value={(newOrder as any)[key]}
-                  onChange={(e) =>
-                    setNewOrder((p) => ({ ...p, [key]: e.target.value }))
-                  }
-                  className="w-full px-4 py-2.5 border border-black/5 bg-gray-50/50 rounded-lg text-[13px] font-medium outline-none transition-all duration-200 focus:border-emerald-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(5,150,105,0.06)] placeholder:text-gray-300"
-                />
-              </div>
-            ))}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
-                  Packages
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newOrder.packages}
-                  onChange={(e) =>
-                    setNewOrder((p) => ({ ...p, packages: e.target.value }))
-                  }
-                  className="w-full px-4 py-2.5 border border-black/5 bg-gray-50/50 rounded-lg text-[13px] font-medium outline-none transition-all duration-200 focus:border-emerald-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(5,150,105,0.06)]"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
-                  Priority
-                </label>
-                <select className="w-full px-4 py-2.5 border border-black/5 bg-gray-50/50 rounded-lg text-[13px] font-medium outline-none cursor-pointer transition-all duration-200 focus:border-emerald-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(5,150,105,0.06)] appearance-none">
-                  <option value="normal">Normal</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">
-                Notes (optional)
-              </label>
-              <textarea
-                placeholder="e.g. Leave at front desk..."
-                value={newOrder.notes}
-                onChange={(e) =>
-                  setNewOrder((p) => ({ ...p, notes: e.target.value }))
-                }
-                rows={2}
-                className="w-full px-4 py-2.5 border border-black/5 bg-gray-50/50 rounded-lg text-[13px] font-medium outline-none font-sans resize-none transition-all duration-200 focus:border-emerald-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(5,150,105,0.06)] placeholder:text-gray-300"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="p-6 md:p-8 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between">
-            <button
-              onClick={() => setShowNewOrderModal(false)}
-              className="flex-1 py-3 bg-white border border-black/5 rounded-lg text-[13px] font-bold text-gray-500 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveOrder}
-              disabled={!newOrder.customer || !newOrder.address}
-              className={`flex-1 py-3 rounded-lg text-[13px] font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
-                orderSaved
-                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-none"
-                  : "bg-emerald-600 text-white shadow-xl shadow-emerald-600/10 hover:bg-emerald-700 active:scale-95"
-              } ${
-                !newOrder.customer || !newOrder.address
-                  ? "opacity-50 cursor-not-allowed"
-                  : "cursor-pointer"
-              }`}
-            >
-              {orderSaved ? (
-                <>
-                  <CheckCircleIcon className="w-4 h-4" />
-                  Order Created
-                </>
-              ) : (
-                "Create Order"
-              )}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setShowNewOrderModal}
+        onClose={() => setShowNewOrderModal(false)}
+        onCreate={handleSaveOrder}
+      />
     </>
   );
 }

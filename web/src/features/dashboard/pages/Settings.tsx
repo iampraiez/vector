@@ -91,6 +91,16 @@ function DataCleaningModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = () => {
+    setLoading(true);
+    setTimeout(() => {
+      onConfirm();
+      setLoading(false);
+    }, 1000);
+  };
+
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -111,10 +121,15 @@ function DataCleaningModal({
         </p>
         <div className="flex flex-col gap-3">
           <button
-            onClick={onConfirm}
-            className="w-full py-4 bg-red-600 text-white font-bold text-[14px] rounded-2xl hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+            onClick={handleConfirm}
+            disabled={loading}
+            className="w-full py-4 bg-red-600 text-white font-bold text-[14px] rounded-2xl hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20 disabled:opacity-70 flex items-center justify-center"
           >
-            Yes, Clear Everything
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              "Yes, Clear Everything"
+            )}
           </button>
           <button
             onClick={onClose}
@@ -137,6 +152,7 @@ function DeleteAccountModal({
 }) {
   const [step, setStep] = useState(1); // 1: Confirmation, 2: Code Verification, 3: Success message
   const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -193,10 +209,19 @@ function DeleteAccountModal({
                 const val = e.target.value.replace(/\D/g, "");
                 setCode(val);
                 if (val.length === 6) {
-                  setTimeout(() => setStep(3), 800);
+                  setLoading(true);
+                  setTimeout(() => {
+                    setLoading(false);
+                    setStep(3);
+                  }, 1200);
                 }
               }}
             />
+            {loading && (
+              <div className="flex justify-center mt-4">
+                <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             <p className="text-[12px] text-center text-gray-400 font-medium">
               Didn't receive it?{" "}
               <button className="text-emerald-600 font-bold hover:underline">
@@ -222,10 +247,20 @@ function DeleteAccountModal({
               </span>
             </p>
             <button
-              onClick={() => (window.location.href = "/login")}
-              className="w-full py-4 bg-gray-900 text-white font-bold text-[14px] rounded-2xl shadow-xl shadow-gray-900/20 hover:-translate-y-1 transition-all"
+              onClick={() => {
+                setLoading(true);
+                setTimeout(() => {
+                  window.location.href = "/dashboard/signin";
+                }, 1000);
+              }}
+              disabled={loading}
+              className="w-full py-4 bg-gray-900 text-white font-bold text-[14px] rounded-2xl shadow-xl shadow-gray-900/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
             >
-              Log Out Now
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                "Log Out Now"
+              )}
             </button>
           </div>
         )}
@@ -422,12 +457,14 @@ export function DashboardSettings() {
                 <div className="flex items-center gap-3 pt-6 border-t border-gray-50">
                   <button
                     onClick={handleSaveCompany}
-                    className="px-6 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-2"
+                    disabled={companySaved}
+                    className="px-6 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 min-w-40"
                   >
                     {companySaved ? (
-                      <CheckCircleIcon className="w-4.5 h-4.5" />
-                    ) : null}
-                    {companySaved ? "Workspace Updated" : "Save Changes"}
+                      <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      "Save Changes"
+                    )}
                   </button>
                   <button
                     onClick={() => setEditingCompany(false)}
