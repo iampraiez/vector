@@ -11,6 +11,7 @@ import { DashboardSettings as Settings } from "./features/dashboard/pages/Settin
 import { DashboardReports as Reports } from "./features/dashboard/pages/Reports";
 import { DashboardSignIn as SignIn } from "./features/auth/pages/SignIn";
 import { DashboardSignUp as SignUp } from "./features/auth/pages/SignUp";
+import { ForgotPassword } from "./features/auth/pages/ForgotPassword";
 import { DashboardNotifications as Notifications } from "./features/dashboard/pages/Notifications";
 
 import { DashboardLayout } from "./features/dashboard/components/DashboardLayout";
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
 
   { path: "/dashboard/signin", Component: SignIn },
   { path: "/dashboard/signup", Component: SignUp },
+  { path: "/dashboard/forgot-password", Component: ForgotPassword },
 
   {
     path: "/dashboard",

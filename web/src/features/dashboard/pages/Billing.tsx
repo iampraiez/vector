@@ -119,56 +119,50 @@ export function DashboardBilling() {
         </p>
       </div>
 
-      {/* Hero Current Plan Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 to-emerald-800 p-8 md:p-10 mb-8 shadow-xl shadow-emerald-600/20">
-        {/* Abstract background shapes */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full -ml-10 -mb-10 blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-8">
-          <div className="flex-1 min-w-70">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full mb-6 border border-white/10">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+      {/* Current Plan Section */}
+      <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="flex-1 min-w-60">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full mb-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
                 Active Plan
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
               Fleet Professional
             </h2>
-            <div className="flex items-center gap-4 text-emerald-50/80 text-[14px]">
+            <div className="flex flex-wrap items-center gap-4 text-gray-500 text-[13px]">
               <p>
                 Next billing:{" "}
-                <span className="font-bold text-white underline decoration-emerald-400">
-                  April 1, 2026
-                </span>
+                <span className="font-bold text-gray-700">April 1, 2026</span>
               </p>
-              <div className="w-1 h-1 rounded-full bg-white/20" />
+              <div className="w-1 h-1 rounded-full bg-gray-200" />
               <p>
-                Credit: <span className="text-white font-bold">$0.00</span>
+                Credit: <span className="font-bold text-gray-700">$0.00</span>
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col items-center md:items-end gap-6 w-full md:w-auto">
-            <div className="text-center md:text-right">
+          <div className="flex flex-col items-start md:items-end gap-4">
+            <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-bold text-white">
+                <span className="text-3xl md:text-4xl font-bold text-gray-900">
                   $49
                 </span>
-                <span className="text-emerald-100/50 font-bold tracking-wider">
+                <span className="text-gray-400 font-semibold tracking-wider text-[13px]">
                   /mo
                 </span>
               </div>
-              <p className="text-[12px] text-emerald-100/60 font-bold uppercase tracking-wider mt-1">
+              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
                 Billed monthly
               </p>
             </div>
             <button
               onClick={() => setShowChangePlan(!showChangePlan)}
-              className="w-full md:w-auto px-6 py-3 bg-white text-emerald-700 font-bold text-[14px] rounded-2xl shadow-lg transition-all hover:bg-emerald-50 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+              className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl shadow-sm transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center gap-2"
             >
-              {showChangePlan ? "Hide Plans" : "Change Subscription Plan"}
+              {showChangePlan ? "Hide Plans" : "Change Plan"}
               <ChevronRightIcon
                 className={`w-4 h-4 transition-transform ${showChangePlan ? "rotate-90" : ""}`}
               />

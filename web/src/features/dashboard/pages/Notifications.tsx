@@ -82,18 +82,18 @@ const INITIAL: Notification[] = [
     id: 7,
     type: "system",
     category: "system",
-    title: "CSV import completed",
-    body: "12 orders imported successfully from today's upload.",
-    time: "2 hours ago",
+    title: "System update applied",
+    body: "Vector platform updated to v2.5.1. Route optimisation accuracy improved by 12%.",
+    time: "3 hours ago",
     read: true,
   },
   {
     id: 8,
-    type: "system",
-    category: "system",
-    title: "Weekly report ready",
-    body: "Your fleet performance report for the week of Mar 1–7 is available.",
-    time: "8 hours ago",
+    type: "driver",
+    category: "drivers",
+    title: "New driver onboarded",
+    body: "Maria Santos completed onboarding and is now available for assignment.",
+    time: "5 hours ago",
     read: true,
   },
   {
@@ -172,7 +172,7 @@ export function DashboardNotifications() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-200 mx-auto pb-24">
+    <div className="p-4 md:p-8 max-w-3xl mx-auto pb-24">
       {/* Header Section */}
       <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
         <div>
@@ -203,159 +203,110 @@ export function DashboardNotifications() {
           {filtered.length > 0 && (
             <button
               onClick={clearCurrent}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-black/5 rounded-xl text-[12px] font-bold text-gray-400 hover:bg-white hover:shadow-lg hover:border-red-600/30 hover:text-red-600 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-black/5 rounded-xl text-[12px] font-bold text-gray-500 hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all cursor-pointer"
             >
               <TrashIcon className="w-4 h-4" />
-              Clear {activeCategory === "all" ? "All" : activeCategory}
+              Clear
             </button>
           )}
         </div>
       </div>
 
-      {/* Category Filter Tabs */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-gray-100/80 rounded-2xl w-fit mb-8 overflow-x-auto scrollbar-hide max-w-full">
-        {CATEGORIES.map(({ key, label }) => {
-          const isActive = activeCategory === key;
+      {/* Category Filter */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
+        {CATEGORIES.map((cat) => {
           const count =
-            key === "all"
-              ? notifications.filter((n) => !n.read).length
-              : notifications.filter((n) => n.category === key && !n.read)
-                  .length;
-
+            cat.key === "all"
+              ? notifications.length
+              : notifications.filter((n) => n.category === cat.key).length;
           return (
             <button
-              key={key}
-              onClick={() => setActiveCategory(key)}
-              className={`relative flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
-                isActive
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold border whitespace-nowrap transition-all cursor-pointer ${
+                activeCategory === cat.key
+                  ? "bg-emerald-600 text-white border-transparent shadow-lg shadow-emerald-600/20"
+                  : "bg-white text-gray-500 border-black/5 hover:border-emerald-600/30 hover:text-emerald-600"
               }`}
             >
-              {label}
-              {count > 0 && (
-                <span
-                  className={`w-5 h-5 flex items-center justify-center text-[10px] rounded-full font-extrabold ${
-                    isActive
-                      ? "bg-emerald-600 text-white"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
+              {cat.label}
+              <span
+                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                  activeCategory === cat.key
+                    ? "bg-white/20 text-white"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {/* List Content */}
-      <div className="space-y-4">
-        {filtered.length === 0 ? (
-          <div className="bg-white border-2 border-dashed border-gray-100 rounded-4xl py-16 px-8 text-center flex flex-col items-center">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-              <BellIcon className="w-10 h-10 text-gray-200" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-400">All caught up!</h3>
-            <p className="text-[13px] text-gray-300 max-w-xs mx-auto mt-2">
-              You don't have any notifications in this category. We'll let you
-              know when something happens.
-            </p>
+      {/* Notification List */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-5">
+            <BellIcon className="w-8 h-8 text-gray-300" />
           </div>
-        ) : (
-          <div className="bg-white border border-black/8 rounded-4xl overflow-hidden shadow-sm shadow-black/5 divide-y divide-gray-50">
-            {filtered.map((notif) => {
-              const Icon = iconMap[notif.type];
-              return (
-                <div
-                  key={notif.id}
-                  onClick={() => markRead(notif.id)}
-                  className={`group relative flex gap-5 p-6 md:p-8 transition-all duration-300 cursor-pointer ${
-                    !notif.read
-                      ? "bg-gray-50/50 hover:bg-white"
-                      : "hover:bg-gray-50/30"
-                  }`}
-                >
-                  {/* Unread Indicator Bar */}
-                  {!notif.read && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 animate-in fade-in duration-700" />
-                  )}
-
-                  {/* Notification Icon */}
-                  <div
-                    className={`w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300 ${categoryColors[notif.type]}`}
-                  >
-                    <Icon className="w-6 h-6 md:w-7 md:h-7" />
-                  </div>
-
-                  {/* Text Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-4 mb-1">
-                      <h4
-                        className={`text-[15px] font-bold truncate tracking-tight transition-colors ${
-                          !notif.read
-                            ? "text-gray-900 group-hover:text-emerald-600"
-                            : "text-gray-600"
-                        }`}
-                      >
-                        {notif.title}
-                      </h4>
-                      <span className="text-[11px] font-bold text-gray-400 whitespace-nowrap uppercase tracking-widest">
-                        {notif.time}
-                      </span>
-                    </div>
-                    <p
-                      className={`text-[13px] leading-relaxed mb-4 ${
-                        !notif.read ? "text-gray-600" : "text-gray-400"
-                      }`}
-                    >
-                      {notif.body}
-                    </p>
-
-                    <div className="flex items-center gap-4">
-                      {!notif.read && (
-                        <button className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest hover:underline">
-                          Mark as read
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          remove(notif.id);
-                        }}
-                        className="text-[11px] font-bold text-gray-300 uppercase tracking-widest hover:text-red-500 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Context Action Button (appears on hover) */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        remove(notif.id);
-                      }}
-                      className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors shadow-sm"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Footer Meta */}
-      {filtered.length > 0 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <InformationCircleIcon className="w-4 h-4 text-gray-300" />
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px]">
-            Showing {filtered.length} updates · System archiving in 30 days
+          <p className="text-[15px] font-bold text-gray-400 mb-1">All clear</p>
+          <p className="text-[13px] text-gray-300 font-medium">
+            No notifications in this category
           </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((n) => {
+            const Icon = iconMap[n.type];
+            const colorClass = categoryColors[n.type];
+            return (
+              <div
+                key={n.id}
+                onClick={() => markRead(n.id)}
+                className={`group flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
+                  n.read
+                    ? "bg-white border-black/5 hover:border-black/10"
+                    : "bg-white border-emerald-600/15 shadow-sm shadow-emerald-600/5 hover:border-emerald-600/25"
+                }`}
+              >
+                <div
+                  className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${colorClass}`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <p
+                      className={`text-[14px] leading-snug ${n.read ? "font-medium text-gray-700" : "font-bold text-gray-900"}`}
+                    >
+                      {n.title}
+                      {!n.read && (
+                        <span className="ml-2 inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full align-middle" />
+                      )}
+                    </p>
+                    <span className="flex-shrink-0 text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                      {n.time}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-gray-400 mt-1 leading-relaxed">
+                    {n.body}
+                  </p>
+                </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    remove(n.id);
+                  }}
+                  className="self-start flex-shrink-0 p-1.5 rounded-lg text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 transition-all cursor-pointer"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

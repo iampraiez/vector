@@ -8,7 +8,7 @@ import {
   ChartBarIcon,
   CreditCardIcon,
   Cog6ToothIcon,
-  PowerIcon,
+  ArrowRightStartOnRectangleIcon,
   BellIcon,
   TruckIcon,
 } from "@heroicons/react/24/outline";
@@ -24,14 +24,16 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "../../../components/ui/sidebar";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "../../../components/ui/avatar";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
+}
+
+const USER_NAME = "Fleet Manager";
+const USER_EMAIL = "manager@vector.com";
+
+function getInitial(name: string) {
+  return name.trim().charAt(0).toUpperCase();
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -61,21 +63,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
       <Sidebar variant="inset" className="border-r border-black/5 bg-white">
-        <SidebarHeader className="p-6 border-b border-black/5">
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
+        {/* ── Brand header ── */}
+        <SidebarHeader className="px-5 py-5 border-b border-black/5">
+          <div
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2.5 cursor-pointer group w-fit"
+          >
+            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
               <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
             </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">
+            <span className="text-[17px] font-extrabold tracking-tight text-gray-900">
               VECTOR
             </span>
           </div>
-          <p className="text-[10px] text-gray-400 tracking-[1px] uppercase font-bold mt-2 ml-11">
-            Fleet Management
-          </p>
         </SidebarHeader>
 
-        <SidebarContent className="p-4">
+        {/* ── Nav items ── */}
+        <SidebarContent className="p-3 flex-1">
           <SidebarMenu>
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -85,14 +89,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <SidebarMenuButton
                     isActive={active}
                     onClick={() => navigate(item.path)}
-                    className={`gap-3 px-4 py-6 rounded-xl transition-all duration-300 ${
+                    className={`gap-3 px-3.5 py-5 rounded-xl transition-all duration-200 ${
                       active
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
-                        : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-200"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-semibold">{item.label}</span>
+                    <Icon className="w-4.5 h-4.5 shrink-0" />
+                    <span className="font-semibold text-[13.5px]">
+                      {item.label}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );
@@ -100,45 +106,54 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </SidebarMenu>
         </SidebarContent>
 
-        <SidebarFooter className="p-4 border-t border-black/5">
-          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-            <Avatar className="w-10 h-10 border-2 border-emerald-100 group-hover:border-emerald-300 transition-colors">
-              <AvatarImage src="" />
-              <AvatarFallback className="bg-emerald-600 text-white font-bold">
-                FM
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 leading-tight">
-                Fleet Manager
-              </p>
-              <p className="text-xs text-gray-400 truncate">
-                manager@vector.com
-              </p>
+        {/* ── User footer ── */}
+        <SidebarFooter className="p-3 border-t border-black/5">
+          <div className="bg-gray-50 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              {/* Avatar — single initial */}
+              <div className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-linear-to-br from-emerald-600 to-emerald-800 text-white text-[14px] font-black tracking-tight select-none">
+                {getInitial(USER_NAME)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-gray-900 leading-tight truncate">
+                  {USER_NAME}
+                </p>
+                <p className="text-[11px] text-gray-400 truncate font-medium">
+                  {USER_EMAIL}
+                </p>
+              </div>
+              {/* Sign out icon button */}
+              <button
+                onClick={() => navigate("/dashboard/signin")}
+                title="Sign out"
+                className="shrink-0 p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200 cursor-pointer"
+              >
+                <ArrowRightStartOnRectangleIcon className="w-4.5 h-4.5" />
+              </button>
             </div>
           </div>
-          <button
-            onClick={() => navigate("/dashboard/signin")}
-            className="mt-4 w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100 hover:bg-red-100 transition-all duration-300"
-          >
-            <PowerIcon className="w-4 h-4" />
-            Sign out
-          </button>
         </SidebarFooter>
       </Sidebar>
 
+      {/* ── Main content area ── */}
       <SidebarInset className="bg-gray-50/50">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-black/5 bg-white/80 backdrop-blur-md px-6 md:hidden">
-          <SidebarTrigger />
-          <div className="flex items-center gap-2.5">
+        {/* Mobile sticky header */}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-black/5 bg-white/90 backdrop-blur-md px-4 md:hidden">
+          <div
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 cursor-pointer"
+          >
             <div className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
               <TruckIcon className="w-4 h-4 text-white" strokeWidth={2.4} />
             </div>
-            <span className="font-bold text-gray-900 tracking-tight">
+            <span className="font-extrabold text-[15px] text-gray-900 tracking-tight">
               VECTOR
             </span>
           </div>
+          <div className="flex-1" />
+          <SidebarTrigger className="text-gray-500 hover:text-gray-900 transition-colors" />
         </header>
+
         <main className="flex-1 overflow-y-auto w-full max-w-400 mx-auto">
           {children || <Outlet />}
         </main>
