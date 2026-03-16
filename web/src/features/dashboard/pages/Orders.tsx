@@ -511,63 +511,98 @@ function EditOrderModal({
 
   return (
     <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-5 md:p-6 border-b border-gray-100 bg-white shrink-0">
+      <DialogContent className="max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0">
           <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
             Edit Order #{order.id}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="p-5 md:p-6 space-y-4 bg-white overflow-y-auto">
-          <ModalInput
-            label="Customer Name"
-            value={form.customerName}
-            onChange={(v) => setForm({ ...form, customerName: v })}
-          />
-          <ModalInput
-            label="Address"
-            value={form.address}
-            onChange={(v) => setForm({ ...form, address: v })}
-          />
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex-1 overflow-y-auto min-h-0 bg-white">
+          <div className="p-5 space-y-4">
             <ModalInput
-              label="Packages"
-              value={form.packages.toString()}
-              type="number"
-              onChange={(v) => setForm({ ...form, packages: parseInt(v) || 0 })}
+              label="Customer Name"
+              value={form.customerName}
+              onChange={(v) => setForm({ ...form, customerName: v })}
             />
             <ModalInput
-              label="Time Window"
-              value={form.timeWindow}
-              onChange={(v) => setForm({ ...form, timeWindow: v })}
+              label="Address"
+              value={form.address}
+              onChange={(v) => setForm({ ...form, address: v })}
             />
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-              Assign Driver
-            </label>
-            <select
-              value={form.assignedTo || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  assignedTo: e.target.value || undefined,
-                  status: e.target.value ? "assigned" : "unassigned",
-                })
-              }
-              className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] font-medium outline-none focus:border-emerald-600 transition-colors cursor-pointer"
-            >
-              <option value="">Unassigned</option>
-              {drivers.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-4">
+              <ModalInput
+                label="Packages"
+                value={form.packages.toString()}
+                type="number"
+                onChange={(v) =>
+                  setForm({ ...form, packages: parseInt(v) || 0 })
+                }
+              />
+              <ModalInput
+                label="Time Window"
+                value={form.timeWindow}
+                onChange={(v) => setForm({ ...form, timeWindow: v })}
+              />
+            </div>
+
+            {/* Scrollable Driver Selection */}
+            <div>
+              <label className="block text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2.5">
+                Assign Driver
+              </label>
+              <div className="bg-gray-50 border border-black/8 rounded-xl overflow-hidden">
+                <div className="max-h-45 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+                  <div className="divide-y divide-black/5">
+                    <button
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          assignedTo: undefined,
+                          status: "unassigned",
+                        })
+                      }
+                      className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
+                        !form.assignedTo
+                          ? "bg-emerald-50 text-emerald-600 font-bold"
+                          : "text-gray-500 hover:bg-white"
+                      }`}
+                    >
+                      Unassigned
+                      {!form.assignedTo && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      )}
+                    </button>
+                    {drivers.map((d) => (
+                      <button
+                        key={d}
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            assignedTo: d,
+                            status: "assigned",
+                          })
+                        }
+                        className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
+                          form.assignedTo === d
+                            ? "bg-emerald-50 text-emerald-600 font-bold"
+                            : "text-gray-700 hover:bg-white"
+                        }`}
+                      >
+                        {d}
+                        {form.assignedTo === d && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="p-5 md:p-6 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between shrink-0">
+        <DialogFooter className="p-5 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between shrink-0">
           <button
             onClick={onClose}
             className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
@@ -638,8 +673,8 @@ function UploadCSVModal({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-5 md:p-6 border-b border-gray-100 bg-white shrink-0">
+      <DialogContent className="max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0">
           <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
             Upload CSV
           </DialogTitle>
@@ -699,27 +734,34 @@ function UploadCSVModal({
                   </p>
                 </div>
               </div>
-              <div className="border border-black/8 rounded-xl overflow-hidden overflow-x-auto">
+              <div className="border border-black/8 rounded-xl overflow-hidden max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
                 <table className="w-full text-[11px] text-left">
-                  <tr className="bg-gray-50 border-b border-black/5">
-                    {preview[0]?.map((c, i) => (
-                      <th key={i} className="px-3 py-2 font-bold text-gray-400">
-                        {c}
-                      </th>
-                    ))}
-                  </tr>
-                  {preview.slice(1, 4).map((r, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-black/5 last:border-0"
-                    >
-                      {r.map((c, j) => (
-                        <td key={j} className="px-3 py-2 text-gray-600">
+                  <thead className="sticky top-0 z-10 bg-gray-50 border-b border-black/5 shadow-sm">
+                    <tr>
+                      {preview[0]?.map((c, i) => (
+                        <th
+                          key={i}
+                          className="px-3 py-2.5 font-bold text-gray-400"
+                        >
                           {c}
-                        </td>
+                        </th>
                       ))}
                     </tr>
-                  ))}
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {preview.slice(1).map((r, i) => (
+                      <tr
+                        key={i}
+                        className="bg-white hover:bg-gray-50 transition-colors"
+                      >
+                        {r.map((c, j) => (
+                          <td key={j} className="px-3 py-2 text-gray-600">
+                            {c}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
               <button
@@ -732,7 +774,7 @@ function UploadCSVModal({
           )}
         </div>
 
-        <DialogFooter className="p-5 md:p-6 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between shrink-0">
+        <DialogFooter className="p-5 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between shrink-0">
           <button
             onClick={onClose}
             className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"

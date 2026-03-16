@@ -153,7 +153,13 @@ export function DashboardSignUp() {
           <div className="bg-white border border-black/8 rounded-2xl p-8 md:p-10 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* --- STEP 1: ACCOUNT --- */}
             {step === "account" && (
-              <div className="animate-in slide-in-from-right-4 duration-500">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleNext();
+                }}
+                className="animate-in slide-in-from-right-4 duration-500"
+              >
                 <div className="mb-7">
                   <h1 className="text-2xl font-extrabold text-gray-900 mb-1.5 tracking-tight">
                     Create your account
@@ -165,13 +171,18 @@ export function DashboardSignUp() {
 
                 <div className="space-y-5">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    <label
+                      htmlFor="signup-name"
+                      className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                    >
                       Full Name
                     </label>
                     <div className="relative group">
                       <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-300 group-focus-within:text-emerald-600 transition-colors" />
                       <input
+                        id="signup-name"
                         type="text"
+                        autoComplete="name"
                         value={formData.fullName}
                         onChange={(e) =>
                           setFormData({ ...formData, fullName: e.target.value })
@@ -183,13 +194,18 @@ export function DashboardSignUp() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    <label
+                      htmlFor="signup-email"
+                      className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                    >
                       Work Email
                     </label>
                     <div className="relative group">
                       <EnvelopeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-300 group-focus-within:text-emerald-600 transition-colors" />
                       <input
+                        id="signup-email"
                         type="email"
+                        autoComplete="email"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
@@ -199,7 +215,7 @@ export function DashboardSignUp() {
                             ? "border-emerald-500 ring-4 ring-emerald-600/5"
                             : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
                         }`}
-                        placeholder="alexrivera@company.com"
+                        placeholder="name@company.com"
                       />
                       {emailValid && (
                         <CheckCircleIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-emerald-600 animate-in zoom-in" />
@@ -208,19 +224,24 @@ export function DashboardSignUp() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    <label
+                      htmlFor="signup-password"
+                      className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                    >
                       Password
                     </label>
                     <div className="relative group">
                       <LockClosedIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-300 group-focus-within:text-emerald-600 transition-colors" />
                       <input
+                        id="signup-password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
                         className="w-full h-12 pl-11 pr-12 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
-                        placeholder="********"
+                        placeholder="••••••••"
                       />
                       <button
                         type="button"
@@ -237,7 +258,7 @@ export function DashboardSignUp() {
                   </div>
 
                   <button
-                    onClick={handleNext}
+                    type="submit"
                     disabled={!step1Valid}
                     className={`w-full h-12 mt-1 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
                       step1Valid
@@ -249,13 +270,20 @@ export function DashboardSignUp() {
                     <ArrowRightIcon className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
+              </form>
             )}
 
             {/* --- STEP 2: COMPANY --- */}
             {step === "company" && (
-              <div className="animate-in slide-in-from-right-4 duration-500">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleNext();
+                }}
+                className="animate-in slide-in-from-right-4 duration-500"
+              >
                 <button
+                  type="button"
                   onClick={() => setStep("account")}
                   className="flex items-center gap-2 text-[12px] font-bold text-gray-300 hover:text-gray-700 mb-7 transition-colors group cursor-pointer"
                 >
@@ -273,13 +301,18 @@ export function DashboardSignUp() {
 
                 <div className="space-y-6">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    <label
+                      htmlFor="signup-company"
+                      className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                    >
                       Fleet name
                     </label>
                     <div className="relative group">
                       <BuildingOffice2Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-300 group-focus-within:text-emerald-600 transition-colors" />
                       <input
+                        id="signup-company"
                         type="text"
+                        autoComplete="organization"
                         value={formData.companyName}
                         onChange={(e) =>
                           setFormData({
@@ -301,6 +334,7 @@ export function DashboardSignUp() {
                       {["1–3", "4–10", "11–25", "26–50", "50+"].map((size) => (
                         <button
                           key={size}
+                          type="button"
                           onClick={() =>
                             setFormData({ ...formData, companySize: size })
                           }
@@ -317,7 +351,7 @@ export function DashboardSignUp() {
                   </div>
 
                   <button
-                    onClick={handleNext}
+                    type="submit"
                     disabled={!step2Valid}
                     className={`w-full h-12 mt-1 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
                       step2Valid
@@ -329,7 +363,7 @@ export function DashboardSignUp() {
                     <ArrowRightIcon className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
+              </form>
             )}
 
             {/* --- STEP 3: PLAN --- */}
@@ -409,11 +443,11 @@ export function DashboardSignUp() {
 
                 <p className="text-[11px] text-gray-300 font-medium text-center mt-5 leading-relaxed">
                   By launching, you agree to VECTOR's{" "}
-                  <a href="#" className="underline text-gray-400">
+                  <a href="/terms" className="underline text-gray-400">
                     Terms of Service
                   </a>{" "}
                   and{" "}
-                  <a href="#" className="underline text-gray-400">
+                  <a href="/privacy" className="underline text-gray-400">
                     Privacy Policy
                   </a>
                   .

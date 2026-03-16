@@ -36,12 +36,6 @@ export function DashboardSignIn() {
     }, 1500);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && emailValid && password.length >= 8) {
-      handleSignIn();
-    }
-  };
-
   const canSubmit = emailValid && password.length >= 8 && !loading;
 
   return (
@@ -95,10 +89,19 @@ export function DashboardSignIn() {
             )}
 
             {/* Form Fields */}
-            <div className="space-y-5">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSignIn();
+              }}
+              className="space-y-5"
+            >
               {/* Email Field */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                <label
+                  htmlFor="signin-email"
+                  className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                >
                   Email address
                 </label>
                 <div className="relative group">
@@ -108,10 +111,10 @@ export function DashboardSignIn() {
                   <input
                     id="signin-email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="you@company.com"
+                    placeholder="name@company.com"
                     className={`w-full h-12 pl-11 pr-11 bg-white border rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
                       emailValid
                         ? "border-emerald-500 ring-4 ring-emerald-600/5"
@@ -129,10 +132,14 @@ export function DashboardSignIn() {
               {/* Password Field */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                  <label
+                    htmlFor="signin-password"
+                    className="text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                  >
                     Password
                   </label>
                   <button
+                    type="button"
                     onClick={() => navigate("/dashboard/forgot-password")}
                     className="text-[12px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
                   >
@@ -146,10 +153,10 @@ export function DashboardSignIn() {
                   <input
                     id="signin-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Your password"
+                    placeholder="••••••••"
                     className="w-full h-12 pl-11 pr-12 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
                   />
                   <button
@@ -168,8 +175,8 @@ export function DashboardSignIn() {
 
               {/* Submit Button */}
               <button
+                type="submit"
                 id="signin-submit"
-                onClick={handleSignIn}
                 disabled={!canSubmit}
                 className={`w-full h-12 mt-2 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
                   canSubmit
@@ -189,7 +196,7 @@ export function DashboardSignIn() {
                   </>
                 )}
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Footer */}

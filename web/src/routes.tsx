@@ -13,14 +13,18 @@ import { DashboardSignIn as SignIn } from "./features/auth/pages/SignIn";
 import { DashboardSignUp as SignUp } from "./features/auth/pages/SignUp";
 import { ForgotPassword } from "./features/auth/pages/ForgotPassword";
 import { DashboardNotifications as Notifications } from "./features/dashboard/pages/Notifications";
+import { Privacy } from "./features/marketing/pages/Privacy";
+import { Terms } from "./features/marketing/pages/Terms";
 
 import { DashboardLayout } from "./features/dashboard/components/DashboardLayout";
 
 export const router = createBrowserRouter([
   { path: "/", Component: Landing },
 
-  // ── Customer Tracking (public — no auth required) ──────────────
+  // ── Marketing & Public Pages ──────────────────────────────
   { path: "/track", Component: TrackingPage },
+  { path: "/privacy", Component: Privacy },
+  { path: "/terms", Component: Terms },
 
   { path: "/dashboard/signin", Component: SignIn },
   { path: "/dashboard/signup", Component: SignUp },

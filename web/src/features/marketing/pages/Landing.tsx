@@ -20,10 +20,8 @@ import {
   StarIcon as StarSolid,
 } from "@heroicons/react/24/solid";
 
-const DELIVERY_IMAGE =
-  "https://images.unsplash.com/photo-1753535865713-02e0d579b7ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZWxpdmVyeSUyMGRyaXZlciUyMHZhbiUyMGxvZ2lzdGljcyUyMHJvdXRlJTIwY2l0eXxlbnwxfHx8fDE3NzI3ODQyODN8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const MAP_IMAGE =
-  "https://images.unsplash.com/photo-1620662892011-f5c2d523fae2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb3V0ZSUyMG9wdGltaXphdGlvbiUyMG1hcCUyMHBpbnMlMjBhZXJpYWwlMjBjaXR5fGVufDF8fHx8MTc3Mjc4NDI4Nnww&ixlib=rb-4.1.0&q=80&w=1080";
+const DELIVERY_IMAGE = "/landing_page.jpeg";
+const MAP_IMAGE = "/gps.jpeg";
 
 const features = [
   {
@@ -849,13 +847,13 @@ export function WebLanding() {
             </p>
             <div className="flex items-center gap-6">
               <a
-                href="#"
+                href="/privacy"
                 className="text-xs text-gray-400 hover:text-gray-600 no-underline transition-colors"
               >
                 Privacy Policy
               </a>
               <a
-                href="#"
+                href="/terms"
                 className="text-xs text-gray-400 hover:text-gray-600 no-underline transition-colors"
               >
                 Terms of Service

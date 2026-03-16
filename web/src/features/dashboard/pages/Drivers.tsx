@@ -15,7 +15,7 @@ import {
 
 export function DashboardDrivers() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"board" | "list">("board");
+  const [viewMode, setViewMode] = useState<"board" | "list">("list");
   const [drivers, setDrivers] = useState([
     {
       id: 1,
