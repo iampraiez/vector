@@ -53,6 +53,23 @@ export default defineConfig({
   build: {
     target: "esnext",
     outDir: "build",
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router"],
+          "ui-vendor": [
+            "lucide-react",
+            "clsx",
+            "tailwind-merge",
+            "@radix-ui/react-slot",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+          ],
+          heroicons: ["@heroicons/react"],
+        },
+      },
+    },
   },
   server: {
     port: 3000,

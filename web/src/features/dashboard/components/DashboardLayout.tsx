@@ -10,6 +10,7 @@ import {
   Cog6ToothIcon,
   PowerIcon,
   BellIcon,
+  TruckIcon,
 } from "@heroicons/react/24/outline";
 import {
   Sidebar,
@@ -62,12 +63,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar variant="inset" className="border-r border-black/5 bg-white">
         <SidebarHeader className="p-6 border-b border-black/5">
           <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
+              <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
+            </div>
             <span className="text-xl font-bold text-gray-900 tracking-tight">
               VECTOR
             </span>
           </div>
-          <p className="text-[10px] text-gray-400 tracking-[1px] uppercase font-bold mt-1">
+          <p className="text-[10px] text-gray-400 tracking-[1px] uppercase font-bold mt-2 ml-11">
             Fleet Management
           </p>
         </SidebarHeader>
@@ -127,9 +130,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <SidebarInset className="bg-gray-50/50">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-black/5 bg-white/80 backdrop-blur-md px-6 md:hidden">
           <SidebarTrigger />
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-600" />
-            <span className="font-bold text-gray-900">VECTOR</span>
+          <div className="flex items-center gap-2.5">
+            <div className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
+              <TruckIcon className="w-4 h-4 text-white" strokeWidth={2.4} />
+            </div>
+            <span className="font-bold text-gray-900 tracking-tight">
+              VECTOR
+            </span>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto w-full max-w-400 mx-auto">

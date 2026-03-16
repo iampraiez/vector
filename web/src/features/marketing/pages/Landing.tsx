@@ -108,9 +108,9 @@ const testimonials = [
 const plans = [
   {
     name: "Starter",
-    price: "29",
+    price: "0",
     period: "/mo",
-    desc: "Perfect for small local fleets",
+    desc: "Perfect for testing the platform",
     drivers: "Up to 5 drivers",
     features: [
       "Route optimization",
@@ -119,41 +119,39 @@ const plans = [
       "Customer tracking links",
       "Email support",
     ],
-    cta: "Start free trial",
+    cta: "Start for free",
     highlighted: false,
   },
   {
-    name: "Growth",
-    price: "89",
+    name: "Professional",
+    price: "29",
     period: "/mo",
-    desc: "For growing delivery operations",
-    drivers: "Up to 20 drivers",
+    desc: "For small local fleets",
+    drivers: "Up to 15 drivers",
     features: [
       "Everything in Starter",
       "Advanced analytics",
       "Priority routing",
       "SMS notifications",
       "Priority support",
-      "API access",
     ],
-    cta: "Start free trial",
+    cta: "Get started",
     highlighted: true,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    desc: "For large fleets & enterprises",
-    drivers: "Unlimited drivers",
+    name: "Growth",
+    price: "89",
+    period: "/mo",
+    desc: "For growing delivery operations",
+    drivers: "Up to 50 drivers",
     features: [
-      "Everything in Growth",
+      "Everything in Professional",
+      "Custom reporting",
+      "API access",
+      "Multi-fleet support",
       "Dedicated account manager",
-      "Custom integrations",
-      "SLA guarantee",
-      "On-site onboarding",
-      "White-label option",
     ],
-    cta: "Contact sales",
+    cta: "Scale now",
     highlighted: false,
   },
 ];
@@ -183,13 +181,13 @@ export function WebLanding() {
         <div className="max-w-300 mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <div
-            className="flex items-center gap-2.5 cursor-pointer"
+            className="flex items-center gap-3 cursor-pointer group"
             onClick={() => navigate("/")}
           >
-            <div className="w-8 h-8 bg-linear-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
-              <TruckIcon className="w-4.5 h-4.5 text-white" />
+            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
+              <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
             </div>
-            <span className="text-[17px] font-bold tracking-tight text-[#121212]">
+            <span className="text-[18px] font-extrabold tracking-tight text-[#121212]">
               VECTOR
             </span>
           </div>
@@ -260,24 +258,26 @@ export function WebLanding() {
                   </a>
                 ))}
                 <div className="h-px bg-black/5 my-3" />
-                <button
-                  onClick={() => {
-                    navigate("/dashboard/signin");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="p-3.5 rounded-xl border border-black/12 bg-transparent text-base font-semibold text-[#212121] cursor-pointer"
-                >
-                  Sign in
-                </button>
-                <button
-                  onClick={() => {
-                    navigate("/dashboard/signup");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="p-3.5 rounded-xl bg-emerald-600 border-none text-base font-semibold text-white cursor-pointer"
-                >
-                  Get started free
-                </button>
+                <div className="mt-auto flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      navigate("/dashboard/signin");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-3.5 rounded-xl border border-black/12 bg-transparent text-base font-semibold text-[#212121] cursor-pointer"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/dashboard/signup");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-3.5 rounded-xl bg-emerald-600 border-none text-base font-semibold text-white cursor-pointer shadow-lg shadow-emerald-500/20"
+                  >
+                    Get started free
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -287,10 +287,13 @@ export function WebLanding() {
       {/* ── Hero ───────────────────────────────────────────────────── */}
       <section className="pt-30 pb-20 max-w-300 mx-auto px-6">
         {/* Badge */}
-        <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-600/20 rounded-full px-3.5 py-1.25 mb-7 animate-fade-in">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-          <span className="text-xs font-semibold text-emerald-600 tracking-wide uppercase">
-            NOW IN OPEN BETA — FREE FOR FLEETS UNDER 5 DRIVERS
+        <div className="inline-flex items-center gap-2.5 bg-emerald-50/50 backdrop-blur-sm border border-emerald-600/10 rounded-full px-4 py-1.5 mb-8 animate-fade-in shadow-sm">
+          <span className="flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+          </span>
+          <span className="text-[11px] font-bold text-emerald-700 tracking-wider uppercase">
+            VECTOR OPEN BETA — FREE FOR UP TO 5 DRIVERS
           </span>
         </div>
 
@@ -626,7 +629,7 @@ export function WebLanding() {
             {plans.map((plan, i) => (
               <div
                 key={i}
-                className={`rounded-[20px] p-8 relative transition-all duration-300 ${
+                className={`rounded-[20px] p-8 relative transition-all duration-300 text-center ${
                   plan.highlighted
                     ? "bg-emerald-600 border-none shadow-[0_20px_60px_rgba(5,150,105,0.3)] scale-[1.03] z-10"
                     : "bg-white border border-black/8 shadow-sm"
@@ -645,7 +648,7 @@ export function WebLanding() {
                   >
                     {plan.name}
                   </p>
-                  <div className="flex items-baseline gap-1 mb-2">
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
                     {plan.price !== "Custom" && (
                       <span
                         className={`text-base font-semibold ${
@@ -694,7 +697,10 @@ export function WebLanding() {
 
                 <div className="flex flex-col gap-2.5">
                   {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-center gap-2">
+                    <div
+                      key={feature}
+                      className="flex items-center justify-center gap-2"
+                    >
                       <CheckCircleIcon
                         className={`w-3.75 h-3.75 shrink-0 ${
                           plan.highlighted
@@ -720,140 +726,140 @@ export function WebLanding() {
 
       {/* ── CTA Banner ─────────────────────────────────────────────── */}
       <section className="py-24 max-w-225 mx-auto px-6 text-center">
-        <div className="bg-linear-to-br from-emerald-50 to-emerald-100 border border-emerald-600/15 rounded-3xl py-16 px-10 shadow-sm">
-          <h2 className="text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-emerald-900 mb-4">
+        <div className="bg-linear-to-br from-emerald-50 to-emerald-100 border border-emerald-600/15 rounded-4xl py-16 px-10 shadow-sm relative overflow-hidden">
+          <h2 className="text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-emerald-900 mb-4 relative z-10">
             Ready to optimise your fleet?
           </h2>
-          <p className="text-[17px] text-emerald-800 leading-relaxed mb-9 max-w-125 mx-auto">
+          <p className="text-[17px] text-emerald-800 leading-relaxed mb-9 max-w-125 mx-auto relative z-10">
             Join hundreds of delivery businesses already saving time and money
             with VECTOR. Set up your fleet in under 10 minutes.
           </p>
-          <div className="flex gap-3 justify-center flex-wrap">
+          <div className="flex gap-3 justify-center flex-wrap relative z-10">
             <button
               onClick={() => navigate("/dashboard/signup")}
               className="flex items-center gap-2 px-8 py-3.5 bg-emerald-600 border-none rounded-xl text-base font-bold text-white cursor-pointer shadow-[0_4px_16px_rgba(5,150,105,0.3)] transition-all duration-250 hover:bg-emerald-700 hover:-translate-y-0.5 tap-scale"
             >
-              Start free trial
-              <ArrowRightIcon className="w-4 h-4" />
+              Start for free
+              <ArrowRightIcon className="w-4.5 h-4.5" />
             </button>
             <button
               onClick={() => navigate("/dashboard/signin")}
               className="px-8 py-3.5 bg-transparent border border-emerald-600/30 rounded-xl text-base font-semibold text-emerald-600 cursor-pointer transition-all duration-250 hover:bg-emerald-600/5 tap-scale"
             >
-              Sign in to dashboard
+              Sign in
             </button>
           </div>
         </div>
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
-      <footer className="border-t border-black/7 py-15 px-6 bg-gray-50">
+      <footer className="border-t border-black/5 py-20 px-6 bg-white">
         <div className="max-w-300 mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-12 mb-16">
             {/* Brand */}
-            <div className="col-span-2 lg:col-span-2">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-7 h-7 bg-linear-to-br from-emerald-600 to-emerald-800 rounded-lg flex items-center justify-center shadow-sm">
-                  <TruckIcon className="w-3.5 h-3.5 text-white" />
+            <div className="col-span-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
+                  <TruckIcon
+                    className="w-4.5 h-4.5 text-white"
+                    strokeWidth={2.4}
+                  />
                 </div>
-                <span className="text-[15px] font-extrabold text-[#121212] tracking-tighter">
+                <span className="text-[18px] font-extrabold text-[#121212] tracking-tight">
                   VECTOR
                 </span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed max-w-50">
-                Smart route optimisation for modern delivery fleets.
+              <p className="text-sm text-gray-500 leading-relaxed max-w-60">
+                The all-in-one route optimisation and fleet management platform
+                built for modern delivery businesses.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4.5">
+              <p className="text-xs font-bold text-[#121212] uppercase tracking-widest mb-6">
                 Product
               </p>
-              <div className="flex flex-col gap-2.5">
-                {["Features", "Pricing", "How it works", "Changelog"].map(
-                  (item) => (
-                    <a
-                      key={item}
-                      href="#"
-                      className="text-sm text-gray-500 hover:text-[#121212] transition-colors"
-                    >
-                      {item}
-                    </a>
-                  ),
-                )}
-              </div>
-            </div>
-
-            {/* Drivers */}
-            <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4.5">
-                Drivers
-              </p>
-              <div className="flex flex-col gap-2.5">
-                {[
-                  { label: "Driver app", path: "/driver" },
-                  { label: "Driver sign in", path: "/signin" },
-                  { label: "Driver sign up", path: "/signup" },
-                  { label: "Track a delivery", path: "/track" },
-                ].map((item) => (
+              <div className="flex flex-col gap-3.5">
+                {["Features", "Pricing"].map((item) => (
                   <a
-                    key={item.label}
-                    href={item.path}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(item.path);
-                    }}
-                    className="text-sm text-gray-500 hover:text-[#121212] transition-colors cursor-pointer"
+                    key={item}
+                    href={`#${item.toLowerCase().replace(" ", "-")}`}
+                    className="text-sm text-gray-500 hover:text-emerald-600 transition-colors no-underline"
                   >
-                    {item.label}
+                    {item}
                   </a>
                 ))}
               </div>
             </div>
 
-            {/* Fleet */}
+            {/* Contact */}
             <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4.5">
-                Fleet owners
+              <p className="text-xs font-bold text-[#121212] uppercase tracking-widest mb-6">
+                Contact
               </p>
-              <div className="flex flex-col gap-2.5">
-                {[
-                  { label: "Dashboard", path: "/dashboard" },
-                  { label: "Sign in", path: "/dashboard/signin" },
-                  { label: "Get started", path: "/dashboard/signup" },
-                  { label: "Contact sales", path: "/dashboard/signup" },
-                ].map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.path}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(item.path);
-                    }}
-                    className="text-sm text-gray-500 hover:text-[#121212] transition-colors cursor-pointer"
-                  >
-                    {item.label}
-                  </a>
-                ))}
+              <div className="flex flex-col gap-3.5">
+                <a
+                  href="mailto:himpraise571@gmail.com"
+                  className="text-sm text-gray-500 hover:text-emerald-600 transition-colors no-underline"
+                >
+                  Email
+                </a>
+              </div>
+            </div>
+
+            {/* Documentation */}
+            <div>
+              <p className="text-xs font-bold text-[#121212] uppercase tracking-widest mb-6">
+                Documentation
+              </p>
+              <div className="flex flex-col gap-3.5">
+                <a
+                  href="https://github.com/iampraiez/vector"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-gray-500 hover:text-emerald-600 transition-colors no-underline"
+                >
+                  GitHub Repo
+                </a>
+              </div>
+            </div>
+
+            {/* About Me */}
+            <div>
+              <p className="text-xs font-bold text-[#121212] uppercase tracking-widest mb-6">
+                About Me
+              </p>
+              <div className="flex flex-col gap-3.5">
+                <a
+                  href="https://iampraiez.vercel.app"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-gray-500 hover:text-emerald-600 transition-colors no-underline"
+                >
+                  Portfolio
+                </a>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-black/7 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 gap-y-4">
-            <p className="text-[13px] text-gray-300">
-              © 2026 VECTOR. All rights reserved.
+          <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-gray-400 font-medium">
+              &copy; {new Date().getFullYear()} Vector. All rights reserved.
             </p>
-            <div className="flex gap-5">
-              {["Privacy", "Terms", "Security"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="text-[13px] text-gray-300 hover:text-gray-500 transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
+            <div className="flex items-center gap-6">
+              <a
+                href="#"
+                className="text-xs text-gray-400 hover:text-gray-600 no-underline transition-colors"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="#"
+                className="text-xs text-gray-400 hover:text-gray-600 no-underline transition-colors"
+              >
+                Terms of Service
+              </a>
             </div>
           </div>
         </div>

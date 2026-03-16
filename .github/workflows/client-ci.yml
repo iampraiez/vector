@@ -1,0 +1,53 @@
+name: Flutter Client CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          
+      - name: Dependencies
+        run: flutter pub get
+          
+      - name: Verify Formatting
+        run: dart format --output=none --set-exit-if-changed .
+        continue-on-error: true
+          
+      - name: Analyze
+        run: flutter analyze
+        continue-on-error: true
+          
+      - name: Run Tests
+        run: |
+          if [ -d "test" ]; then
+            flutter test
+          else
+            echo "No tests found."
+          fi
+          
+      - name: Build Android Release
+        run: flutter build apk --release

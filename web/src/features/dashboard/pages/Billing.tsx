@@ -185,7 +185,7 @@ export function DashboardBilling() {
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`group relative bg-white border-2 rounded-3xl p-8 transition-all hover:shadow-2xl hover:-translate-y-1 ${
+              className={`group relative bg-white border-2 rounded-3xl p-8 transition-all hover:shadow-2xl hover:-translate-y-1 text-center ${
                 plan.current
                   ? "border-emerald-600 shadow-xl shadow-emerald-600/5"
                   : plan.highlight
@@ -208,7 +208,7 @@ export function DashboardBilling() {
               <h3 className="text-gray-400 font-bold text-[11px] uppercase tracking-widest mb-1">
                 {plan.name}
               </h3>
-              <div className="flex items-baseline gap-1 mb-4">
+              <div className="flex items-baseline justify-center gap-1 mb-4">
                 <span className="text-3xl font-bold text-gray-900">
                   {plan.price}
                 </span>
@@ -222,7 +222,10 @@ export function DashboardBilling() {
 
               <div className="space-y-4 mb-10">
                 {plan.features.map((f) => (
-                  <div key={f} className="flex items-start gap-3">
+                  <div
+                    key={f}
+                    className="flex items-start justify-center gap-3"
+                  >
                     <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                     <span className="text-[13px] text-gray-600 font-medium">
                       {f}
