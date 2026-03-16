@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  useSettingsStore,
+  NotificationsConfig,
+} from "../../../store/settingsStore";
 
 import {
   BuildingOfficeIcon,
@@ -14,6 +18,8 @@ import {
   ExclamationTriangleIcon,
   MapPinIcon,
   KeyIcon,
+  ClockIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/outline";
 
 /* --- Shared Components --- */
@@ -272,30 +278,59 @@ function DeleteAccountModal({
 /* --- Main Dashboard Settings Component --- */
 
 export function DashboardSettings() {
+  const {
+    company,
+    notifications,
+    billing,
+    isLoading,
+    isMutating,
+    fetchSettings,
+    updateCompany,
+    updateNotifications,
+    changePlan,
+  } = useSettingsStore();
+
   const [activeTab, setActiveTab] = useState<
-    "workspace" | "notifications" | "security" | "danger"
+    "workspace" | "notifications" | "security" | "billing" | "danger"
   >("workspace");
-  const [company, setCompany] = useState({
-    name: "VECTOR Fleet Services",
-    email: "contact@vectorfleet.com",
-    phone: "+1 (555) 000-0000",
-    city: "San Francisco",
-    state: "CA",
+
+  const [editingCompany, setEditingCompany] = useState(false);
+  const [companyDraft, setCompanyDraft] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    city: "",
+    state: "",
     timezone: "America/Los_Angeles",
   });
-  const [editingCompany, setEditingCompany] = useState(false);
-  const [companyDraft, setCompanyDraft] = useState(company);
-  const [companySaved, setCompanySaved] = useState(false);
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    push: true,
-    driverAlerts: true,
-    deliveryUpdates: true,
-    paymentAlerts: false,
-    weeklyReport: true,
-  });
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    if (company) {
+      // Async update to avoid cascading render warning
+      Promise.resolve().then(() => {
+        setCompanyDraft((prev) => {
+          if (prev.name === company.name && prev.email === company.email)
+            return prev;
+          return company;
+        });
+      });
+    } else {
+      Promise.resolve().then(() => {
+        setCompanyDraft({
+          name: "VECTOR Fleet Services",
+          email: "contact@vectorfleet.com",
+          phone: "+1 (555) 000-0000",
+          city: "San Francisco",
+          state: "CA",
+          timezone: "America/Los_Angeles",
+        });
+      });
+    }
+  }, [company]);
 
   const [isDataCleaningOpen, setIsDataCleaningOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
@@ -306,25 +341,33 @@ export function DashboardSettings() {
     navigator.clipboard.writeText(companyCode).catch(() => {});
   };
 
-  const toggle = (key: keyof typeof notifications) => () => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key: keyof NotificationsConfig) => async () => {
+    if (notifications) {
+      const newSettings = { ...notifications, [key]: !notifications[key] };
+      await updateNotifications(newSettings);
+    }
   };
 
-  const handleSaveCompany = () => {
-    setCompanySaved(true);
-    setTimeout(() => {
-      setCompany(companyDraft);
-      setEditingCompany(false);
-      setCompanySaved(false);
-    }, 900);
+  const handleSaveCompany = async () => {
+    await updateCompany(companyDraft);
+    setEditingCompany(false);
   };
 
   const tabs = [
     { id: "workspace", label: "Workspace", icon: BuildingOfficeIcon },
     { id: "notifications", label: "Communications", icon: BellIcon },
     { id: "security", label: "Security & API", icon: ShieldCheckIcon },
+    { id: "billing", label: "Billing & Plans", icon: CreditCardIcon },
     { id: "danger", label: "Danger Zone", icon: ExclamationTriangleIcon },
   ] as const;
+
+  if (isLoading && !company) {
+    return (
+      <div className="p-4 md:p-8 max-w-350 mx-auto flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -411,28 +454,28 @@ export function DashboardSettings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <StaticField
                         label="Operating Name"
-                        value={company.name}
+                        value={company?.name || "VECTOR Fleet Services"}
                         icon={BuildingOfficeIcon}
                       />
                       <StaticField
                         label="Operations Email"
-                        value={company.email}
+                        value={company?.email || "contact@vectorfleet.com"}
                         icon={EnvelopeIcon}
                       />
                       <StaticField
                         label="Fleet Hotline"
-                        value={company.phone}
+                        value={company?.phone || "+1 (555) 000-0000"}
                         icon={BellIcon}
                       />
                       <StaticField
                         label="Region / HQ"
-                        value={`${company.city}, ${company.state}`}
+                        value={`${company?.city || "San Francisco"}, ${company?.state || "CA"}`}
                         icon={MapPinIcon}
                       />
                       <div className="md:col-span-2 pt-4">
                         <button
                           onClick={() => {
-                            setCompanyDraft(company);
+                            if (company) setCompanyDraft(company);
                             setEditingCompany(true);
                           }}
                           className="flex items-center gap-2 px-6 py-3 bg-gray-50 border border-black/5 rounded-2xl text-[13px] font-black text-gray-500 hover:bg-white hover:border-emerald-600/30 hover:text-emerald-600 hover:shadow-lg transition-all cursor-pointer"
@@ -486,10 +529,10 @@ export function DashboardSettings() {
                       <div className="flex items-center gap-3 pt-8 border-t border-gray-50">
                         <button
                           onClick={handleSaveCompany}
-                          disabled={companySaved}
+                          disabled={isMutating}
                           className="px-8 py-3 bg-emerald-600 text-white font-black text-[13px] rounded-2xl shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 min-w-44"
                         >
-                          {companySaved ? (
+                          {isMutating ? (
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           ) : (
                             "Save Workspace"
@@ -519,7 +562,7 @@ export function DashboardSettings() {
                     subtitle="Receive instant updates when drivers go offline or encounter delays."
                   >
                     <Toggle
-                      value={notifications.driverAlerts}
+                      value={notifications?.driverAlerts ?? true}
                       onChange={toggle("driverAlerts")}
                     />
                   </SettingRow>
@@ -528,7 +571,7 @@ export function DashboardSettings() {
                     subtitle="Critical delivery failures sent directly to your supervisor hotline."
                   >
                     <Toggle
-                      value={notifications.sms}
+                      value={notifications?.sms ?? false}
                       onChange={toggle("sms")}
                     />
                   </SettingRow>
@@ -537,7 +580,7 @@ export function DashboardSettings() {
                     subtitle="Daily delivery performance and billing summaries."
                   >
                     <Toggle
-                      value={notifications.email}
+                      value={notifications?.email ?? true}
                       onChange={toggle("email")}
                     />
                   </SettingRow>
@@ -546,7 +589,7 @@ export function DashboardSettings() {
                     subtitle="In-app alerts for real-time fleet map events."
                   >
                     <Toggle
-                      value={notifications.push}
+                      value={notifications?.push ?? true}
                       onChange={toggle("push")}
                     />
                   </SettingRow>
@@ -595,6 +638,93 @@ export function DashboardSettings() {
                 </div>
               </Section>
             )}
+
+            {activeTab === "billing" && (
+              <Section
+                title="Subscription & Billing"
+                subtitle="Manage your plan and invoices"
+              >
+                <div className="space-y-6">
+                  <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 capitalize">
+                          {billing?.plan || "free"} Plan
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {billing?.plan === "pro"
+                            ? "Advanced features for scaling fleets"
+                            : billing?.plan === "enterprise"
+                              ? "Custom limits and dedicated support"
+                              : "Basic tools for small teams"}
+                        </p>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-lg">
+                        Active
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                      {billing?.plan !== "pro" && (
+                        <button
+                          onClick={() => changePlan("pro")}
+                          disabled={isMutating}
+                          className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl hover:bg-emerald-700 transition shadow-md"
+                        >
+                          Upgrade to Pro
+                        </button>
+                      )}
+                      {billing?.plan !== "enterprise" && (
+                        <button
+                          onClick={() => changePlan("enterprise")}
+                          disabled={isMutating}
+                          className="px-5 py-2.5 bg-gray-900 text-white font-bold text-[13px] rounded-xl hover:bg-gray-800 transition shadow-md"
+                        >
+                          Go Enterprise
+                        </button>
+                      )}
+                      {billing?.plan !== "free" && (
+                        <button
+                          onClick={() => changePlan("free")}
+                          disabled={isMutating}
+                          className="px-4 py-2 text-gray-500 font-bold text-[13px] hover:text-gray-700 transition"
+                        >
+                          Downgrade to Free
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {billing && billing.subscription_id && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <StaticField
+                        label="Current Period Start"
+                        value={new Date(
+                          billing.current_period_start,
+                        ).toLocaleDateString()}
+                        icon={ClockIcon}
+                      />
+                      <StaticField
+                        label="Current Period End"
+                        value={new Date(
+                          billing.current_period_end,
+                        ).toLocaleDateString()}
+                        icon={ClockIcon}
+                      />
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t border-gray-100">
+                    <p className="text-[12px] text-gray-400">
+                      All payments are processed securely via Stripe. To update
+                      your payment method or view past invoices, visit the
+                      Stripe Customer Portal.
+                    </p>
+                  </div>
+                </div>
+              </Section>
+            )}
+
             {activeTab === "danger" && (
               <div className="bg-red-50/50 border border-red-100 rounded-3xl p-6 md:p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 rounded-full -mr-24 -mt-24 blur-3xl pointer-events-none" />

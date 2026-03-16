@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useDashboardStore } from "../../../store/dashboardStore";
 
 import {
   UsersIcon,
@@ -22,112 +23,74 @@ const today = new Date().toLocaleDateString("en-US", {
 
 export function DashboardOverview() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const {
+    metrics,
+    activeDrivers,
+    recentOrders,
+    isLoading,
+    fetchDashboardData,
+  } = useDashboardStore();
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, []);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  const metrics = [
+  const metricsData = [
     {
       label: "Active Drivers",
-      value: "12",
-      change: "+2",
-      trend: "up",
+      value: metrics?.active_drivers ?? "—",
+      change: metrics?.active_drivers_change ?? "—",
+      trend:
+        metrics?.active_drivers_change?.startsWith("+") ||
+        metrics?.active_drivers_change === "+0"
+          ? "up"
+          : "down",
       icon: UsersIcon,
     },
     {
       label: "Pending Orders",
-      value: "34",
-      change: "-5",
-      trend: "down",
+      value: metrics?.pending_orders ?? "—",
+      change: metrics?.pending_orders_change ?? "—",
+      trend:
+        metrics?.pending_orders_change?.startsWith("+") ||
+        metrics?.pending_orders_change === "+0"
+          ? "up"
+          : "down",
       icon: ArchiveBoxIcon,
     },
     {
       label: "On-time Rate",
-      value: "94%",
-      change: "+3%",
-      trend: "up",
+      value: metrics ? `${metrics.on_time_rate}%` : "—",
+      change: metrics ? `${metrics.on_time_rate_change}%` : "—",
+      trend:
+        metrics?.on_time_rate_change?.startsWith("+") ||
+        metrics?.on_time_rate_change === "+0"
+          ? "up"
+          : "down",
       icon: ArrowTrendingUpIcon,
     },
     {
       label: "Fuel Saved",
-      value: "$248",
-      change: "+12%",
-      trend: "up",
+      value: metrics ? `$${metrics.fuel_saved_usd}` : "—",
+      change: metrics?.fuel_saved_change
+        ? `${metrics.fuel_saved_change}%`
+        : "—",
+      trend:
+        metrics?.fuel_saved_change?.startsWith("+") ||
+        metrics?.fuel_saved_change === "+0"
+          ? "up"
+          : "down",
       icon: BanknotesIcon,
     },
   ];
 
-  const activeDrivers = [
-    {
-      name: "Alex Rivera",
-      location: "Downtown",
-      stops: 4,
-      eta: "2h 15m",
-      status: "active",
-    },
-    {
-      name: "Sarah Chen",
-      location: "Midtown",
-      stops: 6,
-      eta: "3h 30m",
-      status: "active",
-    },
-    {
-      name: "Mike Johnson",
-      location: "Uptown",
-      stops: 3,
-      eta: "1h 45m",
-      status: "active",
-    },
-    {
-      name: "Emma Davis",
-      location: "Suburb",
-      stops: 5,
-      eta: "2h 50m",
-      status: "break",
-    },
-  ];
-
-  const recentOrders = [
-    {
-      id: "ORD-1234",
-      customer: "Acme Corp",
-      address: "123 Main St",
-      time: "10 min ago",
-      status: "assigned",
-    },
-    {
-      id: "ORD-1235",
-      customer: "Tech Solutions",
-      address: "456 Market St",
-      time: "25 min ago",
-      status: "in-progress",
-    },
-    {
-      id: "ORD-1236",
-      customer: "Global Industries",
-      address: "789 Oak Ave",
-      time: "1 hour ago",
-      status: "completed",
-    },
-    {
-      id: "ORD-1237",
-      customer: "Bright Media",
-      address: "321 Park Blvd",
-      time: "2 hours ago",
-      status: "completed",
-    },
-  ];
-
   const statusStyle = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "completed":
         return { bg: "#ECFDF5", color: "#059669" };
       case "in-progress":
+      case "in_progress":
         return { bg: "#EFF6FF", color: "#3B82F6" };
       case "assigned":
         return { bg: "#FEF3C7", color: "#D97706" };
@@ -138,9 +101,10 @@ export function DashboardOverview() {
 
   const handleSaveOrder = () => {
     setShowNewOrderModal(false);
+    fetchDashboardData();
   };
 
-  if (loading) {
+  if (isLoading && !metrics) {
     return (
       <div className="p-4 md:p-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -180,7 +144,7 @@ export function DashboardOverview() {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {metrics.map((m) => {
+          {metricsData.map((m) => {
             const Icon = m.icon;
             return (
               <div
@@ -243,9 +207,11 @@ export function DashboardOverview() {
                   <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0 relative border border-black/5 transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100">
                     <span className="text-[12px] font-bold text-gray-500 group-hover:text-emerald-600">
                       {driver.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                        ? driver.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                        : "?"}
                     </span>
                     <div
                       className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
@@ -261,16 +227,16 @@ export function DashboardOverview() {
                     </p>
                     <div className="flex items-center gap-2 text-[12px] text-gray-400 font-medium">
                       <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{driver.location}</span>
-                      <span className="text-gray-200">/</span>
-                      <span className="shrink-0">{driver.stops} stops</span>
+                      <span className="truncate">
+                        {driver.current_location_name || "Unknown"}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-black/5 group-hover:border-emerald-600/20 group-hover:bg-emerald-50/50 transition-all shadow-sm">
                       <ClockIcon className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" />
                       <span className="text-[11px] text-gray-600 font-bold">
-                        {driver.eta}
+                        Online
                       </span>
                     </div>
                   </div>
@@ -324,17 +290,9 @@ export function DashboardOverview() {
                       </div>
                       <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
                         <span className="text-gray-900 truncate">
-                          {order.customer}
+                          {order.customer_name}
                         </span>
-                        <span className="text-gray-200">/</span>
-                        <span className="truncate">{order.address}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 bg-white px-2.5 py-1.5 rounded-lg border border-black/5 group-hover:border-emerald-600/20 group-hover:bg-emerald-50/50 transition-all shadow-sm">
-                      <ClockIcon className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" />
-                      <span className="text-[11px] text-gray-600 font-bold whitespace-nowrap">
-                        {order.time}
-                      </span>
                     </div>
                   </div>
                 );

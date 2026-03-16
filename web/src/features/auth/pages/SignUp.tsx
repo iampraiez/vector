@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useForm } from "react-hook-form";
+import { AxiosError } from "axios";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   EnvelopeIcon,
@@ -61,7 +62,7 @@ export function DashboardSignUp() {
     register,
     handleSubmit,
     trigger,
-    watch,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFleetValues>({
@@ -72,9 +73,9 @@ export function DashboardSignUp() {
     },
   });
 
-  const emailValue = watch("email");
+  const emailValue = useWatch({ control, name: "email" });
   const emailValid = !errors.email && emailValue?.length > 0;
-  const currentPlan = watch("plan_id");
+  const currentPlan = useWatch({ control, name: "plan_id" });
 
   const handleNextToCompany = async () => {
     const isStep1Valid = await trigger(["full_name", "email", "password"]);
@@ -106,9 +107,10 @@ export function DashboardSignUp() {
       setTimeout(() => {
         navigate("/dashboard/signin");
       }, 3000);
-    } catch (err: any) {
-      if (err.response?.data?.message) {
-        setGlobalError(err.response.data.message);
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      if (error.response?.data?.message) {
+        setGlobalError(error.response.data.message);
       } else {
         setGlobalError("Failed to sign up. Please try again.");
       }
@@ -128,9 +130,13 @@ export function DashboardSignUp() {
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md bg-white rounded-2xl p-10 text-center shadow-xl border border-black/5 animate-in fade-in zoom-in duration-500">
           <CheckSolid className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Check your email
+          </h2>
           <p className="text-gray-500">{successMessage}</p>
-          <p className="text-sm text-gray-400 mt-6">Redirecting to sign in...</p>
+          <p className="text-sm text-gray-400 mt-6">
+            Redirecting to sign in...
+          </p>
         </div>
       </div>
     );
@@ -244,7 +250,9 @@ export function DashboardSignUp() {
                       />
                     </div>
                     {errors.full_name && (
-                      <p className="text-xs text-red-500">{errors.full_name.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.full_name.message}
+                      </p>
                     )}
                   </div>
 
@@ -276,7 +284,9 @@ export function DashboardSignUp() {
                       )}
                     </div>
                     {errors.email && (
-                      <p className="text-xs text-red-500">{errors.email.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.email.message}
+                      </p>
                     )}
                   </div>
 
@@ -314,7 +324,9 @@ export function DashboardSignUp() {
                       </button>
                     </div>
                     {errors.password && (
-                      <p className="text-xs text-red-500">{errors.password.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.password.message}
+                      </p>
                     )}
                   </div>
 
@@ -374,7 +386,9 @@ export function DashboardSignUp() {
                       />
                     </div>
                     {errors.company_name && (
-                      <p className="text-xs text-red-500">{errors.company_name.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.company_name.message}
+                      </p>
                     )}
                   </div>
 
@@ -447,7 +461,9 @@ export function DashboardSignUp() {
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setValue("plan_id", p.id, { shouldValidate: true })}
+                        onClick={() =>
+                          setValue("plan_id", p.id, { shouldValidate: true })
+                        }
                         className={`w-full p-4 rounded-xl border-2 text-left relative transition-all cursor-pointer ${
                           isSelected
                             ? "bg-emerald-50 border-emerald-500 shadow-sm"

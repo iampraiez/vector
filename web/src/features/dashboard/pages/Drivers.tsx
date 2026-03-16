@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useDriverStore } from "../../../store/driverStore";
 
 import {
   MagnifyingGlassIcon,
@@ -14,76 +15,48 @@ import {
 } from "@heroicons/react/24/outline";
 
 export function DashboardDrivers() {
+  const navigate = useNavigate();
+  const { drivers, isLoading, fetchDrivers, deleteDriver } = useDriverStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"board" | "list">("list");
-  const [drivers, setDrivers] = useState([
-    {
-      id: 1,
-      name: "Alex Rivera",
-      email: "alex.rivera@email.com",
-      phone: "+1 (555) 123-4567",
-      vehicle: "Van • ABC-1234",
-      todayStops: 4,
-      completedRoutes: 234,
-      rating: 4.9,
-      status: "active",
-      lastSession: "2 min ago",
-      companyCode: "FLEET-2024",
-    },
-    {
-      id: 2,
-      name: "Sarah Chen",
-      email: "sarah.chen@email.com",
-      phone: "+1 (555) 234-5678",
-      vehicle: "Truck • XYZ-5678",
-      todayStops: 6,
-      completedRoutes: 189,
-      rating: 4.8,
-      status: "active",
-      lastSession: "5 min ago",
-      companyCode: "FLEET-2024",
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike.j@email.com",
-      phone: "+1 (555) 345-6789",
-      vehicle: "Van • DEF-9012",
-      todayStops: 3,
-      completedRoutes: 412,
-      rating: 5.0,
-      status: "active",
-      lastSession: "1 min ago",
-      companyCode: "FLEET-2024",
-    },
-    {
-      id: 4,
-      name: "Emma Davis",
-      email: "emma.d@email.com",
-      phone: "+1 (555) 456-7890",
-      vehicle: "Car • GHI-3456",
-      todayStops: 0,
-      completedRoutes: 156,
-      rating: 4.7,
-      status: "offline",
-      lastSession: "2 hours ago",
-      companyCode: "FLEET-2024",
-    },
-  ]);
 
-  const handleRemoveDriver = (id: number, name: string) => {
+  useEffect(() => {
+    fetchDrivers({ limit: 100 });
+  }, [fetchDrivers]);
+
+  const handleRemoveDriver = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to remove ${name} from your fleet?`)) {
-      setDrivers(drivers.filter((d) => d.id !== id));
+      await deleteDriver(id);
     }
   };
 
   const filteredDrivers = drivers.filter(
     (driver) =>
-      driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      driver.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      (driver.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (driver.email || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const navigate = useNavigate();
+  const activeCount = filteredDrivers.filter(
+    (d) => d.status === "active",
+  ).length;
+  const totalRoutes = filteredDrivers.reduce(
+    (acc, curr) => acc + (curr.total_deliveries || 0),
+    0,
+  );
+  const avgRating = filteredDrivers.length
+    ? (
+        filteredDrivers.reduce((acc, curr) => acc + (curr.avg_rating || 0), 0) /
+        filteredDrivers.length
+      ).toFixed(1)
+    : "0.0";
+
+  if (isLoading && drivers.length === 0) {
+    return (
+      <div className="p-4 md:p-8 max-w-350 mx-auto flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-350 mx-auto">
@@ -122,10 +95,10 @@ export function DashboardDrivers() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatsCard label="Total Drivers" value="4" />
-        <StatsCard label="Active Now" value="3" />
-        <StatsCard label="Total Routes" value="991" />
-        <StatsCard label="Avg Rating" value="4.8" />
+        <StatsCard label="Total Drivers" value={drivers.length.toString()} />
+        <StatsCard label="Active Now" value={activeCount.toString()} />
+        <StatsCard label="Total Routes" value={totalRoutes.toString()} />
+        <StatsCard label="Avg Rating" value={avgRating} />
       </div>
 
       {/* Search Bar */}
@@ -181,9 +154,6 @@ export function DashboardDrivers() {
                     >
                       {driver.status}
                     </span>
-                    <span className="text-[11px] text-gray-400 font-medium truncate">
-                      {driver.companyCode}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -211,24 +181,18 @@ export function DashboardDrivers() {
                     <TruckIcon className="w-4 h-4 shrink-0 opacity-60" />
                   </div>
                   <span className="text-[13px] font-semibold tracking-tight">
-                    {driver.vehicle}
+                    {driver.vehicle_type
+                      ? `${driver.vehicle_type} • ${driver.vehicle_plate || ""}`
+                      : "Unassigned Vehicle"}
                   </span>
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-3 gap-2 bg-gray-50/50 rounded-xl p-3 mb-6 border border-black/5 transition-colors group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50">
+              <div className="grid grid-cols-2 gap-2 bg-gray-50/50 rounded-xl p-3 mb-6 border border-black/5 transition-colors group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50">
                 <div className="text-center border-r border-black/5 last:border-0">
                   <p className="text-lg font-bold text-gray-900 mb-0">
-                    {driver.todayStops}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                    Stops
-                  </p>
-                </div>
-                <div className="text-center border-r border-black/5 last:border-0">
-                  <p className="text-lg font-bold text-gray-900 mb-0">
-                    {driver.completedRoutes}
+                    {driver.total_deliveries || 0}
                   </p>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                     Routes
@@ -238,7 +202,7 @@ export function DashboardDrivers() {
                   <div className="flex items-center justify-center gap-1">
                     <StarIcon className="w-3 h-3 text-amber-400 fill-amber-400" />
                     <p className="text-lg font-bold text-gray-900">
-                      {driver.rating}
+                      {driver.avg_rating || "N/A"}
                     </p>
                   </div>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
@@ -252,7 +216,12 @@ export function DashboardDrivers() {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                    {driver.lastSession}
+                    {driver.last_active_at
+                      ? new Date(driver.last_active_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Active"}
                   </span>
                 </div>
                 <button
@@ -280,7 +249,6 @@ export function DashboardDrivers() {
                   {[
                     "DRIVER",
                     "VEHICLE",
-                    "TODAY",
                     "ROUTES",
                     "RATING",
                     "LAST SEEN",
@@ -327,29 +295,21 @@ export function DashboardDrivers() {
                     </td>
                     <td className="px-5 py-3.5">
                       <p className="text-[13px] text-gray-500 font-medium">
-                        {driver.vehicle}
+                        {driver.vehicle_type
+                          ? `${driver.vehicle_type} • ${driver.vehicle_plate || ""}`
+                          : "Unassigned"}
                       </p>
-                    </td>
-                    <td className="px-5 py-3.5 text-center sm:text-left">
-                      <div className="flex flex-col">
-                        <span className="text-[13px] font-bold text-gray-900">
-                          {driver.todayStops}
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">
-                          stops
-                        </span>
-                      </div>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className="text-[13px] font-bold text-gray-900">
-                        {driver.completedRoutes}
+                        {driver.total_deliveries || 0}
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1">
                         <StarIcon className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                         <span className="text-[13px] font-bold text-gray-900">
-                          {driver.rating}
+                          {driver.avg_rating || "N/A"}
                         </span>
                       </div>
                     </td>
@@ -357,7 +317,14 @@ export function DashboardDrivers() {
                       <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <ClockIcon className="w-3.5 h-3.5 text-gray-300" />
                         <span className="text-[12px] text-gray-400 font-medium">
-                          {driver.lastSession}
+                          {driver.last_active_at
+                            ? new Date(
+                                driver.last_active_at,
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "Active"}
                         </span>
                       </div>
                     </td>

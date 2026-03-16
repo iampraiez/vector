@@ -44,6 +44,8 @@ jobs:
           echo "$SECRETS_CONTEXT" | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> .env
 
       - name: Build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: pnpm build
 
       - name: Ensure Cloudflare Project Exists

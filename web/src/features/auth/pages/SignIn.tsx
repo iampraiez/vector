@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useForm } from "react-hook-form";
+import { AxiosError } from "axios";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   EnvelopeIcon,
@@ -26,14 +27,14 @@ export function DashboardSignIn() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors, isSubmitting, isValid },
   } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     mode: "onChange",
   });
 
-  const emailValue = watch("email");
+  const emailValue = useWatch({ control, name: "email" });
   const emailValid = !errors.email && emailValue?.length > 0;
 
   const onSubmit = async (data: SignInValues) => {
@@ -42,16 +43,17 @@ export function DashboardSignIn() {
       const res = await api.post("/auth/sign-in", {
         email: data.email,
         password: data.password,
-        device_id: navigator.userAgent, // or some actual device ID generator
+        device_id: navigator.userAgent,
       });
 
       const { user, access_token, refresh_token } = res.data;
       setAuth(user, access_token, refresh_token);
 
       navigate("/dashboard");
-    } catch (err: any) {
-      if (err.response?.data?.message) {
-        setGlobalError(err.response.data.message);
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      if (error.response?.data?.message) {
+        setGlobalError(error.response.data.message);
       } else {
         setGlobalError("Failed to sign in. Please check your credentials.");
       }
@@ -195,7 +197,9 @@ export function DashboardSignIn() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs text-red-500">{errors.password.message}</p>
+                  <p className="text-xs text-red-500">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 

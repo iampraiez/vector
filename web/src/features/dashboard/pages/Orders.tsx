@@ -1,4 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useOrderStore } from "../../../store/orderStore";
+import { useDriverStore } from "../../../store/driverStore";
 
 import {
   PlusIcon,
@@ -9,12 +11,14 @@ import {
   ClockIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
-import {
-  NewOrderModal,
-  Order,
-  OrderStatus,
-  ModalInput,
-} from "../components/NewOrderModal";
+import { NewOrderModal, ModalInput } from "../components/NewOrderModal";
+import { Order } from "../../../store/orderStore";
+type OrderStatus =
+  | "unassigned"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "failed";
 import {
   Dialog,
   DialogContent,
@@ -24,76 +28,29 @@ import {
 } from "../../../components/ui/dialog";
 
 export function DashboardOrders() {
+  const {
+    orders,
+    stats,
+    isLoading,
+    isMutating,
+    fetchOrders,
+    updateOrder,
+    importBulkOrders,
+  } = useOrderStore();
+  const { drivers, fetchDrivers } = useDriverStore();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | OrderStatus>("all");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "DEL-001",
-      customerName: "Sarah Chen",
-      address: "742 Evergreen Terrace",
-      city: "Springfield, IL",
-      packages: 3,
-      priority: "high",
-      timeWindow: "9:00 AM - 11:00 AM",
-      status: "assigned",
-      assignedTo: "Alex Rivera",
-      notes: "Ring doorbell twice",
-      createdAt: "Today, 8:00 AM",
-    },
-    {
-      id: "DEL-002",
-      customerName: "Mike Johnson",
-      address: "1428 Elm Street",
-      city: "Springfield, IL",
-      packages: 1,
-      priority: "normal",
-      timeWindow: "11:00 AM - 1:00 PM",
-      status: "in-progress",
-      assignedTo: "Sarah Chen",
-      notes: "Leave at front desk",
-      createdAt: "Today, 8:15 AM",
-    },
-    {
-      id: "DEL-003",
-      customerName: "Emma Davis",
-      address: "890 Oak Avenue",
-      city: "Springfield, IL",
-      packages: 2,
-      priority: "normal",
-      timeWindow: "2:00 PM - 4:00 PM",
-      status: "unassigned",
-      createdAt: "Today, 8:30 AM",
-    },
-    {
-      id: "DEL-004",
-      customerName: "John Smith",
-      address: "456 Park Lane",
-      city: "Springfield, IL",
-      packages: 2,
-      priority: "normal",
-      timeWindow: "10:00 AM - 12:00 PM",
-      status: "completed",
-      assignedTo: "Mike Johnson",
-      createdAt: "Today, 7:45 AM",
-    },
-    {
-      id: "DEL-005",
-      customerName: "Lisa Anderson",
-      address: "123 Main Street",
-      city: "Springfield, IL",
-      packages: 1,
-      priority: "normal",
-      timeWindow: "3:00 PM - 5:00 PM",
-      status: "unassigned",
-      createdAt: "Today, 9:00 AM",
-    },
-  ]);
+  useEffect(() => {
+    fetchOrders({ limit: 100 });
+    fetchDrivers({ limit: 100 });
+  }, [fetchOrders, fetchDrivers]);
 
-  const drivers = ["Alex Rivera", "Sarah Chen", "Mike Johnson", "Emma Davis"];
+  const driverNames = drivers.map((d) => d.name);
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -105,42 +62,49 @@ export function DashboardOrders() {
     return matchesSearch && matchesFilter;
   });
 
-  const stats = {
-    total: orders.length,
-    unassigned: orders.filter((o) => o.status === "unassigned").length,
-    inProgress: orders.filter((o) => o.status === "in-progress").length,
-    completed: orders.filter((o) => o.status === "completed").length,
-  };
-
   const getStatusClasses = (status: OrderStatus) => {
     switch (status) {
       case "unassigned":
         return "bg-gray-100 text-gray-500";
       case "assigned":
         return "bg-blue-50 text-blue-600";
+      case "in_progress":
       case "in-progress":
         return "bg-emerald-50 text-emerald-600";
       case "completed":
         return "bg-emerald-100 text-emerald-700";
       case "failed":
         return "bg-red-50 text-red-600";
+      default:
+        return "bg-gray-100 text-gray-500";
     }
   };
 
-  const getStatusLabel = (status: OrderStatus) => {
-    switch (status) {
+  const getStatusLabel = (status: string) => {
+    switch (status.replace("-", "_").toLowerCase()) {
       case "unassigned":
         return "Unassigned";
       case "assigned":
         return "Assigned";
+      case "in_progress":
       case "in-progress":
         return "In Progress";
       case "completed":
         return "Completed";
       case "failed":
         return "Failed";
+      default:
+        return status;
     }
   };
+
+  if (isLoading && orders.length === 0) {
+    return (
+      <div className="p-4 md:p-8 max-w-350 mx-auto flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -175,14 +139,22 @@ export function DashboardOrders() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Orders" value={stats.total} />
-          <StatCard label="Unassigned" value={stats.unassigned} color="amber" />
+          <StatCard label="Total Orders" value={stats?.total || 0} />
+          <StatCard
+            label="Unassigned"
+            value={stats?.unassigned || 0}
+            color="amber"
+          />
           <StatCard
             label="In Progress"
-            value={stats.inProgress}
+            value={stats?.in_progress || 0}
             color="emerald"
           />
-          <StatCard label="Completed" value={stats.completed} color="emerald" />
+          <StatCard
+            label="Completed"
+            value={stats?.completed || 0}
+            color="emerald"
+          />
         </div>
 
         {/* Filters & Search */}
@@ -237,7 +209,7 @@ export function DashboardOrders() {
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                       {order.id}
                     </p>
-                    {order.priority === "high" && (
+                    {order.priority && order.priority === "high" && (
                       <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md tracking-wider">
                         Priority
                       </span>
@@ -250,7 +222,7 @@ export function DashboardOrders() {
                   </span>
                 </div>
                 <h3 className="text-[14px] font-bold text-gray-900 mb-1">
-                  {order.customerName}
+                  {order.customer_name}
                 </h3>
                 <p className="text-[12px] text-gray-500 mb-4 line-clamp-1">
                   {order.address}
@@ -260,7 +232,9 @@ export function DashboardOrders() {
                     <div className="flex items-center gap-1.5">
                       <ClockIcon className="w-3.5 h-3.5 text-gray-400" />
                       <span className="text-[11px] text-gray-500 font-medium">
-                        {order.timeWindow}
+                        {order.time_window_start
+                          ? `${order.time_window_start} - ${order.time_window_end}`
+                          : "Any time"}
                       </span>
                     </div>
                   </div>
@@ -309,7 +283,7 @@ export function DashboardOrders() {
                         <p className="text-[13px] font-bold text-gray-900">
                           {order.id}
                         </p>
-                        {order.priority === "high" && (
+                        {order.priority && order.priority === "high" && (
                           <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md mt-1 tracking-wider">
                             Priority
                           </span>
@@ -317,56 +291,51 @@ export function DashboardOrders() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-[13px] font-bold text-gray-800">
-                          {order.customerName}
-                        </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          {order.packages}{" "}
-                          {order.packages === 1 ? "pkg" : "pkgs"}
+                          {order.customer_name}
                         </p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-[13px] text-gray-500 max-w-45 truncate">
                           {order.address}
                         </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          {order.city}
-                        </p>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-[13px] text-gray-500 font-medium">
-                          {order.timeWindow}
+                          {order.time_window_start
+                            ? `${order.time_window_start} - ${order.time_window_end}`
+                            : "Any time"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        {order.assignedTo ? (
+                        {order.driver_id || order.driver_name ? (
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
                               <UserIcon className="w-3.5 h-3.5 text-gray-500" />
                             </div>
                             <span className="text-[13px] text-gray-700 font-medium">
-                              {order.assignedTo}
+                              {order.driver_name || "Assigned Driver"}
                             </span>
                           </div>
                         ) : (
                           <select
-                            onChange={(e) => {
-                              if (e.target.value)
-                                setOrders(
-                                  orders.map((o) =>
-                                    o.id === order.id
-                                      ? {
-                                          ...o,
-                                          assignedTo: e.target.value,
-                                          status: "assigned",
-                                        }
-                                      : o,
-                                  ),
+                            onChange={async (e) => {
+                              if (e.target.value) {
+                                // Find driver ID by name from driver store
+                                const matched = drivers.find(
+                                  (d) => d.name === e.target.value,
                                 );
+                                if (matched) {
+                                  await updateOrder(order.id, {
+                                    driver_id: matched.id,
+                                    status: "assigned",
+                                  });
+                                }
+                              }
                             }}
                             className="bg-gray-50/50 border border-black/8 rounded-lg px-2.5 py-1 text-[12px] text-gray-500 outline-none hover:border-emerald-600/30 transition-colors"
                           >
                             <option value="">Assign driver...</option>
-                            {drivers.map((d) => (
+                            {driverNames.map((d) => (
                               <option key={d} value={d}>
                                 {d}
                               </option>
@@ -402,10 +371,11 @@ export function DashboardOrders() {
       {editingOrder && (
         <EditOrderModal
           order={editingOrder}
-          drivers={drivers}
+          drivers={driverNames}
           onClose={() => setEditingOrder(null)}
-          onSave={(updated) => {
-            setOrders(orders.map((o) => (o.id === updated.id ? updated : o)));
+          onSave={async (updated) => {
+            // we'd probably call updateOrder in the store here
+            await updateOrder(editingOrder.id, updated);
             setEditingOrder(null);
           }}
         />
@@ -414,10 +384,11 @@ export function DashboardOrders() {
       {showUploadModal && (
         <UploadCSVModal
           onClose={() => setShowUploadModal(false)}
-          onImport={(newOrders) => {
-            setOrders((prev) => [...prev, ...newOrders]);
+          onImport={async (newOrders) => {
+            await importBulkOrders(newOrders);
             setShowUploadModal(false);
           }}
+          isMutating={isMutating}
         />
       )}
 
@@ -425,11 +396,8 @@ export function DashboardOrders() {
         open={showNewOrderModal}
         onOpenChange={setShowNewOrderModal}
         onClose={() => setShowNewOrderModal(false)}
-        onCreate={(order) => {
-          setOrders((prev) => [...prev, order]);
-          setShowNewOrderModal(false);
-        }}
-        drivers={drivers}
+        onCreate={() => setShowNewOrderModal(false)}
+        drivers={driverNames}
       />
     </>
   );
