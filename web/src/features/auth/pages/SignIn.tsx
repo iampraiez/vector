@@ -16,6 +16,7 @@ import {
 import { useAuthStore } from "../../../store/authStore";
 import { api } from "../../../lib/api";
 import { signInSchema, SignInValues } from "../../../lib/validations";
+import { ErrorAlert } from "../../../components/ui/ErrorAlert";
 
 export function DashboardSignIn() {
   const navigate = useNavigate();
@@ -52,23 +53,17 @@ export function DashboardSignIn() {
       navigate("/dashboard");
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
-      if (error.response?.data?.message) {
-        setGlobalError(error.response.data.message);
+      const msg =
+        error.response?.data?.message ||
+        "Failed to sign in. Please check your credentials.";
 
-        // If error message indicates unverified email, redirect to verify-email
-        if (
-          error.response.data.message
-            .toLowerCase()
-            .includes("verify your email")
-        ) {
-          setTimeout(() => {
-            navigate(
-              `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
-            );
-          }, 2000);
-        }
-      } else {
-        setGlobalError("Failed to sign in. Please check your credentials.");
+      setGlobalError(msg);
+
+      // If backend signals unverified email, redirect to verify page immediately
+      if (msg.toLowerCase().includes("verify your email")) {
+        navigate(
+          `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
+        );
       }
     }
   };
@@ -118,10 +113,11 @@ export function DashboardSignIn() {
 
             {/* Global Error Message */}
             {globalError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
-                <p className="text-[13px] text-red-600 font-semibold text-center">
-                  {globalError}
-                </p>
+              <div className="mb-5">
+                <ErrorAlert
+                  message={globalError}
+                  onDismiss={() => setGlobalError("")}
+                />
               </div>
             )}
 

@@ -32,11 +32,21 @@ export class MailService {
         to,
         from: {
           email: this.from,
-          name: 'Vector',
+          name: 'Vector Fleet',
+        },
+        replyTo: {
+          email: this.from,
+          name: 'Vector Fleet',
         },
         subject,
         text: text || html.replace(/<[^>]*>?/gm, ''),
         html,
+        headers: {
+          'X-Mailer': 'VectorFleet/1.0',
+          'X-Priority': '3',
+          Precedence: 'Bulk',
+          'List-Unsubscribe': `<mailto:${this.from}?subject=unsubscribe>`,
+        },
       });
 
       this.logger.log(`Email sent via SendGrid to ${to}`);

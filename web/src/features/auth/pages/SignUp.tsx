@@ -19,6 +19,7 @@ import { CheckCircleIcon as CheckSolid } from "@heroicons/react/24/solid";
 
 import { signUpFleetSchema, SignUpFleetValues } from "../../../lib/validations";
 import { api } from "../../../lib/api";
+import { ErrorAlert } from "../../../components/ui/ErrorAlert";
 
 const plans = [
   {
@@ -54,7 +55,6 @@ export function DashboardSignUp() {
   const [step, setStep] = useState<Step>("account");
   const [showPassword, setShowPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const [companySize, setCompanySize] = useState("");
 
@@ -93,9 +93,8 @@ export function DashboardSignUp() {
 
   const onSubmit = async (data: SignUpFleetValues) => {
     setGlobalError("");
-    setSuccessMessage("");
     try {
-      const res = await api.post("/auth/sign-up/fleet", {
+      await api.post("/auth/sign-up/fleet", {
         email: data.email,
         password: data.password,
         full_name: data.full_name,
@@ -103,19 +102,15 @@ export function DashboardSignUp() {
         plan_id: data.plan_id,
       });
 
-      setSuccessMessage(res.data.message || "Account created successfully.");
-      setTimeout(() => {
-        navigate(
-          `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
-        );
-      }, 3000);
+      // Immediately navigate to email verification; don't wait
+      navigate(
+        `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
+      );
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
-      if (error.response?.data?.message) {
-        setGlobalError(error.response.data.message);
-      } else {
-        setGlobalError("Failed to sign up. Please try again.");
-      }
+      setGlobalError(
+        error.response?.data?.message || "Failed to sign up. Please try again.",
+      );
     }
   };
 
@@ -126,23 +121,6 @@ export function DashboardSignUp() {
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === step);
-
-  if (successMessage) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-2xl p-10 text-center shadow-xl border border-black/5 animate-in fade-in zoom-in duration-500">
-          <CheckSolid className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Check your email
-          </h2>
-          <p className="text-gray-500">{successMessage}</p>
-          <p className="text-sm text-gray-400 mt-6">
-            Redirecting to verification...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
@@ -209,11 +187,10 @@ export function DashboardSignUp() {
           {/* Form Card */}
           <div className="bg-white border border-black/8 rounded-2xl p-8 md:p-10 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {globalError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
-                <p className="text-[13px] text-red-600 font-semibold text-center">
-                  {globalError}
-                </p>
-              </div>
+              <ErrorAlert
+                message={globalError}
+                onDismiss={() => setGlobalError("")}
+              />
             )}
 
             {/* --- STEP 1: ACCOUNT --- */}
