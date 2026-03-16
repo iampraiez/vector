@@ -51,11 +51,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          pnpm exec wrangler pages project create vector-web --production-branch main || echo "Project already exists or could not be created."
+          npx wrangler@latest pages project create vector-web --production-branch main || echo "Project already exists or could not be created."
 
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          pnpm exec wrangler pages deploy dist --project-name vector-web --branch main
+          npx wrangler@latest pages deploy dist --project-name vector-web --branch main
