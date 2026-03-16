@@ -144,95 +144,115 @@ export function DashboardDrivers() {
 
       {/* Drivers — Board view */}
       {viewMode === "board" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredDrivers.map((driver) => (
             <div
               key={driver.id}
               onClick={() => navigate("/dashboard/driver-detail")}
-              className="bg-white rounded-2xl p-6 border border-black/8 transition-all duration-200 group hover:border-emerald-600 hover:shadow-md cursor-pointer"
+              className="bg-white rounded-2xl p-6 border border-black/5 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 cursor-pointer relative overflow-hidden"
             >
+              {/* Active Glow Effect on Hover */}
+              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+
               {/* Driver Header */}
-              <div className="flex items-start gap-4 mb-5">
-                <div className="w-12 h-12 rounded-full bg-gray-50 border border-black/8 flex items-center justify-center shrink-0 relative transition-colors group-hover:bg-emerald-50">
-                  <span className="text-gray-500 font-bold text-[13px] group-hover:text-emerald-600">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-13 h-13 rounded-full bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 relative transition-all duration-300 group-hover:bg-emerald-50 group-hover:border-emerald-100">
+                  <span className="text-gray-500 font-bold text-[14px] tracking-tight group-hover:text-emerald-600">
                     {driver.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </span>
                   {driver.status === "active" && (
-                    <div className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-[0_0_0_1px_rgba(16,185,129,0.1)]" />
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[15px] font-bold text-gray-900 mb-1 truncate">
+                  <h3 className="text-[16px] font-bold text-gray-900 mb-0.5 truncate tracking-tight">
                     {driver.name}
                   </h3>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                      driver.status === "active"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : "bg-gray-50 text-gray-400"
-                    }`}
-                  >
-                    {driver.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${
+                        driver.status === "active"
+                          ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                          : "bg-gray-50 text-gray-400 border border-gray-100"
+                      }`}
+                    >
+                      {driver.status}
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-medium truncate">
+                      {driver.companyCode}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Contact Info */}
-              <div className="flex flex-col gap-2.5 mb-5 pb-5 border-b border-gray-100">
-                <div className="flex items-center gap-2.5 text-gray-500 hover:text-emerald-600 transition-colors">
-                  <EnvelopeIcon className="w-4 h-4 shrink-0 opacity-60" />
-                  <span className="text-[12px] truncate">{driver.email}</span>
+              {/* Contact & Vehicle Info */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-3 text-gray-500 group-hover:text-gray-700 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
+                    <EnvelopeIcon className="w-4 h-4 shrink-0 opacity-70" />
+                  </div>
+                  <span className="text-[13px] font-medium truncate">
+                    {driver.email}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2.5 text-gray-500">
-                  <PhoneIcon className="w-4 h-4 shrink-0 opacity-60" />
-                  <span className="text-[12px]">{driver.phone}</span>
+                <div className="flex items-center gap-3 text-gray-500 group-hover:text-gray-700 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
+                    <PhoneIcon className="w-4 h-4 shrink-0 opacity-70" />
+                  </div>
+                  <span className="text-[13px] font-medium">
+                    {driver.phone}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2.5 text-gray-500">
-                  <TruckIcon className="w-4 h-4 shrink-0 opacity-60" />
-                  <span className="text-[12px] font-medium text-gray-400">
+                <div className="flex items-center gap-3 text-gray-400 group-hover:text-gray-600 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
+                    <TruckIcon className="w-4 h-4 shrink-0 opacity-60" />
+                  </div>
+                  <span className="text-[13px] font-semibold tracking-tight">
                     {driver.vehicle}
                   </span>
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-                <div>
-                  <p className="text-lg font-bold text-gray-900 mb-0.5">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-2 bg-gray-50/50 rounded-xl p-3 mb-6 border border-black/5 transition-colors group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50">
+                <div className="text-center border-r border-black/5 last:border-0">
+                  <p className="text-lg font-bold text-gray-900 mb-0">
                     {driver.todayStops}
                   </p>
-                  <p className="text-[11px] text-gray-400 font-medium">Stops</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    Stops
+                  </p>
                 </div>
-                <div>
-                  <p className="text-lg font-bold text-gray-900 mb-0.5">
+                <div className="text-center border-r border-black/5 last:border-0">
+                  <p className="text-lg font-bold text-gray-900 mb-0">
                     {driver.completedRoutes}
                   </p>
-                  <p className="text-[11px] text-gray-400 font-medium">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                     Routes
                   </p>
                 </div>
-                <div>
-                  <div className="flex items-center justify-center gap-1 mb-0.5">
-                    <StarIcon className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <StarIcon className="w-3 h-3 text-amber-400 fill-amber-400" />
                     <p className="text-lg font-bold text-gray-900">
                       {driver.rating}
                     </p>
                   </div>
-                  <p className="text-[11px] text-gray-400 font-medium">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                     Rating
                   </p>
                 </div>
               </div>
 
               {/* Last Session & Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <ClockIcon className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-medium">
-                    Last seen {driver.lastSession}
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    {driver.lastSession}
                   </span>
                 </div>
                 <button
@@ -240,7 +260,7 @@ export function DashboardDrivers() {
                     e.stopPropagation();
                     handleRemoveDriver(driver.id, driver.name);
                   }}
-                  className="p-1.5 bg-transparent border border-black/8 rounded-lg text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:bg-red-50 hover:text-red-500 cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-black/5 rounded-lg text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:bg-red-50 hover:text-red-500 cursor-pointer shadow-sm"
                 >
                   <TrashIcon className="w-4 h-4" />
                 </button>

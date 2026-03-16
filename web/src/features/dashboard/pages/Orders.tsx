@@ -7,9 +7,15 @@ import {
   PencilIcon,
   UserIcon,
   ClockIcon,
-  XMarkIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../components/ui/dialog";
 
 type OrderStatus =
   | "unassigned"
@@ -167,14 +173,14 @@ export function DashboardOrders() {
           <div className="flex gap-3">
             <button
               onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-black/8 rounded-xl text-[13px] font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[13px] font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
             >
               <ArrowUpTrayIcon className="w-4 h-4" />
               Upload CSV
             </button>
             <button
               onClick={() => setShowNewOrderModal(true)}
-              className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 rounded-xl text-[13px] font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 cursor-pointer"
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-bold text-white shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 active:scale-95 cursor-pointer"
             >
               <PlusIcon className="w-4 h-4" />
               New Order
@@ -195,17 +201,17 @@ export function DashboardOrders() {
         </div>
 
         {/* Filters & Search */}
-        <div className="bg-white border border-black/8 rounded-2xl p-4 md:p-5 mb-8 shadow-sm">
+        <div className="bg-white border border-black/5 rounded-xl p-4 md:p-5 mb-8 shadow-sm">
           <div className="flex flex-col gap-4">
             {/* Search */}
             <div className="relative group">
               <MagnifyingGlassIcon className="w-4.5 h-4.5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-emerald-600" />
               <input
                 type="text"
-                placeholder="Search orders by customer, ID, or address..."
+                placeholder="Search orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-gray-50/50 border border-black/8 rounded-xl text-[13px] outline-none transition-all focus:border-emerald-600 focus:bg-white focus:shadow-[0_0_0_3px_rgba(5,150,105,0.08)] placeholder:text-gray-300"
+                className="w-full pl-11 pr-4 py-2.5 bg-gray-50/50 border border-black/5 rounded-lg text-[13px] outline-none transition-all focus:border-emerald-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(5,150,105,0.06)] placeholder:text-gray-300"
               />
             </div>
 
@@ -485,9 +491,9 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer shrink-0 ${
+      className={`px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer shrink-0 ${
         active
-          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+          ? "bg-emerald-600 text-white shadow-xl shadow-emerald-600/10"
           : "bg-gray-100/50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
       }`}
     >
@@ -510,93 +516,79 @@ function EditOrderModal({
   const [form, setForm] = useState(order);
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-        <div className="p-6 md:p-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-              Edit Order #{order.id}
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
+    <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
+        <DialogHeader className="p-6 md:p-8 border-b border-gray-100 bg-white">
+          <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+            Edit Order #{order.id}
+          </DialogTitle>
+        </DialogHeader>
 
-          <div className="space-y-4">
+        <div className="p-6 md:p-8 space-y-5 bg-white overflow-y-auto max-h-[60vh]">
+          <ModalInput
+            label="Customer Name"
+            value={form.customerName}
+            onChange={(v) => setForm({ ...form, customerName: v })}
+          />
+          <ModalInput
+            label="Address"
+            value={form.address}
+            onChange={(v) => setForm({ ...form, address: v })}
+          />
+          <div className="grid grid-cols-2 gap-4">
             <ModalInput
-              label="Customer Name"
-              value={form.customerName}
-              onChange={(v) => setForm({ ...form, customerName: v })}
+              label="Packages"
+              value={form.packages.toString()}
+              type="number"
+              onChange={(v) => setForm({ ...form, packages: parseInt(v) || 0 })}
             />
             <ModalInput
-              label="Address"
-              value={form.address}
-              onChange={(v) => setForm({ ...form, address: v })}
+              label="Time Window"
+              value={form.timeWindow}
+              onChange={(v) => setForm({ ...form, timeWindow: v })}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <ModalInput
-                label="Packages"
-                value={form.packages.toString()}
-                type="number"
-                onChange={(v) =>
-                  setForm({ ...form, packages: parseInt(v) || 0 })
-                }
-              />
-              <ModalInput
-                label="Time Window"
-                value={form.timeWindow}
-                onChange={(v) => setForm({ ...form, timeWindow: v })}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                Assign Driver
-              </label>
-              <select
-                value={form.assignedTo || ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    assignedTo: e.target.value || undefined,
-                    status: e.target.value ? "assigned" : "unassigned",
-                  })
-                }
-                className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] outline-none focus:border-emerald-600 transition-colors cursor-pointer"
-              >
-                <option value="">Unassigned</option>
-                {drivers.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
-
-          <div className="mt-8 flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 bg-gray-50 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+          <div>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+              Assign Driver
+            </label>
+            <select
+              value={form.assignedTo || ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  assignedTo: e.target.value || undefined,
+                  status: e.target.value ? "assigned" : "unassigned",
+                })
+              }
+              className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] font-medium outline-none focus:border-emerald-600 transition-colors cursor-pointer"
             >
-              Cancel
-            </button>
-            <button
-              onClick={() => onSave(form)}
-              className="flex-1 py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer"
-            >
-              Save Changes
-            </button>
+              <option value="">Unassigned</option>
+              {drivers.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      </div>
-    </div>
+
+        <DialogFooter className="p-6 md:p-8 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            className="flex-1 py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer"
+          >
+            Save Changes
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -646,25 +638,15 @@ function UploadCSVModal({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in duration-300">
-        <div className="p-6 md:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-              Upload CSV
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-lg"
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
+        <DialogHeader className="p-6 md:p-8 border-b border-gray-100 bg-white">
+          <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+            Upload CSV
+          </DialogTitle>
+        </DialogHeader>
 
+        <div className="p-6 md:p-8 bg-white">
           {!file ? (
             <div
               onDragOver={(e) => {
@@ -749,33 +731,33 @@ function UploadCSVModal({
               </button>
             </div>
           )}
-
-          <div className="mt-8 flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 text-gray-500 text-[13px] font-bold"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleImport}
-              disabled={!file || loading}
-              className={`flex-1 py-3 rounded-xl text-[13px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-                loading
-                  ? "bg-emerald-50 text-emerald-600 shadow-none"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
-              } disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none`}
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>Import Orders</>
-              )}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+
+        <DialogFooter className="p-6 md:p-8 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={!file || loading}
+            className={`flex-1 py-3 rounded-xl text-[13px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+              loading
+                ? "bg-emerald-50 text-emerald-600 shadow-none border border-emerald-100"
+                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
+            } disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none`}
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>Import Orders</>
+            )}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -798,6 +780,7 @@ function NewOrderModal({
     assignedTo: "",
     notes: "",
   });
+
   const [loading, setLoading] = useState(false);
 
   const handleCreate = () => {
@@ -820,27 +803,15 @@ function NewOrderModal({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[90vh]">
-        <div className="p-6 md:p-8 border-b border-gray-100 shrink-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-              New Order
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-lg"
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg p-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-6 md:p-8 border-b border-gray-100 bg-white shrink-0">
+          <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+            New Order
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 md:p-8 overflow-y-auto space-y-5">
+        <div className="p-6 md:p-8 overflow-y-auto space-y-5 bg-white">
           <ModalInput
             label="Customer Name *"
             value={form.customerName}
@@ -886,7 +857,7 @@ function NewOrderModal({
                     priority: e.target.value as "normal" | "high",
                   })
                 }
-                className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] outline-none hover:border-emerald-600/30 transition-colors"
+                className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] font-medium outline-none hover:border-emerald-600/30 transition-colors"
               >
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
@@ -900,7 +871,7 @@ function NewOrderModal({
             <select
               value={form.assignedTo}
               onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
-              className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] outline-none hover:border-emerald-600/30 transition-colors"
+              className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] font-medium outline-none hover:border-emerald-600/30 transition-colors"
             >
               <option value="">Unassigned</option>
               {drivers.map((d) => (
@@ -917,16 +888,16 @@ function NewOrderModal({
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-3 text-[13px] outline-none min-h-25 hover:border-emerald-600/30 transition-colors resize-none"
+              className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-3 text-[13px] font-medium outline-none min-h-25 hover:border-emerald-600/30 transition-colors resize-none placeholder:text-gray-300"
               placeholder="Gate code, special instructions..."
             />
           </div>
         </div>
 
-        <div className="p-6 md:p-8 border-t border-gray-100 bg-gray-50 shrink-0 flex gap-3">
+        <DialogFooter className="p-6 md:p-8 border-t border-gray-100 bg-gray-50 shrink-0 flex gap-3 sm:justify-between">
           <button
             onClick={onClose}
-            className="flex-1 py-3 text-gray-500 text-[13px] font-bold"
+            className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -937,9 +908,9 @@ function NewOrderModal({
           >
             {loading ? "Creating..." : "Create Order"}
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

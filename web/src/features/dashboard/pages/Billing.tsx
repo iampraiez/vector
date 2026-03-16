@@ -120,10 +120,13 @@ export function DashboardBilling() {
       </div>
 
       {/* Current Plan Section */}
-      <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-6">
+      <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
+
+        <div className="flex flex-wrap items-center justify-between gap-6 relative z-10">
           <div className="flex-1 min-w-60">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
                 Active Plan
@@ -133,13 +136,16 @@ export function DashboardBilling() {
               Fleet Professional
             </h2>
             <div className="flex flex-wrap items-center gap-4 text-gray-500 text-[13px]">
-              <p>
+              <p className="flex items-center gap-1.5 font-medium">
                 Next billing:{" "}
-                <span className="font-bold text-gray-700">April 1, 2026</span>
+                <span className="font-bold text-gray-900">April 1, 2026</span>
               </p>
               <div className="w-1 h-1 rounded-full bg-gray-200" />
-              <p>
-                Credit: <span className="font-bold text-gray-700">$0.00</span>
+              <p className="flex items-center gap-1.5 font-medium">
+                Credit:{" "}
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 rounded-md">
+                  $0.00
+                </span>
               </p>
             </div>
           </div>
@@ -147,24 +153,24 @@ export function DashboardBilling() {
           <div className="flex flex-col items-start md:items-end gap-4">
             <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl md:text-4xl font-bold text-gray-900">
+                <span className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tighter">
                   $49
                 </span>
-                <span className="text-gray-400 font-semibold tracking-wider text-[13px]">
+                <span className="text-gray-400 font-bold tracking-tight text-[13px]">
                   /mo
                 </span>
               </div>
-              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 text-center md:text-right">
                 Billed monthly
               </p>
             </div>
             <button
               onClick={() => setShowChangePlan(!showChangePlan)}
-              className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl shadow-sm transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center gap-2"
+              className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center gap-2"
             >
               {showChangePlan ? "Hide Plans" : "Change Plan"}
               <ChevronRightIcon
-                className={`w-4 h-4 transition-transform ${showChangePlan ? "rotate-90" : ""}`}
+                className={`w-4 h-4 transition-transform duration-300 ${showChangePlan ? "rotate-90" : ""}`}
               />
             </button>
           </div>
@@ -249,7 +255,7 @@ export function DashboardBilling() {
       {/* Grid and Usage */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Payment Method */}
-        <div className="bg-white border border-black/8 rounded-3xl p-8 shadow-sm">
+        <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">
               Payment Method
@@ -259,51 +265,51 @@ export function DashboardBilling() {
             </button>
           </div>
 
-          <div className="group bg-gray-50/50 border border-black/5 rounded-2xl p-6 flex items-center justify-between transition-all hover:bg-white hover:border-emerald-200 hover:shadow-lg mb-6">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20 transition-transform group-hover:scale-110">
-                <CreditCardIcon className="w-7 h-7 text-white" />
+          <div className="group bg-gray-50/50 border border-black/5 rounded-xl p-5 flex items-center justify-between transition-all hover:bg-white hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-600/5 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-9 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20 transition-transform group-hover:scale-105">
+                <CreditCardIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-[14px] font-bold text-gray-900 mb-0.5">
+                <p className="text-[14px] font-bold text-gray-900 mb-0.5 tracking-tight">
                   •••• •••• •••• 4242
                 </p>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                   Mastercard • Expires 12/27
                 </p>
               </div>
             </div>
-            <button className="p-2.5 rounded-xl border border-black/8 hover:border-emerald-600/30 hover:bg-emerald-50 transition-colors group/edit cursor-pointer">
+            <button className="p-2 rounded-lg border border-black/5 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all group/edit cursor-pointer">
               <ArrowUpRightIcon className="w-4 h-4 text-gray-400 group-hover/edit:text-emerald-600" />
             </button>
           </div>
 
-          <button className="w-full h-14 border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 font-bold text-[13px] hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all cursor-pointer">
+          <button className="w-full py-4 border-2 border-dashed border-gray-100 rounded-xl text-gray-400 font-bold text-[13px] hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all cursor-pointer">
             + Add New Payment Method
           </button>
         </div>
 
         {/* Usage Metrics */}
-        <div className="bg-white border border-black/8 rounded-3xl p-8 shadow-sm">
+        <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-8">
             Capacity & Usage
           </h2>
-          <div className="space-y-8">
+          <div className="space-y-6">
             {usageItems.map((item) => {
               const pct = Math.round((item.used / item.total) * 100);
               return (
                 <div key={item.label}>
-                  <div className="flex justify-between items-end mb-3">
+                  <div className="flex justify-between items-end mb-2.5">
                     <div>
-                      <p className="text-[13px] font-bold text-gray-800">
+                      <p className="text-[13px] font-bold text-gray-800 tracking-tight">
                         {item.label}
                       </p>
                       <p className="text-[11px] text-gray-400 font-medium">
-                        Standard monthly quota
+                        Standard quota
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[15px] font-bold text-gray-900">
+                      <span className="text-[15px] font-bold text-gray-900 tracking-tight">
                         {item.used.toLocaleString()}
                       </span>
                       <span className="text-[12px] text-gray-300 font-bold mx-1">
@@ -314,20 +320,20 @@ export function DashboardBilling() {
                       </span>
                     </div>
                   </div>
-                  <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden border border-black/5">
+                  <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden border border-black/5">
                     <div
-                      className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out shadow-sm`}
+                      className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
                   <div className="flex justify-between mt-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
                       {pct}% utilized
                     </span>
                     {pct > 80 && (
                       <div className="flex items-center gap-1">
                         <ExclamationCircleIcon className="w-3 h-3 text-amber-500" />
-                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                        <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest">
                           Near Limit
                         </span>
                       </div>
@@ -341,8 +347,8 @@ export function DashboardBilling() {
       </div>
 
       {/* Invoices */}
-      <div className="bg-white border border-black/8 rounded-3xl overflow-hidden shadow-sm shadow-black/5">
-        <div className="p-6 md:p-8 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white border border-black/5 rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-6 md:p-8 border-b border-gray-50 flex flex-wrap items-center justify-between gap-4 bg-gray-50/30">
           <div>
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">
               Recent Statements
@@ -351,9 +357,9 @@ export function DashboardBilling() {
               Download and review your past billing records
             </p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-black/5 rounded-xl text-[12px] font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer capitalize">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer capitalize shadow-sm">
             <ArrowDownTrayIcon className="w-4 h-4" />
-            Download All History
+            Download History
           </button>
         </div>
 

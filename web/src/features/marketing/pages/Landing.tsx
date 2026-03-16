@@ -187,7 +187,7 @@ export function WebLanding() {
             <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
               <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
             </div>
-            <span className="text-[18px] font-extrabold tracking-tight text-[#121212]">
+            <span className="text-[16px] font-extrabold tracking-[0.04em] text-[#121212]">
               VECTOR
             </span>
           </div>
@@ -765,7 +765,7 @@ export function WebLanding() {
                     strokeWidth={2.4}
                   />
                 </div>
-                <span className="text-[18px] font-extrabold text-[#121212] tracking-tight">
+                <span className="text-[16px] font-extrabold text-[#121212] tracking-[0.04em]">
                   VECTOR
                 </span>
               </div>

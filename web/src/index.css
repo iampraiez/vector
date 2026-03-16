@@ -12,6 +12,15 @@
   --font-sans:
     "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-sidebar: var(--color-white);
+  --color-sidebar-foreground: var(--color-gray-900);
+  --color-sidebar-primary: var(--color-primary);
+  --color-sidebar-primary-foreground: var(--color-white);
+  --color-sidebar-accent: var(--color-gray-50);
+  --color-sidebar-accent-foreground: var(--color-gray-900);
+  --color-sidebar-border: var(--color-border-subtle);
+  --color-sidebar-ring: var(--color-primary);
 }
 
 @layer base {
