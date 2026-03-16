@@ -12,6 +12,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { RoutesService } from './routes.service';
+import {
+  CreateRouteDto,
+  UpdateRouteDto,
+  AssignRouteDto,
+} from './dto/routes.dto';
+
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -30,7 +36,10 @@ export class RoutesController {
 
   @Post()
   @Roles('admin', 'manager')
-  createRoute(@CurrentUser('company_id') companyId: string, @Body() dto: any) {
+  createRoute(
+    @CurrentUser('company_id') companyId: string,
+    @Body() dto: CreateRouteDto,
+  ) {
     return this.routesService.createRoute(companyId, dto);
   }
 
@@ -48,7 +57,7 @@ export class RoutesController {
   updateRoute(
     @CurrentUser('company_id') companyId: string,
     @Param('route_id') routeId: string,
-    @Body() dto: any,
+    @Body() dto: UpdateRouteDto,
   ) {
     return this.routesService.updateRoute(companyId, routeId, dto);
   }
@@ -77,7 +86,7 @@ export class RoutesController {
   assignRoute(
     @CurrentUser('company_id') companyId: string,
     @Param('route_id') routeId: string,
-    @Body() dto: { driver_id: string },
+    @Body() dto: AssignRouteDto,
   ) {
     return this.routesService.assignRoute(companyId, routeId, dto);
   }

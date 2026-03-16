@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   EnvelopeIcon,
   LockClosedIcon,
@@ -10,33 +12,53 @@ import {
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 
+import { useAuthStore } from "../../../store/authStore";
+import { api } from "../../../lib/api";
+import { signInSchema, SignInValues } from "../../../lib/validations";
+
 export function DashboardSignIn() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [emailValid, setEmailValid] = useState(false);
-  const [error, setError] = useState("");
+  const [globalError, setGlobalError] = useState("");
 
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setEmailValid(emailRegex.test(value));
-    if (error) setError("");
-  };
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting, isValid },
+  } = useForm<SignInValues>({
+    resolver: zodResolver(signInSchema),
+    mode: "onChange",
+  });
 
-  const handleSignIn = () => {
-    if (!emailValid || password.length < 8) return;
-    setLoading(true);
-    setError("");
-    setTimeout(() => {
-      setLoading(false);
+  const emailValue = watch("email");
+  const emailValid = !errors.email && emailValue?.length > 0;
+
+  const onSubmit = async (data: SignInValues) => {
+    setGlobalError("");
+    try {
+      const res = await api.post("/auth/sign-in", {
+        email: data.email,
+        password: data.password,
+        device_id: navigator.userAgent, // or some actual device ID generator
+      });
+
+      const { user, access_token, refresh_token } = res.data;
+      setAuth(user, access_token, refresh_token);
+
       navigate("/dashboard");
-    }, 1500);
+    } catch (err: any) {
+      if (err.response?.data?.message) {
+        setGlobalError(err.response.data.message);
+      } else {
+        setGlobalError("Failed to sign in. Please check your credentials.");
+      }
+    }
   };
 
-  const canSubmit = emailValid && password.length >= 8 && !loading;
+  const canSubmit = isValid && !isSubmitting;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
@@ -79,23 +101,17 @@ export function DashboardSignIn() {
               </p>
             </div>
 
-            {/* Error Message */}
-            {error && (
+            {/* Global Error Message */}
+            {globalError && (
               <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
                 <p className="text-[13px] text-red-600 font-semibold text-center">
-                  {error}
+                  {globalError}
                 </p>
               </div>
             )}
 
             {/* Form Fields */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSignIn();
-              }}
-              className="space-y-5"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Email Field */}
               <div className="space-y-1.5">
                 <label
@@ -112,21 +128,25 @@ export function DashboardSignIn() {
                     id="signin-email"
                     type="email"
                     autoComplete="email"
-                    value={email}
-                    onChange={(e) => handleEmailChange(e.target.value)}
+                    {...register("email")}
                     placeholder="name@company.com"
                     className={`w-full h-12 pl-11 pr-11 bg-white border rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
-                      emailValid
-                        ? "border-emerald-500 ring-4 ring-emerald-600/5"
-                        : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
+                      errors.email
+                        ? "border-red-500 focus:ring-4 focus:ring-red-600/10"
+                        : emailValid
+                          ? "border-emerald-500 ring-4 ring-emerald-600/5"
+                          : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
                     }`}
                   />
-                  {emailValid && (
+                  {emailValid && !errors.email && (
                     <div className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-in zoom-in duration-300">
                       <CheckCircleIcon className="w-4.5 h-4.5 text-emerald-600" />
                     </div>
                   )}
                 </div>
+                {errors.email && (
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               {/* Password Field */}
@@ -154,10 +174,13 @@ export function DashboardSignIn() {
                     id="signin-password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    {...register("password")}
                     placeholder="••••••••"
-                    className="w-full h-12 pl-11 pr-12 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
+                    className={`w-full h-12 pl-11 pr-12 bg-white border rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
+                      errors.password
+                        ? "border-red-500 focus:ring-4 focus:ring-red-600/10"
+                        : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
+                    }`}
                   />
                   <button
                     type="button"
@@ -171,6 +194,9 @@ export function DashboardSignIn() {
                     )}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-xs text-red-500">{errors.password.message}</p>
+                )}
               </div>
 
               {/* Submit Button */}
@@ -184,7 +210,7 @@ export function DashboardSignIn() {
                     : "bg-gray-100 text-gray-300 cursor-not-allowed"
                 }`}
               >
-                {loading ? (
+                {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Signing in...

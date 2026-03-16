@@ -12,7 +12,9 @@ import {
   UpdateOrderDto,
   ReportQueryDto,
   ChangePlanDto,
+  CreateDriverDto,
 } from './dto/dashboard.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class DashboardService {
@@ -272,16 +274,40 @@ export class DashboardService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  createDriverInvite(_companyId: string, _dto: any) {
-    // In a real app, you would:
-    // 1. Create a user record with a generic password
-    // 2. Or create an invite token in Redis and send an email
+  async createDriverInvite(companyId: string, dto: CreateDriverDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existingUser) {
+      throw new ConflictException('An account with this email already exists');
+    }
 
-    // For this stub, we return a mock response
+    const tempPassword = `vec-${Math.random().toString(36).substring(2, 8)}`;
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        full_name: dto.full_name,
+        phone: dto.phone,
+        role: 'driver',
+        company_id: companyId,
+        driver_profile: {
+          create: {
+            company_id: companyId,
+            vehicle_type: dto.vehicle_type,
+            vehicle_plate: dto.vehicle_plate,
+            status: 'offline',
+          },
+        },
+      },
+    });
+
     return {
-      message: 'Driver invite sent successfully',
-      temp_password: 'vector-temp-pass',
+      message: 'Driver invite created successfully',
+      temp_password: tempPassword,
+      user_id: user.id,
     };
   }
 
@@ -619,11 +645,35 @@ export class DashboardService {
     return { invoices };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  changePlan(_companyId: string, _dto: ChangePlanDto) {
-    // Stub for Paystack integration
+  async changePlan(companyId: string, dto: ChangePlanDto) {
+    const activeRecord = await this.prisma.billingRecord.findFirst({
+      where: { company_id: companyId, status: 'active' },
+    });
+
+    if (activeRecord) {
+      // Archive old plan
+      await this.prisma.billingRecord.update({
+        where: { id: activeRecord.id },
+        data: { status: 'canceled', cancel_at_period_end: false },
+      });
+    }
+
+    // Create new plan record
+    await this.prisma.billingRecord.create({
+      data: {
+        company_id: companyId,
+        plan_id: dto.plan_id,
+        status: 'active',
+        current_period_start: new Date().toISOString(),
+        // Example: start a new 30-day period
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    });
+
+    // Stub for Paystack/Stripe checkout URL if you actually needed payment intent
     return {
-      message: 'Plan change initiated',
+      message: 'Plan changed successfully',
+      plan_id: dto.plan_id,
       checkout_url: 'https://paystack.com/pay/stub',
     };
   }

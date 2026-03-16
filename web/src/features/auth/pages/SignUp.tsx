@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   EnvelopeIcon,
   LockClosedIcon,
@@ -13,6 +15,9 @@ import {
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckSolid } from "@heroicons/react/24/solid";
+
+import { signUpFleetSchema, SignUpFleetValues } from "../../../lib/validations";
+import { api } from "../../../lib/api";
 
 const plans = [
   {
@@ -47,36 +52,67 @@ export function DashboardSignUp() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("account");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [globalError, setGlobalError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    companyName: "",
-    companySize: "",
-    plan: "starter",
+  const [companySize, setCompanySize] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    trigger,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFleetValues>({
+    resolver: zodResolver(signUpFleetSchema),
+    mode: "onChange",
+    defaultValues: {
+      plan_id: "starter",
+    },
   });
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-  const step1Valid =
-    formData.fullName.trim().length >= 2 &&
-    emailValid &&
-    formData.password.length >= 8;
-  const step2Valid =
-    formData.companyName.trim().length >= 2 && formData.companySize !== "";
+  const emailValue = watch("email");
+  const emailValid = !errors.email && emailValue?.length > 0;
+  const currentPlan = watch("plan_id");
 
-  const handleNext = () => {
-    if (step === "account" && step1Valid) setStep("company");
-    else if (step === "company" && step2Valid) setStep("plan");
+  const handleNextToCompany = async () => {
+    const isStep1Valid = await trigger(["full_name", "email", "password"]);
+    if (isStep1Valid) {
+      setStep("company");
+    }
   };
 
-  const handleSubmit = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/dashboard");
-    }, 1800);
+  const handleNextToPlan = async () => {
+    const isStep2Valid = await trigger(["company_name"]);
+    if (isStep2Valid && companySize) {
+      setStep("plan");
+    }
+  };
+
+  const onSubmit = async (data: SignUpFleetValues) => {
+    setGlobalError("");
+    setSuccessMessage("");
+    try {
+      const res = await api.post("/auth/sign-up/fleet", {
+        email: data.email,
+        password: data.password,
+        full_name: data.full_name,
+        company_name: data.company_name,
+        plan_id: data.plan_id,
+      });
+
+      setSuccessMessage(res.data.message || "Account created successfully.");
+      setTimeout(() => {
+        navigate("/dashboard/signin");
+      }, 3000);
+    } catch (err: any) {
+      if (err.response?.data?.message) {
+        setGlobalError(err.response.data.message);
+      } else {
+        setGlobalError("Failed to sign up. Please try again.");
+      }
+    }
   };
 
   const steps: { id: Step; label: string; num: number }[] = [
@@ -86,6 +122,19 @@ export function DashboardSignUp() {
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === step);
+
+  if (successMessage) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white rounded-2xl p-10 text-center shadow-xl border border-black/5 animate-in fade-in zoom-in duration-500">
+          <CheckSolid className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
+          <p className="text-gray-500">{successMessage}</p>
+          <p className="text-sm text-gray-400 mt-6">Redirecting to sign in...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
@@ -151,15 +200,17 @@ export function DashboardSignUp() {
 
           {/* Form Card */}
           <div className="bg-white border border-black/8 rounded-2xl p-8 md:p-10 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {globalError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
+                <p className="text-[13px] text-red-600 font-semibold text-center">
+                  {globalError}
+                </p>
+              </div>
+            )}
+
             {/* --- STEP 1: ACCOUNT --- */}
             {step === "account" && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleNext();
-                }}
-                className="animate-in slide-in-from-right-4 duration-500"
-              >
+              <div className="animate-in slide-in-from-right-4 duration-500">
                 <div className="mb-7">
                   <h1 className="text-2xl font-extrabold text-gray-900 mb-1.5 tracking-tight">
                     Create your account
@@ -183,14 +234,18 @@ export function DashboardSignUp() {
                         id="signup-name"
                         type="text"
                         autoComplete="name"
-                        value={formData.fullName}
-                        onChange={(e) =>
-                          setFormData({ ...formData, fullName: e.target.value })
-                        }
-                        className="w-full h-12 pl-11 pr-4 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
+                        {...register("full_name")}
+                        className={`w-full h-12 pl-11 pr-4 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
+                          errors.full_name
+                            ? "border-red-500 focus:ring-4 focus:ring-red-600/10"
+                            : "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
+                        }`}
                         placeholder="Alex Rivera"
                       />
                     </div>
+                    {errors.full_name && (
+                      <p className="text-xs text-red-500">{errors.full_name.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -206,21 +261,23 @@ export function DashboardSignUp() {
                         id="signup-email"
                         type="email"
                         autoComplete="email"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
+                        {...register("email")}
                         className={`w-full h-12 pl-11 pr-11 bg-white border rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
-                          emailValid
-                            ? "border-emerald-500 ring-4 ring-emerald-600/5"
-                            : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
+                          errors.email
+                            ? "border-red-500 focus:ring-4 focus:ring-red-600/10"
+                            : emailValid
+                              ? "border-emerald-500 ring-4 ring-emerald-600/5"
+                              : "border-black/10 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
                         }`}
                         placeholder="name@company.com"
                       />
-                      {emailValid && (
+                      {emailValid && !errors.email && (
                         <CheckCircleIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-emerald-600 animate-in zoom-in" />
                       )}
                     </div>
+                    {errors.email && (
+                      <p className="text-xs text-red-500">{errors.email.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -236,11 +293,12 @@ export function DashboardSignUp() {
                         id="signup-password"
                         type={showPassword ? "text" : "password"}
                         autoComplete="new-password"
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        className="w-full h-12 pl-11 pr-12 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
+                        {...register("password")}
+                        className={`w-full h-12 pl-11 pr-12 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
+                          errors.password
+                            ? "border-red-500 focus:ring-4 focus:ring-red-600/10"
+                            : "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
+                        }`}
                         placeholder="••••••••"
                       />
                       <button
@@ -255,33 +313,26 @@ export function DashboardSignUp() {
                         )}
                       </button>
                     </div>
+                    {errors.password && (
+                      <p className="text-xs text-red-500">{errors.password.message}</p>
+                    )}
                   </div>
 
                   <button
-                    type="submit"
-                    disabled={!step1Valid}
-                    className={`w-full h-12 mt-1 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
-                      step1Valid
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5"
-                        : "bg-gray-100 text-gray-300 cursor-not-allowed"
-                    }`}
+                    type="button"
+                    onClick={handleNextToCompany}
+                    className="w-full h-12 mt-1 rounded-xl bg-emerald-600 text-white font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5"
                   >
                     Continue
                     <ArrowRightIcon className="w-4 h-4" />
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* --- STEP 2: COMPANY --- */}
             {step === "company" && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleNext();
-                }}
-                className="animate-in slide-in-from-right-4 duration-500"
-              >
+              <div className="animate-in slide-in-from-right-4 duration-500">
                 <button
                   type="button"
                   onClick={() => setStep("account")}
@@ -313,17 +364,18 @@ export function DashboardSignUp() {
                         id="signup-company"
                         type="text"
                         autoComplete="organization"
-                        value={formData.companyName}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            companyName: e.target.value,
-                          })
-                        }
-                        className="w-full h-12 pl-11 pr-4 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5 transition-all"
+                        {...register("company_name")}
+                        className={`w-full h-12 pl-11 pr-4 bg-white border border-black/10 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
+                          errors.company_name
+                            ? "border-red-500 focus:ring-4 focus:ring-red-600/10"
+                            : "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-600/5"
+                        }`}
                         placeholder="e.g. Acme Logistics"
                       />
                     </div>
+                    {errors.company_name && (
+                      <p className="text-xs text-red-500">{errors.company_name.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -335,11 +387,9 @@ export function DashboardSignUp() {
                         <button
                           key={size}
                           type="button"
-                          onClick={() =>
-                            setFormData({ ...formData, companySize: size })
-                          }
+                          onClick={() => setCompanySize(size)}
                           className={`h-11 rounded-xl text-[13px] font-bold border transition-all cursor-pointer ${
-                            formData.companySize === size
+                            companySize === size
                               ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
                               : "bg-white border-black/10 text-gray-500 hover:border-emerald-400/40"
                           }`}
@@ -351,10 +401,11 @@ export function DashboardSignUp() {
                   </div>
 
                   <button
-                    type="submit"
-                    disabled={!step2Valid}
+                    type="button"
+                    onClick={handleNextToPlan}
+                    disabled={!companySize}
                     className={`w-full h-12 mt-1 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
-                      step2Valid
+                      companySize
                         ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5"
                         : "bg-gray-100 text-gray-300 cursor-not-allowed"
                     }`}
@@ -363,13 +414,17 @@ export function DashboardSignUp() {
                     <ArrowRightIcon className="w-4 h-4" />
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* --- STEP 3: PLAN --- */}
             {step === "plan" && (
-              <div className="animate-in slide-in-from-right-4 duration-500">
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="animate-in slide-in-from-right-4 duration-500"
+              >
                 <button
+                  type="button"
                   onClick={() => setStep("company")}
                   className="flex items-center gap-2 text-[12px] font-bold text-gray-300 hover:text-gray-700 mb-7 transition-colors group cursor-pointer"
                 >
@@ -386,53 +441,64 @@ export function DashboardSignUp() {
                 </div>
 
                 <div className="space-y-3 mb-7">
-                  {plans.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setFormData({ ...formData, plan: p.id })}
-                      className={`w-full p-4 rounded-xl border-2 text-left relative transition-all cursor-pointer ${
-                        formData.plan === p.id
-                          ? "bg-emerald-50 border-emerald-500 shadow-sm"
-                          : "bg-white border-black/8 hover:border-emerald-400/40"
-                      }`}
-                    >
-                      {p.highlight && (
-                        <div className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full">
-                          Popular
+                  {plans.map((p) => {
+                    const isSelected = currentPlan === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setValue("plan_id", p.id, { shouldValidate: true })}
+                        className={`w-full p-4 rounded-xl border-2 text-left relative transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-emerald-50 border-emerald-500 shadow-sm"
+                            : "bg-white border-black/8 hover:border-emerald-400/40"
+                        }`}
+                      >
+                        {p.highlight && (
+                          <div className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full">
+                            Popular
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p
+                              className={`text-[14px] font-bold ${isSelected ? "text-emerald-900" : "text-gray-900"}`}
+                            >
+                              {p.name}
+                            </p>
+                            <p className="text-[12px] text-gray-400 font-medium mt-0.5">
+                              {p.drivers}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p
+                              className={`text-lg font-black tracking-tight ${isSelected ? "text-emerald-600" : "text-gray-900"}`}
+                            >
+                              {p.price}
+                              <span className="text-[11px] font-bold text-gray-400">
+                                {p.period}
+                              </span>
+                            </p>
+                          </div>
                         </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p
-                            className={`text-[14px] font-bold ${formData.plan === p.id ? "text-emerald-900" : "text-gray-900"}`}
-                          >
-                            {p.name}
-                          </p>
-                          <p className="text-[12px] text-gray-400 font-medium mt-0.5">
-                            {p.drivers}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p
-                            className={`text-lg font-black tracking-tight ${formData.plan === p.id ? "text-emerald-600" : "text-gray-900"}`}
-                          >
-                            {p.price}
-                            <span className="text-[11px] font-bold text-gray-400">
-                              {p.period}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <button
-                  onClick={handleSubmit}
-                  className="w-full h-12 bg-gray-900 text-white rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-xl shadow-black/10 hover:bg-black hover:-translate-y-0.5 active:translate-y-0"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full h-12 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
+                    isSubmitting
+                      ? "bg-gray-800 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-900 text-white shadow-xl shadow-black/10 hover:bg-black hover:-translate-y-0.5 active:translate-y-0"
+                  }`}
                 >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    </>
                   ) : (
                     <>
                       Launch Workspace
@@ -452,7 +518,7 @@ export function DashboardSignUp() {
                   </a>
                   .
                 </p>
-              </div>
+              </form>
             )}
           </div>
         </div>
