@@ -271,7 +271,7 @@ export function DashboardNotifications() {
                 }`}
               >
                 <div
-                  className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${colorClass}`}
+                  className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${colorClass}`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
@@ -286,7 +286,7 @@ export function DashboardNotifications() {
                         <span className="ml-2 inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full align-middle" />
                       )}
                     </p>
-                    <span className="flex-shrink-0 text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                    <span className="shrink-0 text-[11px] text-gray-400 font-medium whitespace-nowrap">
                       {n.time}
                     </span>
                   </div>
@@ -300,7 +300,7 @@ export function DashboardNotifications() {
                     e.stopPropagation();
                     remove(n.id);
                   }}
-                  className="self-start flex-shrink-0 p-1.5 rounded-lg text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 transition-all cursor-pointer"
+                  className="self-start shrink-0 p-1.5 rounded-lg text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 transition-all cursor-pointer"
                 >
                   <TrashIcon className="w-4 h-4" />
                 </button>
