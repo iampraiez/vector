@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/inputs.dart';
@@ -16,12 +17,14 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
   bool _isManualTab = true;
   final TextEditingController _nameController = TextEditingController();
   final List<Map<String, dynamic>> _stops = [
-    {'address': '', 'packages': 1}
+    {'customerName': '', 'address': '', 'packages': 1, 'date': DateTime.now()}
   ];
   bool _creating = false;
+  String? _importedFileName;
+  int _detectedOrders = 0;
 
   void _addStop() {
-    setState(() => _stops.add({'address': '', 'packages': 1}));
+    setState(() => _stops.add({'customerName': '', 'address': '', 'packages': 1, 'date': DateTime.now()}));
   }
 
   void _removeStop(int index) {
@@ -204,9 +207,17 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                             ),
                             const SizedBox(height: AppSpacing.p3),
                             AppTextField(
+                              hintText: 'Customer name (Optional)',
+                              initialValue: s['customerName'],
+                              onChanged: (v) => setState(() => _stops[idx]['customerName'] = v),
+                              prefixIcon: const Icon(Icons.person_outline, size: 18),
+                            ),
+                            const SizedBox(height: AppSpacing.p3),
+                            AppTextField(
                               hintText: 'Enter delivery address',
                               initialValue: s['address'],
                               onChanged: (v) => setState(() => _stops[idx]['address'] = v),
+                              prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                             ),
                             const SizedBox(height: AppSpacing.p2),
                             Row(
@@ -222,7 +233,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                                 Container(
                                   width: 40,
                                   alignment: Alignment.center,
-                                  child: Text('${s['packages']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                  child: Text('${s['packages']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.add_circle_outline),
@@ -230,7 +241,38 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                                   onPressed: () => setState(() => _stops[idx]['packages']++),
                                 ),
                               ],
-                            )
+                            ),
+                            const Divider(color: AppColors.border, height: 24),
+                            // Per-stop Date
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: s['date'],
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                                );
+                                if (picked != null) setState(() => _stops[idx]['date'] = picked);
+                              },
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Delivery Date',
+                                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                                    ),
+                                  ),
+                                  Text(
+                                    DateFormat('MMM dd, yyyy').format(s['date']),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -271,30 +313,83 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     ),
                   ] else ...[
                     // Import UI
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border, width: 1.5), // Clean solid border
-                      ),
-                      alignment: Alignment.center,
-                      child: Column(
+                    if (_importedFileName == null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border, width: 1.5), // Clean solid border
+                        ),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 64, height: 64,
+                              decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                              child: const Icon(Icons.upload_file, color: AppColors.primary, size: 28),
+                            ),
+                            const SizedBox(height: AppSpacing.p4),
+                            const Text('Upload CSV or Excel file', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                            const SizedBox(height: AppSpacing.p2),
+                            const Text('Drag and drop or click to browse', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                            const SizedBox(height: AppSpacing.p4),
+                            AppButton(
+                              label: 'Choose file', 
+                              variant: ButtonVariant.outline, 
+                              onPressed: () {
+                                setState(() {
+                                  _importedFileName = 'orders_march_17.csv';
+                                  _detectedOrders = 12;
+                                });
+                              }
+                            )
+                          ],
+                        ),
+                      )
+                    else
+                      Column(
                         children: [
                           Container(
-                            width: 64, height: 64,
-                            decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
-                            child: const Icon(Icons.upload_file, color: AppColors.primary, size: 28),
+                            padding: const EdgeInsets.all(AppSpacing.p4),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.primary),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40, height: 40,
+                                  decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                                  child: const Icon(Icons.description, color: AppColors.primary, size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(_importedFileName!, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                                      Text('$_detectedOrders orders detected', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                                  onPressed: () => setState(() => _importedFileName = null),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: AppSpacing.p4),
-                          const Text('Upload CSV or Excel file', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                          const SizedBox(height: AppSpacing.p2),
-                          const Text('Drag and drop or click to browse', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                          const SizedBox(height: AppSpacing.p4),
-                          AppButton(label: 'Choose file', variant: ButtonVariant.outline, onPressed: () {})
+                          const SizedBox(height: AppSpacing.p6),
+                          AppButton(
+                            label: _creating ? 'Importing...' : 'Confirm & import orders',
+                            isFullWidth: true,
+                            onPressed: _createRoute,
+                          ),
                         ],
                       ),
-                    ),
+                    
                     const SizedBox(height: AppSpacing.p6),
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.p5),
@@ -304,14 +399,14 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                         children: [
                           Row(
                             children: const [
-                              Icon(Icons.description_outlined, color: AppColors.primary, size: 20),
+                              Icon(Icons.info_outline, color: AppColors.primary, size: 20),
                               SizedBox(width: AppSpacing.p3),
-                              Text('File format', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                              Text('Simple Import Guide', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                             ],
                           ),
                           const SizedBox(height: AppSpacing.p3),
                           const Text(
-                            'Your file should include columns for:\n• Address\n• Package count\n• (Optional) Customer name',
+                            'Upload a CSV with these columns:\n• Full Address (Required)\n• Packages (Default: 1)\n• Customer Name (Optional)',
                             style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.6),
                           )
                         ],

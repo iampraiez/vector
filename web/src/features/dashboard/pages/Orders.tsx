@@ -11,15 +11,12 @@ import {
   ClockIcon,
   DocumentTextIcon,
   ArchiveBoxIcon,
+  TrashIcon,
+  CheckIcon,
+  DocumentIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal, ModalInput } from "../components/NewOrderModal";
 import { Order } from "../../../store/orderStore";
-type OrderStatus =
-  | "unassigned"
-  | "assigned"
-  | "in_progress"
-  | "completed"
-  | "failed";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +24,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../../components/ui/dialog";
+
+type OrderStatus =
+  | "unassigned"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "failed";
 
 export function DashboardOrders() {
   const {
@@ -45,6 +49,7 @@ export function DashboardOrders() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   useEffect(() => {
     fetchOrders({ limit: 100 });
@@ -120,6 +125,28 @@ export function DashboardOrders() {
             </p>
           </div>
           <div className="flex gap-3">
+            {selectedOrders.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (
+                      confirm(
+                        `Are you sure you want to delete ${selectedOrders.length} orders?`,
+                      )
+                    ) {
+                      await useOrderStore
+                        .getState()
+                        .deleteOrders(selectedOrders);
+                      setSelectedOrders([]);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] font-bold shadow-sm transition-all hover:bg-red-100 hover:shadow-md cursor-pointer"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            )}
             <button
               onClick={() => setShowUploadModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[13px] font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
@@ -216,21 +243,47 @@ export function DashboardOrders() {
                 </p>
               </div>
             ) : (
-              filteredOrders.map((order) => (
+              filteredOrders.map((order, index) => (
                 <div
                   key={order.id}
-                  className="bg-white border border-black/8 rounded-2xl p-4 shadow-sm"
+                  className={`bg-white border rounded-2xl p-4 shadow-sm transition-all ${
+                    selectedOrders.includes(order.id)
+                      ? "border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-500"
+                      : "border-black/8"
+                  }`}
+                  onClick={() => {
+                    if (selectedOrders.includes(order.id)) {
+                      setSelectedOrders(
+                        selectedOrders.filter((id) => id !== order.id),
+                      );
+                    } else {
+                      setSelectedOrders([...selectedOrders, order.id]);
+                    }
+                  }}
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                        {order.id}
-                      </p>
-                      {order.priority && order.priority === "high" && (
-                        <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md tracking-wider">
-                          Priority
-                        </span>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                          selectedOrders.includes(order.id)
+                            ? "bg-emerald-600 border-emerald-600"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        {selectedOrders.includes(order.id) && (
+                          <CheckIcon className="w-3.5 h-3.5 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                          Order {index + 1}
+                        </p>
+                        {order.priority && order.priority === "high" && (
+                          <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md tracking-wider">
+                            Priority
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status as OrderStatus)}`}
@@ -249,6 +302,7 @@ export function DashboardOrders() {
                       <div className="flex items-center gap-1.5">
                         <ClockIcon className="w-3.5 h-3.5 text-gray-400" />
                         <span className="text-[11px] text-gray-500 font-medium">
+                          {order.delivery_date || "Today"} •{" "}
                           {order.time_window_start
                             ? `${order.time_window_start} - ${order.time_window_end}`
                             : "Any time"}
@@ -273,8 +327,30 @@ export function DashboardOrders() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100">
+                    <th className="px-6 py-4">
+                      <div
+                        className={`w-5 h-5 rounded-md border flex items-center justify-center cursor-pointer transition-colors ${
+                          selectedOrders.length === filteredOrders.length &&
+                          filteredOrders.length > 0
+                            ? "bg-emerald-600 border-emerald-600"
+                            : "border-gray-300 bg-white hover:border-emerald-600"
+                        }`}
+                        onClick={() => {
+                          if (selectedOrders.length === filteredOrders.length) {
+                            setSelectedOrders([]);
+                          } else {
+                            setSelectedOrders(filteredOrders.map((o) => o.id));
+                          }
+                        }}
+                      >
+                        {selectedOrders.length === filteredOrders.length &&
+                          filteredOrders.length > 0 && (
+                            <CheckIcon className="w-3.5 h-3.5 text-white" />
+                          )}
+                      </div>
+                    </th>
                     {[
-                      "ORDER ID",
+                      "ORDER",
                       "CUSTOMER",
                       "ADDRESS",
                       "TIME WINDOW",
@@ -294,7 +370,7 @@ export function DashboardOrders() {
                 <tbody className="divide-y divide-gray-100">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-14 text-center">
+                      <td colSpan={8} className="px-6 py-14 text-center">
                         <div className="flex flex-col items-center gap-3">
                           <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                             <ArchiveBoxIcon className="w-6 h-6 text-gray-300" />
@@ -313,14 +389,59 @@ export function DashboardOrders() {
                       </td>
                     </tr>
                   ) : (
-                    filteredOrders.map((order) => (
+                    filteredOrders.map((order, index) => (
                       <tr
                         key={order.id}
-                        className="transition-colors hover:bg-gray-50/50 group"
+                        className={`transition-colors hover:bg-gray-50/50 group cursor-pointer ${
+                          selectedOrders.includes(order.id)
+                            ? "bg-emerald-50/30"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          // Prevent triggering selection when clicking buttons/selects if needed
+                          // but for now let's make the whole row selectable except for the individual buttons
+                          if (selectedOrders.includes(order.id)) {
+                            setSelectedOrders(
+                              selectedOrders.filter((id) => id !== order.id),
+                            );
+                          } else {
+                            setSelectedOrders([...selectedOrders, order.id]);
+                          }
+                        }}
                       >
+                        <td
+                          className="px-6 py-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded-md border flex items-center justify-center cursor-pointer transition-colors ${
+                              selectedOrders.includes(order.id)
+                                ? "bg-emerald-600 border-emerald-600"
+                                : "border-gray-300 bg-white hover:border-emerald-600"
+                            }`}
+                            onClick={() => {
+                              if (selectedOrders.includes(order.id)) {
+                                setSelectedOrders(
+                                  selectedOrders.filter(
+                                    (id) => id !== order.id,
+                                  ),
+                                );
+                              } else {
+                                setSelectedOrders([
+                                  ...selectedOrders,
+                                  order.id,
+                                ]);
+                              }
+                            }}
+                          >
+                            {selectedOrders.includes(order.id) && (
+                              <CheckIcon className="w-3.5 h-3.5 text-white" />
+                            )}
+                          </div>
+                        </td>
                         <td className="px-6 py-4">
                           <p className="text-[13px] font-bold text-gray-900">
-                            {order.id}
+                            Order {index + 1}
                           </p>
                           {order.priority && order.priority === "high" && (
                             <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md mt-1 tracking-wider">
@@ -340,6 +461,7 @@ export function DashboardOrders() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-[13px] text-gray-500 font-medium">
+                            {order.delivery_date || "Today"} •{" "}
                             {order.time_window_start
                               ? `${order.time_window_start} - ${order.time_window_end}`
                               : "Any time"}
@@ -435,7 +557,6 @@ export function DashboardOrders() {
       <NewOrderModal
         open={showNewOrderModal}
         onOpenChange={setShowNewOrderModal}
-        onClose={() => setShowNewOrderModal(false)}
         onCreate={() => {
           setShowNewOrderModal(false);
         }}
@@ -521,11 +642,13 @@ function EditOrderModal({
 
   return (
     <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0">
-          <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
-            Edit Order #{order.id}
-          </DialogTitle>
+      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
+        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0 relative">
+          <div className="pr-8">
+            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+              Edit Order
+            </DialogTitle>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto min-h-0 bg-white">
@@ -540,7 +663,13 @@ function EditOrderModal({
               value={form.address}
               onChange={(v) => setForm({ ...form, address: v })}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ModalInput
+                label="City"
+                value={form.city || ""}
+                onChange={(v) => setForm({ ...form, city: v })}
+                placeholder="City"
+              />
               <ModalInput
                 label="Packages"
                 value={form.packages.toString()}
@@ -549,6 +678,21 @@ function EditOrderModal({
                   setForm({ ...form, packages: parseInt(v) || 0 })
                 }
               />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 flex-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                  Delivery Date
+                </label>
+                <input
+                  type="date"
+                  value={form.delivery_date || ""}
+                  onChange={(e) =>
+                    setForm({ ...form, delivery_date: e.target.value })
+                  }
+                  className="w-full bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
+                />
+              </div>
               <div className="space-y-1.5 flex-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
                   Time Window
@@ -631,17 +775,11 @@ function EditOrderModal({
           </div>
         </div>
 
-        <DialogFooter className="p-5 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+        <DialogFooter className="p-5 border-t border-gray-100 bg-gray-50 shrink-0">
           <button
             onClick={handleSave}
             disabled={loading}
-            className="flex-1 py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? (
               <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -693,31 +831,28 @@ function UploadCSVModal({
       city: row[2] || "",
       packages: parseInt(row[3]) || 1,
       priority: "normal",
-      time_window_start: row[4] || "09:00",
-      time_window_end: row[5] || "17:00",
+      delivery_date: row[4] || new Date().toISOString().split("T")[0],
+      time_window_start: row[5] || "09:00",
+      time_window_end: row[6] || "17:00",
+      notes: row[7] || "",
     }));
     onImport(newOrders);
+    setFile(null);
+    setPreview([]);
   };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0 flex flex-row items-center justify-between">
-          <div>
+      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
+        <DialogHeader className="p-6 border-b border-gray-100 bg-white shrink-0">
+          <div className="flex flex-col items-center text-center px-8">
             <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
               Upload CSV
             </DialogTitle>
-            <p className="text-[12px] text-gray-500 mt-0.5">
+            <p className="text-[12px] text-gray-500 mt-1">
               Import bulk orders from a spreadsheet
             </p>
           </div>
-          <a
-            href="/template_orders.csv"
-            download
-            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100 transition-all"
-          >
-            Download Template
-          </a>
         </DialogHeader>
 
         <div className="p-5 md:p-6 bg-white overflow-y-auto">
@@ -804,36 +939,87 @@ function UploadCSVModal({
                   </tbody>
                 </table>
               </div>
-              <button
-                onClick={() => setFile(null)}
-                className="text-[11px] font-bold text-red-500 uppercase tracking-wider hover:opacity-75 transition-opacity"
-              >
-                Remove File
-              </button>
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-black/5">
+                <button
+                  onClick={() => setFile(null)}
+                  className="text-[11px] font-bold text-red-500 uppercase tracking-wider hover:opacity-75 transition-opacity px-2"
+                >
+                  Remove File
+                </button>
+                <a
+                  href="/template_orders.csv"
+                  download
+                  className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider hover:opacity-75 transition-opacity px-2 flex items-center gap-1.5"
+                >
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  Get Template
+                </a>
+              </div>
             </div>
           )}
+
+          {/* Format Guidance */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100/50">
+                <DocumentIcon className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                Supported CSV Format
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+              {[
+                { label: "customer_name", desc: "Required" },
+                { label: "address", desc: "Required" },
+                { label: "packages", desc: "Optional (Default 1)" },
+                { label: "delivery_date", desc: "YYYY-MM-DD" },
+                { label: "city", desc: "Optional" },
+                { label: "notes", desc: "Optional" },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0"
+                >
+                  <span className="text-[12px] font-mono text-gray-700">
+                    {item.label}
+                  </span>
+                  <span className="text-[10px] font-medium text-gray-400 italic">
+                    {item.desc}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <DialogFooter className="p-5 border-t border-gray-100 bg-gray-50 flex gap-3 sm:justify-between shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+        <DialogFooter className="p-4 border-t border-gray-100 bg-white shrink-0 sm:flex sm:justify-end">
           <button
             onClick={handleImport}
             disabled={!file || loading || isMutating}
-            className={`flex-1 py-3 rounded-xl text-[13px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+            className={`w-full sm:w-auto px-10 py-2.5 rounded-xl text-[13px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
               loading || isMutating
                 ? "bg-emerald-50 text-emerald-600 shadow-none border border-emerald-100"
                 : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
-            } disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none`}
+            } disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none cursor-pointer`}
           >
             {loading || isMutating ? (
               <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>Import Orders</>
+              "Import Orders"
             )}
           </button>
         </DialogFooter>

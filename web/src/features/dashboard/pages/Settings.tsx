@@ -297,6 +297,7 @@ export function DashboardSettings() {
     fetchSettings,
     updateCompany,
     updateNotifications,
+    regenerateAccessCode,
   } = useSettingsStore();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -315,7 +316,24 @@ export function DashboardSettings() {
   };
 
   const handleSaveCompany = async (data: Partial<CompanyInfo>) => {
-    await updateCompany(data);
+    // Only send fields supported by UpdateCompanySettingsDto to avoid 400 error
+    const filteredData: Partial<CompanyInfo> = {
+      name: data.name,
+      contact_email: data.contact_email,
+      phone: data.phone,
+      city: data.city,
+      state: data.state,
+      timezone: data.timezone,
+    };
+
+    // Remove undefined fields to keep the patch request clean
+    Object.keys(filteredData).forEach((key) => {
+      if (filteredData[key as keyof CompanyInfo] === undefined) {
+        delete filteredData[key as keyof CompanyInfo];
+      }
+    });
+
+    await updateCompany(filteredData);
   };
 
   if (isLoading && !company) {
@@ -393,17 +411,21 @@ export function DashboardSettings() {
           />
           <StaticField
             label="Operations Email"
-            value={company?.contact_email || "contact@vectorfleet.com"}
+            value={company?.contact_email || ""}
             icon={EnvelopeIcon}
           />
           <StaticField
             label="Fleet Hotline"
-            value={company?.phone || "+1 (555) 000-0000"}
+            value={company?.phone || ""}
             icon={BellIcon}
           />
           <StaticField
             label="Region"
-            value={`${company?.city || "San Francisco"}, ${company?.state || "CA"}`}
+            value={
+              company?.city && company?.state
+                ? `${company.city}, ${company.state}`
+                : company?.city || company?.state || ""
+            }
             icon={MapPinIcon}
           />
         </div>

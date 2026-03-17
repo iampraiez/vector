@@ -13,6 +13,7 @@ export interface Order {
   lng?: number;
   time_window_start: string | null;
   time_window_end: string | null;
+  delivery_date: string | null;
   packages: number;
   service_time_min?: number;
   priority?: "normal" | "high";
@@ -51,6 +52,7 @@ interface OrderState {
   createOrder: (data: Partial<Order>) => Promise<void>;
   updateOrder: (id: string, data: Partial<Order>) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
+  deleteOrders: (ids: string[]) => Promise<void>;
   importBulkOrders: (data: Partial<Order>[]) => Promise<unknown>;
 }
 
@@ -129,6 +131,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
+  deleteOrders: async (ids: string[]) => {
+    set({ isMutating: true, error: null });
+    try {
+      // Assuming backend supports bulk delete or we iterate
+      await Promise.all(ids.map((id) => api.delete(`/dashboard/orders/${id}`)));
+      await get().fetchOrders();
+      set({ isMutating: false });
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error: error.response?.data?.message || "Failed to delete orders",
+        isMutating: false,
+      });
+      throw err;
+    }
+  },
+
   importBulkOrders: async (data: Partial<Order>[]) => {
     set({ isMutating: true, error: null });
     try {
@@ -137,9 +156,24 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       set({ isMutating: false });
       return res.data;
     } catch (err: unknown) {
-      const error = err as AxiosError<{ message?: string }>;
+      const error = err as AxiosError<{
+        message?: string;
+        errors?: { reason: string }[];
+      }>;
+      let errorMessage =
+        error.response?.data?.message || "Failed to import orders";
+
+      // If backend returns row-specific errors, append them
+      if (error.response?.data?.errors?.length) {
+        const topErrors = error.response.data.errors
+          .slice(0, 3)
+          .map((e) => e.reason)
+          .join(", ");
+        errorMessage += `: ${topErrors}${error.response.data.errors.length > 3 ? "..." : ""}`;
+      }
+
       set({
-        error: error.response?.data?.message || "Failed to import orders",
+        error: errorMessage,
         isMutating: false,
       });
       throw err;

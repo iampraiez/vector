@@ -38,11 +38,21 @@ class AppTextField extends StatefulWidget {
 
 class _AppTextFieldState extends State<AppTextField> {
   late bool _obscureText;
+  late TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.isPassword ? true : widget.obscureText;
+    _controller = widget.controller ?? TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -62,8 +72,7 @@ class _AppTextFieldState extends State<AppTextField> {
           const SizedBox(height: AppSpacing.p1),
         ],
         TextField(
-          controller: widget.controller ??
-              (widget.initialValue != null ? (TextEditingController(text: widget.initialValue)) : null),
+          controller: _controller,
           obscureText: _obscureText,
           keyboardType: widget.keyboardType,
           maxLines: widget.maxLines,

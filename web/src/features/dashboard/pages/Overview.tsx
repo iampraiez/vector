@@ -279,7 +279,7 @@ export function DashboardOverview() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <p className="text-[14px] font-bold text-gray-900 tracking-tight">
-                          {order.id}
+                          Order {recentOrders.length - i}
                         </p>
                         <span
                           className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider border"
@@ -308,7 +308,6 @@ export function DashboardOverview() {
       <NewOrderModal
         open={showNewOrderModal}
         onOpenChange={setShowNewOrderModal}
-        onClose={() => setShowNewOrderModal(false)}
         onCreate={handleSaveOrder}
       />
     </>

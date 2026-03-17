@@ -196,6 +196,7 @@ model Stop {
   time_window_end         String?      // HH:mm
   notes                   String?
   status                  StopStatus   @default(unassigned)
+  delivery_date           String?      // YYYY-MM-DD
   arrived_at              DateTime?
   completed_at            DateTime?
   failure_reason          String?

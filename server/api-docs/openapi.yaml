@@ -1209,6 +1209,8 @@ components:
           type: string
         time_window_end:
           type: string
+        delivery_date:
+          type: string
         notes:
           type: string
       required:
@@ -1240,6 +1242,8 @@ components:
         time_window_start:
           type: string
         time_window_end:
+          type: string
+        delivery_date:
           type: string
         notes:
           type: string

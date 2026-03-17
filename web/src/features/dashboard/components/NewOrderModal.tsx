@@ -6,6 +6,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../../components/ui/dialog";
+import {
+  UserIcon,
+  MapPinIcon,
+  BuildingOfficeIcon,
+  CubeIcon,
+  CalendarIcon,
+  ClockIcon,
+  BookmarkIcon,
+  ChatBubbleLeftRightIcon,
+} from "@heroicons/react/24/outline";
 
 export type OrderStatus =
   | "unassigned"
@@ -23,6 +33,7 @@ export interface Order {
   priority: "normal" | "high";
   time_window_start: string | null;
   time_window_end: string | null;
+  delivery_date: string | null;
   status: OrderStatus;
   assigned_to?: string;
   notes?: string;
@@ -32,7 +43,6 @@ export interface Order {
 interface NewOrderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onClose: () => void;
   onCreate: (order: Order) => void;
   drivers?: string[];
 }
@@ -40,7 +50,6 @@ interface NewOrderModalProps {
 export function NewOrderModal({
   open,
   onOpenChange,
-  onClose,
   onCreate,
   drivers = [],
 }: NewOrderModalProps) {
@@ -49,6 +58,7 @@ export function NewOrderModal({
     address: "",
     city: "",
     packages: "1",
+    deliveryDate: new Date().toISOString().split("T")[0],
     timeWindowStart: "09:00",
     timeWindowEnd: "17:00",
     priority: "normal" as "normal" | "high",
@@ -69,6 +79,7 @@ export function NewOrderModal({
         city: form.city,
         packages: parseInt(form.packages) || 1,
         priority: form.priority,
+        delivery_date: form.deliveryDate,
         time_window_start: form.timeWindowStart,
         time_window_end: form.timeWindowEnd,
         status: form.assigned_to ? "assigned" : "unassigned",
@@ -82,6 +93,7 @@ export function NewOrderModal({
         address: "",
         city: "",
         packages: "1",
+        deliveryDate: new Date().toISOString().split("T")[0],
         timeWindowStart: "09:00",
         timeWindowEnd: "17:00",
         priority: "normal",
@@ -94,73 +106,113 @@ export function NewOrderModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0">
-          <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
-            New Order
-          </DialogTitle>
-          <p className="text-[13px] text-gray-500 mt-1">
-            Create a delivery order and assign it later
-          </p>
+      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto focus:outline-none">
+        <DialogHeader className="p-6 border-b border-gray-100 bg-white shrink-0">
+          <div className="flex flex-col items-center text-center px-8">
+            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+              New Order
+            </DialogTitle>
+            <p className="text-[13px] text-gray-500 mt-1">
+              Create a delivery order and assign it later
+            </p>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto min-h-0 bg-white">
           <div className="p-5 space-y-4">
-            <ModalInput
-              label="Customer Name *"
-              value={form.customer_name}
-              onChange={(v) => setForm({ ...form, customer_name: v })}
-              placeholder="Acme Corp"
-            />
-            <ModalInput
-              label="Address *"
-              value={form.address}
-              onChange={(v) => setForm({ ...form, address: v })}
-              placeholder="742 Evergreen Terrace"
-            />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <ModalInput
-                label="City"
-                value={form.city}
-                onChange={(v) => setForm({ ...form, city: v })}
-                placeholder="Springfield"
+                label="Customer Name *"
+                value={form.customer_name}
+                onChange={(v) => setForm({ ...form, customer_name: v })}
+                placeholder="Acme Corp"
+                icon={<UserIcon className="w-4 h-4 text-emerald-600" />}
               />
+              <ModalInput
+                label="Address *"
+                value={form.address}
+                onChange={(v) => setForm({ ...form, address: v })}
+                placeholder="742 Evergreen Terrace"
+                icon={<MapPinIcon className="w-4 h-4 text-emerald-600" />}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ModalInput
+                  label="City"
+                  value={form.city}
+                  onChange={(v) => setForm({ ...form, city: v })}
+                  placeholder="Springfield"
+                  icon={
+                    <BuildingOfficeIcon className="w-4 h-4 text-emerald-600" />
+                  }
+                />
+                <ModalInput
+                  label="Packages"
+                  value={form.packages}
+                  type="number"
+                  onChange={(v) => setForm({ ...form, packages: v })}
+                  icon={<CubeIcon className="w-4 h-4 text-emerald-600" />}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 flex-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                  Delivery Date
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all">
+                    <CalendarIcon className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <input
+                    type="date"
+                    value={form.deliveryDate}
+                    onChange={(e) =>
+                      setForm({ ...form, deliveryDate: e.target.value })
+                    }
+                    className="w-full bg-gray-50/50 border border-black/8 rounded-xl pl-12 pr-4 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
               <div className="space-y-1.5 flex-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
                   Time Window
                 </label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    value={form.timeWindowStart}
-                    onChange={(e) =>
-                      setForm({ ...form, timeWindowStart: e.target.value })
-                    }
-                    className="flex-1 bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
-                  />
-                  <span className="text-gray-400 text-[12px] font-bold">-</span>
+                  <div className="relative group flex-1">
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all">
+                      <ClockIcon className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <input
+                      type="time"
+                      value={form.timeWindowStart}
+                      onChange={(e) =>
+                        setForm({ ...form, timeWindowStart: e.target.value })
+                      }
+                      className="w-full bg-gray-50/50 border border-black/8 rounded-xl pl-12 pr-2 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <span className="text-gray-300 font-bold">-</span>
                   <input
                     type="time"
                     value={form.timeWindowEnd}
                     onChange={(e) =>
                       setForm({ ...form, timeWindowEnd: e.target.value })
                     }
-                    className="flex-1 bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
+                    className="flex-1 bg-gray-50/50 border border-black/8 rounded-xl px-2 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all"
                   />
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <ModalInput
-                label="Packages"
-                value={form.packages}
-                type="number"
-                onChange={(v) => setForm({ ...form, packages: v })}
-              />
-              <div>
-                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
-                  Priority
-                </label>
+
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Priority
+              </label>
+              <div className="relative group">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm pointer-events-none transition-all group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50">
+                  <BookmarkIcon className="w-4 h-4 text-emerald-600" />
+                </div>
                 <select
                   value={form.priority}
                   onChange={(e) =>
@@ -169,11 +221,26 @@ export function NewOrderModal({
                       priority: e.target.value as "normal" | "high",
                     })
                   }
-                  className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] font-medium outline-none hover:border-emerald-600/30 transition-colors cursor-pointer"
+                  className="w-full bg-gray-50/50 border border-black/8 rounded-xl pl-12 pr-4 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all appearance-none cursor-pointer"
                 >
-                  <option value="normal">Normal</option>
-                  <option value="high">High</option>
+                  <option value="normal">Normal Priority</option>
+                  <option value="high">High Priority</option>
                 </select>
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
 
@@ -221,34 +288,33 @@ export function NewOrderModal({
               </div>
             )}
 
-            <div>
-              <label className="block text-[11px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
                 Delivery Notes
               </label>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-3 text-[13px] font-medium outline-none min-h-20 hover:border-emerald-600/30 transition-colors resize-none placeholder:text-gray-300"
-                placeholder="Gate code, special instructions..."
-              />
+              <div className="relative group">
+                <div className="absolute left-3.5 top-4 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm transition-all group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50">
+                  <ChatBubbleLeftRightIcon className="w-4 h-4 text-emerald-600" />
+                </div>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className="w-full bg-gray-50/50 border border-black/8 rounded-xl pl-12 pr-4 py-3 text-[13.5px] font-medium outline-none min-h-24 focus:border-emerald-600 focus:bg-white transition-all resize-none placeholder:text-gray-300"
+                  placeholder="Gate code, special instructions..."
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="p-5 border-t border-gray-100 bg-gray-50 shrink-0 flex gap-3 sm:justify-between">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 bg-white border border-black/8 text-gray-600 text-[13px] font-bold rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+        <DialogFooter className="p-4 border-t border-gray-100 bg-white shrink-0 sm:flex sm:justify-end">
           <button
             onClick={handleCreate}
             disabled={!form.customer_name || !form.address || loading}
-            className="flex-2 py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none transition-all flex items-center justify-center"
+            className="w-full sm:w-auto px-10 py-2.5 bg-emerald-600 text-white text-[13px] font-bold rounded-xl shadow-lg shadow-emerald-600/15 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none transition-all flex items-center justify-center cursor-pointer"
           >
             {loading ? (
-              <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               "Create Order"
             )}
@@ -265,25 +331,36 @@ export function ModalInput({
   onChange,
   type = "text",
   placeholder,
+  icon,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  icon?: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-bold text-gray-400 border-gray-100 uppercase tracking-widest ml-1">
         {label}
       </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-gray-50 border border-black/8 rounded-xl px-4 py-2.5 text-[13px] outline-none focus:border-emerald-600 transition-colors placeholder:text-gray-300"
-      />
+      <div className="relative group">
+        {icon && (
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all">
+            {icon}
+          </div>
+        )}
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full bg-gray-50/50 border border-black/8 rounded-xl ${
+            icon ? "pl-12" : "px-4"
+          } pr-4 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all placeholder:text-gray-300`}
+        />
+      </div>
     </div>
   );
 }

@@ -87,6 +87,10 @@ export class CreateOrderDto {
 
   @IsString()
   @IsOptional()
+  delivery_date?: string;
+
+  @IsString()
+  @IsOptional()
   notes?: string;
 }
 
