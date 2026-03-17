@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { TruckIcon } from "@heroicons/react/24/solid";
 import { useAuthStore } from "../../../store/authStore";
+import { useSettingsStore } from "../../../store/settingsStore";
 import {
   Sidebar,
   SidebarContent,
@@ -42,7 +43,14 @@ function DashboardSidebar() {
   const location = useLocation();
   const { setOpenMobile, isMobile } = useSidebar();
   const { user, logout } = useAuthStore();
+  const { company, fetchSettings } = useSettingsStore();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!company) {
+      fetchSettings();
+    }
+  }, [company, fetchSettings]);
 
   const navItems = [
     { path: "/dashboard", icon: Squares2X2Icon, label: "Overview" },
@@ -137,7 +145,7 @@ function DashboardSidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-bold text-gray-900 leading-none truncate mb-1">
-                {user?.email.split("@")[0] || "Fleet Manager"}
+                {company?.name || "Loading..."}
               </p>
               <p className="text-[10px] text-gray-400 truncate font-medium tracking-tight">
                 {user?.email || "manager@vector.com"}

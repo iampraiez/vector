@@ -40,7 +40,12 @@ export class MailService {
           name: 'Vector Fleet',
         },
         subject,
-        text: text || html.replace(/<[^>]*>?/gm, ''),
+        text:
+          text ||
+          html
+            .replace(/<[^>]*>?/gm, ' ')
+            .replace(/\s+/g, ' ')
+            .trim(),
         html,
         attachments: attachments?.map((a) => ({
           content: Buffer.from(a.content).toString('base64'),
@@ -51,8 +56,6 @@ export class MailService {
         headers: {
           'X-Mailer': 'VectorFleet/1.0',
           'X-Priority': '3',
-          Precedence: 'Bulk',
-          'List-Unsubscribe': `<mailto:${this.from}?subject=unsubscribe>`,
         },
       });
 

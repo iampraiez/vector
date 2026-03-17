@@ -152,6 +152,13 @@ function EditProfileModal({
   isMutating: boolean;
 }) {
   const [draft, setDraft] = useState<CompanyInfo>(initialData);
+  const [prevInitialData, setPrevInitialData] =
+    useState<CompanyInfo>(initialData);
+
+  if (initialData !== prevInitialData) {
+    setDraft(initialData);
+    setPrevInitialData(initialData);
+  }
 
   if (!isOpen) return null;
 
