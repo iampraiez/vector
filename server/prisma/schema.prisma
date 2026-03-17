@@ -59,11 +59,14 @@ model Company {
   subscription_tier  String?
   paystack_customer_id String?
   billing_email      String?
+  contact_email      String?
+  phone              String?
   city               String?
   state              String?
   country            String?
   logo_url           String?
   timezone           String?   @default("UTC")
+  notification_settings Json?    @default("{\"email\":true,\"sms\":false,\"push\":true,\"driverAlerts\":true,\"deliveryUpdates\":true,\"paymentAlerts\":false,\"weeklyReport\":true}")
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
 

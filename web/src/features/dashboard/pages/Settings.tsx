@@ -191,8 +191,8 @@ function EditProfileModal({
             />
             <InputField
               label="Ops Email"
-              value={draft.email}
-              onChange={(v) => setDraft({ ...draft, email: v })}
+              value={draft.contact_email}
+              onChange={(v) => setDraft({ ...draft, contact_email: v })}
             />
           </div>
           <InputField
@@ -326,7 +326,7 @@ export function DashboardSettings() {
     );
   }
 
-  const companyCode = "VECT-2024";
+  const companyCode = company?.company_code || "VECT-XXXX";
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 pb-32">
@@ -362,8 +362,12 @@ export function DashboardSettings() {
             </div>
           </div>
         </div>
-        <button className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer">
-          Regenerate
+        <button
+          onClick={() => regenerateAccessCode()}
+          disabled={isMutating}
+          className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+        >
+          {isMutating ? "..." : "Regenerate"}
         </button>
       </div>
 
@@ -389,7 +393,7 @@ export function DashboardSettings() {
           />
           <StaticField
             label="Operations Email"
-            value={company?.email || "contact@vectorfleet.com"}
+            value={company?.contact_email || "contact@vectorfleet.com"}
             icon={EnvelopeIcon}
           />
           <StaticField
@@ -471,7 +475,7 @@ export function DashboardSettings() {
         initialData={
           company || {
             name: "",
-            email: "",
+            contact_email: "",
             phone: "",
             city: "",
             state: "",

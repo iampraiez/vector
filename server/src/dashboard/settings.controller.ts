@@ -15,7 +15,11 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { UpdateCompanySettingsDto, CreateApiKeyDto } from './dto/settings.dto';
+import {
+  UpdateCompanySettingsDto,
+  CreateApiKeyDto,
+  UpdateNotificationsDto,
+} from './dto/settings.dto';
 
 @Controller('dashboard/settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,12 +32,25 @@ export class SettingsController {
     return this.dashboardService.getSettings(companyId);
   }
 
-  @Patch()
+  @Patch('company')
   updateSettings(
     @CurrentUser('company_id') companyId: string,
     @Body() dto: UpdateCompanySettingsDto,
   ) {
     return this.dashboardService.updateSettings(companyId, dto);
+  }
+
+  @Patch('notifications')
+  updateNotifications(
+    @CurrentUser('company_id') companyId: string,
+    @Body() dto: UpdateNotificationsDto,
+  ) {
+    return this.dashboardService.updateNotifications(companyId, dto);
+  }
+
+  @Post('regenerate-code')
+  regenerateAccessCode(@CurrentUser('company_id') companyId: string) {
+    return this.dashboardService.regenerateAccessCode(companyId);
   }
 
   @Post('api-keys')

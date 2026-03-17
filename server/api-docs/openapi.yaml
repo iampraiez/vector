@@ -521,6 +521,7 @@ paths:
           description: ""
       tags: &a6
         - Settings
+  /dashboard/settings/company:
     patch:
       operationId: SettingsController_updateSettings
       parameters: []
@@ -532,6 +533,28 @@ paths:
               $ref: "#/components/schemas/UpdateCompanySettingsDto"
       responses:
         "200":
+          description: ""
+      tags: *a6
+  /dashboard/settings/notifications:
+    patch:
+      operationId: SettingsController_updateNotifications
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNotificationsDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a6
+  /dashboard/settings/regenerate-code:
+    post:
+      operationId: SettingsController_regenerateAccessCode
+      parameters: []
+      responses:
+        "201":
           description: ""
       tags: *a6
   /dashboard/settings/api-keys:
@@ -1288,8 +1311,33 @@ components:
           type: string
         billing_email:
           type: string
+        contact_email:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
         timezone:
           type: string
+    UpdateNotificationsDto:
+      type: object
+      properties:
+        email:
+          type: boolean
+        sms:
+          type: boolean
+        push:
+          type: boolean
+        driverAlerts:
+          type: boolean
+        deliveryUpdates:
+          type: boolean
+        paymentAlerts:
+          type: boolean
+        weeklyReport:
+          type: boolean
     CreateApiKeyDto:
       type: object
       properties:

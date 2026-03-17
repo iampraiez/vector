@@ -16,6 +16,10 @@ import {
   ChangePlanDto,
   CreateDriverDto,
 } from './dto/dashboard.dto';
+import {
+  UpdateCompanySettingsDto,
+  UpdateNotificationsDto,
+} from './dto/settings.dto';
 import * as bcrypt from 'bcrypt';
 
 import { InjectQueue } from '@nestjs/bull';
@@ -716,13 +720,58 @@ export class DashboardService {
 
     if (!company) throw new NotFoundException('Company not found');
 
-    return { company };
+    return {
+      company: {
+        id: company.id,
+        name: company.name,
+        email: company.contact_email || company.billing_email,
+        phone: company.phone,
+        city: company.city,
+        state: company.state,
+        timezone: company.timezone,
+        company_code: company.company_code,
+      },
+      notifications: company.notification_settings,
+      apiKeys: company.api_keys,
+    };
   }
 
-  async updateSettings(companyId: string, dto: any) {
+  async updateSettings(companyId: string, dto: UpdateCompanySettingsDto) {
+    const data: Prisma.CompanyUpdateInput = {};
+    if (dto.name) data.name = dto.name;
+    if (dto.contact_email) data.contact_email = dto.contact_email;
+    if (dto.phone) data.phone = dto.phone;
+    if (dto.city) data.city = dto.city;
+    if (dto.state) data.state = dto.state;
+    if (dto.timezone) data.timezone = dto.timezone;
+
     return this.prisma.company.update({
       where: { id: companyId },
-      data: dto as Prisma.CompanyUpdateInput,
+      data,
+    });
+  }
+
+  async updateNotifications(companyId: string, dto: UpdateNotificationsDto) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const currentSettings =
+      (company.notification_settings as Record<string, boolean>) || {};
+    const newSettings = { ...currentSettings, ...dto };
+
+    return this.prisma.company.update({
+      where: { id: companyId },
+      data: { notification_settings: newSettings as Prisma.InputJsonValue },
+    });
+  }
+
+  async regenerateAccessCode(companyId: string) {
+    const newCode = `VECT-${Math.floor(1000 + Math.random() * 9000)}`;
+    return this.prisma.company.update({
+      where: { id: companyId },
+      data: { company_code: newCode },
     });
   }
 

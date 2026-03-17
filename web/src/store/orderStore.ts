@@ -6,17 +6,22 @@ export interface Order {
   id: string;
   external_id: string | null;
   customer_name: string;
-  customer_phone: string;
+  customer_phone?: string;
   address: string;
-  lat: number;
-  lng: number;
+  city?: string;
+  lat?: number;
+  lng?: number;
   time_window_start: string | null;
   time_window_end: string | null;
-  service_time_min: number;
+  packages: number;
+  service_time_min?: number;
+  priority?: "normal" | "high";
   status: string;
   route_id: string | null;
   driver_id: string | null;
   driver_name?: string;
+  assigned_to?: string;
+  notes?: string;
   route_name?: string;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore } from "../../../store/driverStore";
 
@@ -55,7 +55,7 @@ export function DashboardOrders() {
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.address.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
@@ -70,7 +70,6 @@ export function DashboardOrders() {
       case "assigned":
         return "bg-blue-50 text-blue-600";
       case "in_progress":
-      case "in-progress":
         return "bg-emerald-50 text-emerald-600";
       case "completed":
         return "bg-emerald-100 text-emerald-700";
@@ -180,7 +179,7 @@ export function DashboardOrders() {
                   { key: "all", label: "All" },
                   { key: "unassigned", label: "Unassigned" },
                   { key: "assigned", label: "Assigned" },
-                  { key: "in-progress", label: "In Progress" },
+                  { key: "in_progress", label: "In Progress" },
                   { key: "completed", label: "Completed" },
                   { key: "failed", label: "Failed" },
                 ] as const
@@ -234,7 +233,7 @@ export function DashboardOrders() {
                       )}
                     </div>
                     <span
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status)}`}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status as OrderStatus)}`}
                     >
                       {getStatusLabel(order.status)}
                     </span>
@@ -385,7 +384,7 @@ export function DashboardOrders() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusClasses(order.status)}`}
+                            className={`inline-flex px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusClasses(order.status as OrderStatus)}`}
                           >
                             {getStatusLabel(order.status)}
                           </span>
@@ -426,7 +425,7 @@ export function DashboardOrders() {
         <UploadCSVModal
           onClose={() => setShowUploadModal(false)}
           onImport={async (newOrders) => {
-            await importBulkOrders(newOrders);
+            await importBulkOrders(newOrders as Order[]);
             setShowUploadModal(false);
           }}
           isMutating={isMutating}
@@ -437,7 +436,9 @@ export function DashboardOrders() {
         open={showNewOrderModal}
         onOpenChange={setShowNewOrderModal}
         onClose={() => setShowNewOrderModal(false)}
-        onCreate={() => setShowNewOrderModal(false)}
+        onCreate={() => {
+          setShowNewOrderModal(false);
+        }}
         drivers={driverNames}
       />
     </>
@@ -531,8 +532,8 @@ function EditOrderModal({
           <div className="p-5 space-y-4">
             <ModalInput
               label="Customer Name"
-              value={form.customerName}
-              onChange={(v) => setForm({ ...form, customerName: v })}
+              value={form.customer_name}
+              onChange={(v) => setForm({ ...form, customer_name: v })}
             />
             <ModalInput
               label="Address"
@@ -548,11 +549,30 @@ function EditOrderModal({
                   setForm({ ...form, packages: parseInt(v) || 0 })
                 }
               />
-              <ModalInput
-                label="Time Window"
-                value={form.timeWindow}
-                onChange={(v) => setForm({ ...form, timeWindow: v })}
-              />
+              <div className="space-y-1.5 flex-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                  Time Window
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={form.time_window_start || "09:00"}
+                    onChange={(e) =>
+                      setForm({ ...form, time_window_start: e.target.value })
+                    }
+                    className="flex-1 bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
+                  />
+                  <span className="text-gray-400 text-[12px] font-bold">-</span>
+                  <input
+                    type="time"
+                    value={form.time_window_end || "17:00"}
+                    onChange={(e) =>
+                      setForm({ ...form, time_window_end: e.target.value })
+                    }
+                    className="flex-1 bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Scrollable Driver Selection */}
@@ -567,18 +587,18 @@ function EditOrderModal({
                       onClick={() =>
                         setForm({
                           ...form,
-                          assignedTo: undefined,
+                          assigned_to: undefined,
                           status: "unassigned",
                         })
                       }
                       className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
-                        !form.assignedTo
+                        !form.assigned_to
                           ? "bg-emerald-50 text-emerald-600 font-bold"
                           : "text-gray-500 hover:bg-white"
                       }`}
                     >
                       Unassigned
-                      {!form.assignedTo && (
+                      {!form.assigned_to && (
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                       )}
                     </button>
@@ -588,18 +608,18 @@ function EditOrderModal({
                         onClick={() =>
                           setForm({
                             ...form,
-                            assignedTo: d,
+                            assigned_to: d,
                             status: "assigned",
                           })
                         }
                         className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
-                          form.assignedTo === d
+                          form.assigned_to === d
                             ? "bg-emerald-50 text-emerald-600 font-bold"
                             : "text-gray-700 hover:bg-white"
                         }`}
                       >
                         {d}
-                        {form.assignedTo === d && (
+                        {form.assigned_to === d && (
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                         )}
                       </button>
@@ -638,9 +658,11 @@ function EditOrderModal({
 function UploadCSVModal({
   onClose,
   onImport,
+  isMutating,
 }: {
   onClose: () => void;
-  onImport: (orders: Order[]) => void;
+  onImport: (orders: Partial<Order>[]) => void;
+  isMutating: boolean;
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -664,29 +686,38 @@ function UploadCSVModal({
 
   const handleImport = () => {
     setLoading(true);
-    setTimeout(() => {
-      const newOrders: Order[] = preview.slice(1).map((row, i) => ({
-        id: `CSV-${Date.now() % 1000}-${i}`,
-        customerName: row[0] || "Unknown",
-        address: row[1] || "Unknown Address",
-        city: row[2] || "",
-        packages: parseInt(row[3]) || 1,
-        priority: "normal",
-        timeWindow: row[4] || "Any time",
-        status: "unassigned",
-        createdAt: "Just now",
-      }));
-      onImport(newOrders);
-    }, 1000);
+    // Skip header row
+    const newOrders: Partial<Order>[] = preview.slice(1).map((row) => ({
+      customer_name: row[0] || "Unknown",
+      address: row[1] || "Unknown Address",
+      city: row[2] || "",
+      packages: parseInt(row[3]) || 1,
+      priority: "normal",
+      time_window_start: row[4] || "09:00",
+      time_window_end: row[5] || "17:00",
+    }));
+    onImport(newOrders);
   };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0">
-          <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
-            Upload CSV
-          </DialogTitle>
+        <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0 flex flex-row items-center justify-between">
+          <div>
+            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+              Upload CSV
+            </DialogTitle>
+            <p className="text-[12px] text-gray-500 mt-0.5">
+              Import bulk orders from a spreadsheet
+            </p>
+          </div>
+          <a
+            href="/template_orders.csv"
+            download
+            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100 transition-all"
+          >
+            Download Template
+          </a>
         </DialogHeader>
 
         <div className="p-5 md:p-6 bg-white overflow-y-auto">
@@ -792,14 +823,14 @@ function UploadCSVModal({
           </button>
           <button
             onClick={handleImport}
-            disabled={!file || loading}
+            disabled={!file || loading || isMutating}
             className={`flex-1 py-3 rounded-xl text-[13px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-              loading
+              loading || isMutating
                 ? "bg-emerald-50 text-emerald-600 shadow-none border border-emerald-100"
                 : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
             } disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none`}
           >
-            {loading ? (
+            {loading || isMutating ? (
               <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
             ) : (
               <>Import Orders</>

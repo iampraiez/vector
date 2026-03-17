@@ -14,11 +14,12 @@ interface ApiKey {
 
 export interface CompanyInfo {
   name: string;
-  email: string;
+  contact_email: string;
   phone: string;
   city: string;
   state: string;
   timezone: string;
+  company_code?: string;
 }
 
 export interface NotificationsConfig {
@@ -51,6 +52,7 @@ interface SettingsState {
   fetchSettings: () => Promise<void>;
   updateCompany: (data: Partial<CompanyInfo>) => Promise<void>;
   updateNotifications: (data: Partial<NotificationsConfig>) => Promise<void>;
+  regenerateAccessCode: () => Promise<void>;
 
   createApiKey: (name: string) => Promise<unknown>;
   revokeApiKey: (id: string) => Promise<void>;
@@ -128,6 +130,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({
         error:
           error.response?.data?.message || "Failed to update notifications",
+        isMutating: false,
+      });
+      throw err;
+    }
+  },
+
+  regenerateAccessCode: async () => {
+    set({ isMutating: true, error: null });
+    try {
+      await api.post("/dashboard/settings/regenerate-code");
+      await get().fetchSettings();
+      set({ isMutating: false });
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error:
+          error.response?.data?.message || "Failed to regenerate access code",
         isMutating: false,
       });
       throw err;

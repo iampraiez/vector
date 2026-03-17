@@ -16,14 +16,15 @@ export type OrderStatus =
 
 export interface Order {
   id: string;
-  customerName: string;
+  customer_name: string;
   address: string;
   city: string;
   packages: number;
   priority: "normal" | "high";
-  timeWindow: string;
+  time_window_start: string | null;
+  time_window_end: string | null;
   status: OrderStatus;
-  assignedTo?: string;
+  assigned_to?: string;
   notes?: string;
   createdAt: string;
 }
@@ -44,44 +45,47 @@ export function NewOrderModal({
   drivers = [],
 }: NewOrderModalProps) {
   const [form, setForm] = useState({
-    customerName: "",
+    customer_name: "",
     address: "",
     city: "",
     packages: "1",
-    timeWindow: "",
+    timeWindowStart: "09:00",
+    timeWindowEnd: "17:00",
     priority: "normal" as "normal" | "high",
-    assignedTo: "",
+    assigned_to: "",
     notes: "",
   });
 
   const [loading, setLoading] = useState(false);
 
   const handleCreate = () => {
-    if (!form.customerName || !form.address) return;
+    if (!form.customer_name || !form.address) return;
     setLoading(true);
     setTimeout(() => {
       onCreate({
         id: `DEL-${Math.floor(Math.random() * 900) + 100}`,
-        customerName: form.customerName,
+        customer_name: form.customer_name,
         address: form.address,
         city: form.city,
         packages: parseInt(form.packages) || 1,
         priority: form.priority,
-        timeWindow: form.timeWindow || "Any time",
-        status: form.assignedTo ? "assigned" : "unassigned",
-        assignedTo: form.assignedTo || undefined,
+        time_window_start: form.timeWindowStart,
+        time_window_end: form.timeWindowEnd,
+        status: form.assigned_to ? "assigned" : "unassigned",
+        assigned_to: form.assigned_to || undefined,
         notes: form.notes || undefined,
         createdAt: "Just now",
       });
       setLoading(false);
       setForm({
-        customerName: "",
+        customer_name: "",
         address: "",
         city: "",
         packages: "1",
-        timeWindow: "",
+        timeWindowStart: "09:00",
+        timeWindowEnd: "17:00",
         priority: "normal",
-        assignedTo: "",
+        assigned_to: "",
         notes: "",
       });
       onOpenChange(false);
@@ -104,8 +108,8 @@ export function NewOrderModal({
           <div className="p-5 space-y-4">
             <ModalInput
               label="Customer Name *"
-              value={form.customerName}
-              onChange={(v) => setForm({ ...form, customerName: v })}
+              value={form.customer_name}
+              onChange={(v) => setForm({ ...form, customer_name: v })}
               placeholder="Acme Corp"
             />
             <ModalInput
@@ -121,12 +125,30 @@ export function NewOrderModal({
                 onChange={(v) => setForm({ ...form, city: v })}
                 placeholder="Springfield"
               />
-              <ModalInput
-                label="Time Window"
-                value={form.timeWindow}
-                onChange={(v) => setForm({ ...form, timeWindow: v })}
-                placeholder="9:00 AM - 11:00 AM"
-              />
+              <div className="space-y-1.5 flex-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                  Time Window
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={form.timeWindowStart}
+                    onChange={(e) =>
+                      setForm({ ...form, timeWindowStart: e.target.value })
+                    }
+                    className="flex-1 bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
+                  />
+                  <span className="text-gray-400 text-[12px] font-bold">-</span>
+                  <input
+                    type="time"
+                    value={form.timeWindowEnd}
+                    onChange={(e) =>
+                      setForm({ ...form, timeWindowEnd: e.target.value })
+                    }
+                    className="flex-1 bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <ModalInput
@@ -165,30 +187,30 @@ export function NewOrderModal({
                   <div className="max-h-45 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
                     <div className="divide-y divide-black/5">
                       <button
-                        onClick={() => setForm({ ...form, assignedTo: "" })}
+                        onClick={() => setForm({ ...form, assigned_to: "" })}
                         className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
-                          form.assignedTo === ""
+                          form.assigned_to === ""
                             ? "bg-emerald-50 text-emerald-600 font-bold"
                             : "text-gray-500 hover:bg-white"
                         }`}
                       >
                         Unassigned
-                        {form.assignedTo === "" && (
+                        {form.assigned_to === "" && (
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                         )}
                       </button>
                       {drivers.map((d) => (
                         <button
                           key={d}
-                          onClick={() => setForm({ ...form, assignedTo: d })}
+                          onClick={() => setForm({ ...form, assigned_to: d })}
                           className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
-                            form.assignedTo === d
+                            form.assigned_to === d
                               ? "bg-emerald-50 text-emerald-600 font-bold"
                               : "text-gray-700 hover:bg-white"
                           }`}
                         >
                           {d}
-                          {form.assignedTo === d && (
+                          {form.assigned_to === d && (
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                           )}
                         </button>
@@ -222,7 +244,7 @@ export function NewOrderModal({
           </button>
           <button
             onClick={handleCreate}
-            disabled={!form.customerName || !form.address || loading}
+            disabled={!form.customer_name || !form.address || loading}
             className="flex-2 py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none transition-all flex items-center justify-center"
           >
             {loading ? (

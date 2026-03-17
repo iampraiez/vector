@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class UpdateCompanySettingsDto {
   @IsString()
@@ -11,9 +11,53 @@ export class UpdateCompanySettingsDto {
 
   @IsString()
   @IsOptional()
-  timezone?: string;
+  contact_email?: string;
 
-  // More fields could be added
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @IsString()
+  @IsOptional()
+  timezone?: string;
+}
+
+export class UpdateNotificationsDto {
+  @IsBoolean()
+  @IsOptional()
+  email?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  sms?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  push?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  driverAlerts?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  deliveryUpdates?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  paymentAlerts?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  weeklyReport?: boolean;
 }
 
 export class CreateApiKeyDto {
