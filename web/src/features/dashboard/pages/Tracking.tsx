@@ -4,13 +4,13 @@ import { useRouteStore } from "../../../store/routeStore";
 
 import {
   MapPinIcon,
-  TruckIcon,
   ClockIcon,
   UserIcon,
   PhoneIcon,
   XMarkIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import { TruckIcon } from "@heroicons/react/24/solid";
 import { Driver } from "../../../store/driverStore";
 
 export function DashboardTracking() {
@@ -96,7 +96,15 @@ export function DashboardTracking() {
               value={remainingStops}
               color="amber"
             />
-            <StatCard label="Avg Completion Rate" value="94%" color="emerald" />
+            <StatCard
+              label="Avg Completion Rate"
+              value={
+                drivers.length > 0
+                  ? `${Math.round((activeDrivers.length / drivers.length) * 100)}%`
+                  : "—"
+              }
+              color="emerald"
+            />
           </div>
 
           {/* Map + Detail Section */}
@@ -276,65 +284,79 @@ export function DashboardTracking() {
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">
               Active Fleet Directory
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              {drivers.map((d) => (
-                <button
-                  key={d.id}
-                  onClick={() => setSelectedDriver(d)}
-                  className={`group bg-white border rounded-2xl p-5 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer ${
-                    selectedDriver?.id === d.id
-                      ? "border-emerald-600 shadow-lg shadow-emerald-600/5"
-                      : "border-black/8 shadow-sm hover:border-emerald-600/30"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300 ${getStatusClasses(d.status)}`}
-                    >
-                      <TruckIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <ChevronRightIcon
-                      className={`w-4 h-4 text-gray-300 transition-transform group-hover:translate-x-1 ${selectedDriver?.id === d.id ? "text-emerald-500 translate-x-1" : ""}`}
-                    />
-                  </div>
-
-                  <h4 className="text-[14px] font-bold text-gray-900 mb-0.5 group-hover:text-emerald-600 transition-colors">
-                    {d.name}
-                  </h4>
-                  <p
-                    className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${getStatusLabelColor(d.status)}`}
+            {drivers.length === 0 ? (
+              <div className="bg-white border border-black/8 rounded-2xl flex flex-col items-center justify-center py-16 text-center shadow-sm">
+                <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                  <TruckIcon className="w-7 h-7 text-gray-300" />
+                </div>
+                <p className="text-[15px] font-bold text-gray-400 mb-1">
+                  No active fleet
+                </p>
+                <p className="text-[13px] text-gray-300 font-medium">
+                  Drivers will appear here once they join your fleet
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {drivers.map((d) => (
+                  <button
+                    key={d.id}
+                    onClick={() => setSelectedDriver(d)}
+                    className={`group bg-white border rounded-2xl p-5 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer ${
+                      selectedDriver?.id === d.id
+                        ? "border-emerald-600 shadow-lg shadow-emerald-600/5"
+                        : "border-black/8 shadow-sm hover:border-emerald-600/30"
+                    }`}
                   >
-                    {d.status}
-                  </p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300 ${getStatusClasses(d.status)}`}
+                      >
+                        <TruckIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <ChevronRightIcon
+                        className={`w-4 h-4 text-gray-300 transition-transform group-hover:translate-x-1 ${selectedDriver?.id === d.id ? "text-emerald-500 translate-x-1" : ""}`}
+                      />
+                    </div>
 
-                  <div className="flex gap-4 pt-4 border-t border-gray-50">
-                    <div className="flex-1">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                        Completed
-                      </p>
-                      <p className="text-[14px] font-bold text-gray-900">
-                        {d.total_deliveries || 0}
-                      </p>
+                    <h4 className="text-[14px] font-bold text-gray-900 mb-0.5 group-hover:text-emerald-600 transition-colors">
+                      {d.name}
+                    </h4>
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${getStatusLabelColor(d.status)}`}
+                    >
+                      {d.status}
+                    </p>
+
+                    <div className="flex gap-4 pt-4 border-t border-gray-50">
+                      <div className="flex-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
+                          Completed
+                        </p>
+                        <p className="text-[14px] font-bold text-gray-900">
+                          {d.total_deliveries || 0}
+                        </p>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
+                          Remain
+                        </p>
+                        <p className="text-[14px] font-bold text-amber-500">
+                          {
+                            routes.filter(
+                              (r) =>
+                                r.driver_id === d.id &&
+                                (r.status === "pending" ||
+                                  r.status === "in_progress"),
+                            ).length
+                          }
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
-                        Remain
-                      </p>
-                      <p className="text-[14px] font-bold text-amber-500">
-                        {
-                          routes.filter(
-                            (r) =>
-                              r.driver_id === d.id &&
-                              (r.status === "pending" ||
-                                r.status === "in_progress"),
-                          ).length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

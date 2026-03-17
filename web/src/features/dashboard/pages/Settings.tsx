@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   useSettingsStore,
   NotificationsConfig,
@@ -7,19 +7,12 @@ import {
 import {
   BuildingOfficeIcon,
   BellIcon,
-  ShieldCheckIcon,
-  ClipboardDocumentIcon,
-  CheckCircleIcon,
-  ArrowTopRightOnSquareIcon,
   TrashIcon,
   PencilIcon,
-  XMarkIcon,
   EnvelopeIcon,
-  ExclamationTriangleIcon,
   MapPinIcon,
-  KeyIcon,
-  ClockIcon,
-  CreditCardIcon,
+  ClipboardDocumentIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 /* --- Shared Components --- */
@@ -86,213 +79,113 @@ function SettingRow({
   );
 }
 
-/* --- Modals for Danger Zone --- */
+function StaticField({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+}) {
+  return (
+    <div className="bg-gray-50/50 border border-black/5 rounded-2xl p-5 hover:bg-white hover:border-emerald-600/20 transition-all group">
+      <div className="flex items-center gap-3 mb-2">
+        <Icon className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+          {label}
+        </span>
+      </div>
+      <p className="text-[14px] font-bold text-gray-900 tracking-tight">
+        {value}
+      </p>
+    </div>
+  );
+}
 
-function DataCleaningModal({
+function InputField({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
+  return (
+    <div className="space-y-1.5 flex-1">
+      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-gray-50 border border-black/5 rounded-xl px-4 py-3 text-[14px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600/40 transition-all"
+      />
+    </div>
+  );
+}
+
+/* --- Simplified Modals --- */
+
+function SimpleConfirmModal({
   isOpen,
   onClose,
+  title,
+  desc,
+  btnText,
   onConfirm,
+  variant = "danger",
 }: {
   isOpen: boolean;
   onClose: () => void;
+  title: string;
+  desc: string;
+  btnText: string;
   onConfirm: () => void;
+  variant?: "danger" | "warning";
 }) {
-  const [loading, setLoading] = useState(false);
-
-  const handleConfirm = () => {
-    setLoading(true);
-    setTimeout(() => {
-      onConfirm();
-      setLoading(false);
-    }, 1000);
-  };
-
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-4xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
-          <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
-          Clear All Fleet Data?
-        </h3>
-        <p className="text-[14px] text-gray-500 leading-relaxed mb-6">
-          This action will permanently delete all order history, driver logs,
-          and analytics.
-          <span className="block mt-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-[13px] text-amber-700 font-medium italic">
-            IMPORTANT: A full audit report of this action will be sent to the
-            fleet owner's registered email address immediately.
-          </span>
-        </p>
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={handleConfirm}
-            disabled={loading}
-            className="w-full py-4 bg-red-600 text-white font-bold text-[14px] rounded-2xl hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20 disabled:opacity-70 flex items-center justify-center"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              "Yes, Clear Everything"
-            )}
-          </button>
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-[13px] text-gray-500 mb-6">{desc}</p>
+        <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="w-full py-3 text-gray-400 font-bold text-[13px] hover:text-gray-600 transition-colors"
+            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
           >
             Cancel
           </button>
+          <button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className={`flex-1 py-3 ${variant === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"} text-white font-bold text-[13px] rounded-xl shadow-lg transition-all`}
+          >
+            {btnText}
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
-function DeleteAccountModal({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  const [step, setStep] = useState(1); // 1: Confirmation, 2: Code Verification, 3: Success message
-  const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-md animate-in fade-in duration-500">
-      <div className="bg-white rounded-[40px] w-full max-w-110 p-10 shadow-2xl shadow-black/20 animate-in slide-in-from-bottom-10 duration-500 overflow-hidden relative">
-        {step === 1 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-red-600/30">
-              <TrashIcon className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">
-              Delete Account?
-            </h3>
-            <p className="text-[14px] text-gray-500 leading-relaxed mb-8">
-              Your account will be deactivated and permanently deleted in{" "}
-              <span className="font-bold text-red-600">7 days</span>. A full
-              activity report will be sent to the fleet owner.
-            </p>
-            <button
-              onClick={() => setStep(2)}
-              className="w-full py-4 bg-red-600 text-white font-bold text-[14px] rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-[0.98]"
-            >
-              Send Verification Code
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full text-center mt-6 text-[13px] font-bold text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              Stay on VECTOR
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-8">
-              <EnvelopeIcon className="w-8 h-8 text-emerald-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
-              Verify Identity
-            </h3>
-            <p className="text-[14px] text-gray-500 mb-8 leading-relaxed">
-              We've sent a 6-digit code to your email. Enter it to confirm
-              deactivation.
-            </p>
-            <input
-              type="text"
-              maxLength={6}
-              placeholder="Enter 6-digit code"
-              className="w-full h-16 bg-gray-50 border border-black/5 rounded-2xl px-6 text-center text-2xl font-bold tracking-[8px] focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600/50 mb-6"
-              value={code}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "");
-                setCode(val);
-                if (val.length === 6) {
-                  setLoading(true);
-                  setTimeout(() => {
-                    setLoading(false);
-                    setStep(3);
-                  }, 1200);
-                }
-              }}
-            />
-            {loading && (
-              <div className="flex justify-center mt-4">
-                <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            <p className="text-[12px] text-center text-gray-400 font-medium">
-              Didn't receive it?{" "}
-              <button className="text-emerald-600 font-bold hover:underline">
-                Resend Code
-              </button>
-            </p>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="text-center animate-in scale-in-90 duration-500">
-            <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/30">
-              <CheckCircleIcon className="w-10 h-10 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">
-              Account Deactivated
-            </h3>
-            <p className="text-[14px] text-gray-500 leading-relaxed mb-8">
-              You will now be logged out. Your account will be deleted in 7
-              days.
-              <span className="block mt-4 font-bold text-gray-900">
-                To reactivate, you must log in and verify your email again.
-              </span>
-            </p>
-            <button
-              onClick={() => {
-                setLoading(true);
-                setTimeout(() => {
-                  window.location.href = "/dashboard/signin";
-                }, 1000);
-              }}
-              disabled={loading}
-              className="w-full py-4 bg-gray-900 text-white font-bold text-[14px] rounded-2xl shadow-xl shadow-gray-900/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Log Out Now"
-              )}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* --- Main Dashboard Settings Component --- */
 
 export function DashboardSettings() {
   const {
     company,
     notifications,
-    billing,
     isLoading,
     isMutating,
     fetchSettings,
     updateCompany,
     updateNotifications,
-    changePlan,
   } = useSettingsStore();
-
-  const [activeTab, setActiveTab] = useState<
-    "workspace" | "notifications" | "security" | "billing" | "danger"
-  >("workspace");
 
   const [editingCompany, setEditingCompany] = useState(false);
   const [companyDraft, setCompanyDraft] = useState({
@@ -303,6 +196,9 @@ export function DashboardSettings() {
     state: "",
     timezone: "America/Los_Angeles",
   });
+
+  const [isDataCleaningOpen, setIsDataCleaningOpen] = useState(false);
+  const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -318,28 +214,8 @@ export function DashboardSettings() {
           return company;
         });
       });
-    } else {
-      Promise.resolve().then(() => {
-        setCompanyDraft({
-          name: "VECTOR Fleet Services",
-          email: "contact@vectorfleet.com",
-          phone: "+1 (555) 000-0000",
-          city: "San Francisco",
-          state: "CA",
-          timezone: "America/Los_Angeles",
-        });
-      });
     }
   }, [company]);
-
-  const [isDataCleaningOpen, setIsDataCleaningOpen] = useState(false);
-  const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
-
-  const companyCode = "VECT-2024";
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(companyCode).catch(() => {});
-  };
 
   const toggle = (key: keyof NotificationsConfig) => async () => {
     if (notifications) {
@@ -353,509 +229,223 @@ export function DashboardSettings() {
     setEditingCompany(false);
   };
 
-  const tabs = [
-    { id: "workspace", label: "Workspace", icon: BuildingOfficeIcon },
-    { id: "notifications", label: "Communications", icon: BellIcon },
-    { id: "security", label: "Security & API", icon: ShieldCheckIcon },
-    { id: "billing", label: "Billing & Plans", icon: CreditCardIcon },
-    { id: "danger", label: "Danger Zone", icon: ExclamationTriangleIcon },
-  ] as const;
-
   if (isLoading && !company) {
     return (
-      <div className="p-4 md:p-8 max-w-350 mx-auto flex items-center justify-center min-h-[50vh]">
+      <div className="p-4 md:p-8 flex items-center justify-center min-h-[50vh]">
         <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
+  const companyCode = "VECT-2024";
+
   return (
-    <>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto pb-20">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-2xl md:text-[32px] font-black text-gray-900 mb-2 tracking-tight">
-            Settings
-          </h1>
-          <p className="text-[13px] text-gray-500 font-medium">
-            Manage your fleet workspace, team access, and security
-            configurations
-          </p>
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 pb-32">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl md:text-[32px] font-black text-gray-900 mb-2 tracking-tight">
+          Settings
+        </h1>
+        <p className="text-[13px] text-gray-500 font-medium">
+          Manage your workspace profile and notification preferences
+        </p>
+      </div>
+
+      {/* Driver Access Code */}
+      <div className="relative overflow-hidden bg-gray-900 rounded-3xl p-6 md:p-8 flex flex-wrap items-center justify-between gap-6 shadow-xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/10 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+              Access Code
+            </span>
+          </div>
+          <h3 className="text-xl font-bold text-white mb-6">Join your fleet</h3>
+          <div className="flex items-center gap-4">
+            <span className="text-3xl font-mono font-black text-white tracking-[4px]">
+              {companyCode}
+            </span>
+            <button
+              onClick={() => navigator.clipboard.writeText(companyCode)}
+              className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all text-white"
+            >
+              <ClipboardDocumentIcon className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+        <button className="relative z-10 px-6 py-3 bg-emerald-600 text-white font-bold text-[12px] rounded-xl hover:bg-emerald-500 transition-all cursor-pointer">
+          Refresh Code
+        </button>
+      </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Settings Sidebar */}
-          <aside className="lg:w-64 shrink-0">
-            <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const active = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap cursor-pointer ${active ? "bg-white text-emerald-600 shadow-sm border border-emerald-600/10" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"}`}
-                  >
-                    <Icon
-                      className={`w-5 h-5 ${
-                        active ? "text-emerald-600" : "text-gray-400"
-                      }`}
-                    />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
-
-          {/* Main Content Area */}
-          <main className="flex-1 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {activeTab === "workspace" && (
-              <>
-                {/* Driver Join Code Banner */}
-                <div className="relative overflow-hidden bg-gray-900 rounded-3xl p-6 md:p-8 flex flex-wrap items-center justify-between gap-6 shadow-2xl shadow-black/10">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/10 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
-                  <div className="relative z-10 flex-1 min-w-75">
-                    <div className="flex items-center gap-2 mb-6">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">
-                        Fleet Onboarding Active
-                      </span>
-                    </div>
-                    <h3 className="text-2xl font-black text-white mb-3 tracking-tight">
-                      Fleet Access Code
-                    </h3>
-                    <p className="text-gray-400 text-[14px] mb-8 max-w-sm font-medium leading-relaxed">
-                      Drivers can join your fleet automatically by entering this
-                      unique identifier in their mobile app.
-                    </p>
-                    <div className="inline-flex items-center gap-6 bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 group transition-all hover:bg-white/10">
-                      <span className="text-3xl font-mono font-black text-white tracking-[6px] select-all">
-                        {companyCode}
-                      </span>
-                      <button
-                        onClick={handleCopyCode}
-                        className="p-2.5 bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90 text-white"
-                      >
-                        <ClipboardDocumentIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  <button className="relative z-10 px-6 py-3.5 bg-emerald-600 text-white font-black text-[12px] rounded-xl shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 hover:-translate-y-1 transition-all cursor-pointer">
-                    Regenerate Code
-                  </button>
-                </div>
-
-                <Section
-                  title="Workspace Profile"
-                  subtitle="General information about your fleet operations HQ"
-                >
-                  {!editingCompany ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <StaticField
-                        label="Operating Name"
-                        value={company?.name || "VECTOR Fleet Services"}
-                        icon={BuildingOfficeIcon}
-                      />
-                      <StaticField
-                        label="Operations Email"
-                        value={company?.email || "contact@vectorfleet.com"}
-                        icon={EnvelopeIcon}
-                      />
-                      <StaticField
-                        label="Fleet Hotline"
-                        value={company?.phone || "+1 (555) 000-0000"}
-                        icon={BellIcon}
-                      />
-                      <StaticField
-                        label="Region / HQ"
-                        value={`${company?.city || "San Francisco"}, ${company?.state || "CA"}`}
-                        icon={MapPinIcon}
-                      />
-                      <div className="md:col-span-2 pt-4">
-                        <button
-                          onClick={() => {
-                            if (company) setCompanyDraft(company);
-                            setEditingCompany(true);
-                          }}
-                          className="flex items-center gap-2 px-6 py-3 bg-gray-50 border border-black/5 rounded-2xl text-[13px] font-black text-gray-500 hover:bg-white hover:border-emerald-600/30 hover:text-emerald-600 hover:shadow-lg transition-all cursor-pointer"
-                        >
-                          <PencilIcon className="w-4 h-4 text-emerald-600" />
-                          Edit Workspace Profile
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <InputField
-                          label="Operating Name"
-                          value={companyDraft.name}
-                          onChange={(v) =>
-                            setCompanyDraft({ ...companyDraft, name: v })
-                          }
-                        />
-                        <InputField
-                          label="Operations Email"
-                          value={companyDraft.email}
-                          onChange={(v) =>
-                            setCompanyDraft({ ...companyDraft, email: v })
-                          }
-                        />
-                        <InputField
-                          label="Fleet Hotline"
-                          value={companyDraft.phone}
-                          onChange={(v) =>
-                            setCompanyDraft({ ...companyDraft, phone: v })
-                          }
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <InputField
-                            label="City"
-                            value={companyDraft.city}
-                            onChange={(v) =>
-                              setCompanyDraft({ ...companyDraft, city: v })
-                            }
-                          />
-                          <InputField
-                            label="State"
-                            value={companyDraft.state}
-                            onChange={(v) =>
-                              setCompanyDraft({ ...companyDraft, state: v })
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 pt-8 border-t border-gray-50">
-                        <button
-                          onClick={handleSaveCompany}
-                          disabled={isMutating}
-                          className="px-8 py-3 bg-emerald-600 text-white font-black text-[13px] rounded-2xl shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 min-w-44"
-                        >
-                          {isMutating ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            "Save Workspace"
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setEditingCompany(false)}
-                          className="px-6 py-3 text-gray-400 font-black text-[13px] hover:text-gray-600 transition-colors cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </Section>
-              </>
-            )}
-
-            {activeTab === "notifications" && (
-              <Section
-                title="Communications"
-                subtitle="Configure system alerts and automated telemetry messages"
+      {/* Workspace Section */}
+      <Section
+        title="Workspace Profile"
+        subtitle="Manage your company details and headquarters info"
+      >
+        {!editingCompany ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <StaticField
+              label="Operating Name"
+              value={company?.name || "VECTOR Fleet Services"}
+              icon={BuildingOfficeIcon}
+            />
+            <StaticField
+              label="Operations Email"
+              value={company?.email || "contact@vectorfleet.com"}
+              icon={EnvelopeIcon}
+            />
+            <StaticField
+              label="Fleet Hotline"
+              value={company?.phone || "+1 (555) 000-0000"}
+              icon={BellIcon}
+            />
+            <StaticField
+              label="Region"
+              value={`${company?.city || "San Francisco"}, ${company?.state || "CA"}`}
+              icon={MapPinIcon}
+            />
+            <div className="md:col-span-2 pt-4">
+              <button
+                onClick={() => setEditingCompany(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-50 border border-black/5 rounded-2xl text-[13px] font-bold text-gray-500 hover:bg-white hover:border-emerald-600/30 hover:text-emerald-600 transition-all cursor-pointer"
               >
-                <div className="space-y-2">
-                  <SettingRow
-                    label="Real-time Telemetry"
-                    subtitle="Receive instant updates when drivers go offline or encounter delays."
-                  >
-                    <Toggle
-                      value={notifications?.driverAlerts ?? true}
-                      onChange={toggle("driverAlerts")}
-                    />
-                  </SettingRow>
-                  <SettingRow
-                    label="Operational SMS Alerts"
-                    subtitle="Critical delivery failures sent directly to your supervisor hotline."
-                  >
-                    <Toggle
-                      value={notifications?.sms ?? false}
-                      onChange={toggle("sms")}
-                    />
-                  </SettingRow>
-                  <SettingRow
-                    label="Email Snapshots"
-                    subtitle="Daily delivery performance and billing summaries."
-                  >
-                    <Toggle
-                      value={notifications?.email ?? true}
-                      onChange={toggle("email")}
-                    />
-                  </SettingRow>
-                  <SettingRow
-                    label="Browser System Notifications"
-                    subtitle="In-app alerts for real-time fleet map events."
-                  >
-                    <Toggle
-                      value={notifications?.push ?? true}
-                      onChange={toggle("push")}
-                    />
-                  </SettingRow>
-                </div>
-              </Section>
-            )}
-
-            {activeTab === "security" && (
-              <Section
-                title="Security"
-                subtitle="Manage your authentication and workspace protection"
-              >
-                <div className="space-y-4">
-                  <button className="w-full flex items-center justify-between p-5 bg-gray-50/50 border border-black/5 rounded-2xl group hover:bg-white hover:border-emerald-600/30 transition-all cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all">
-                        <ShieldCheckIcon className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-[14px] font-black text-gray-900 mb-0.5">
-                          Account Credentials
-                        </p>
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                          Change Password • Manage Sessions
-                        </p>
-                      </div>
-                    </div>
-                    <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-                  </button>
-                  <button className="w-full flex items-center justify-between p-5 bg-gray-50/50 border border-black/5 rounded-2xl group hover:bg-white hover:border-emerald-600/30 transition-all cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all">
-                        <KeyIcon className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-[14px] font-black text-gray-900 mb-0.5">
-                          Two-Factor Authentication
-                        </p>
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                          Increase account security
-                        </p>
-                      </div>
-                    </div>
-                    <ArrowTopRightOnSquareIcon className="w-4 h-4 text-gray-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-                  </button>
-                </div>
-              </Section>
-            )}
-
-            {activeTab === "billing" && (
-              <Section
-                title="Subscription & Billing"
-                subtitle="Manage your plan and invoices"
-              >
-                <div className="space-y-6">
-                  <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 capitalize">
-                          {billing?.plan || "free"} Plan
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {billing?.plan === "pro"
-                            ? "Advanced features for scaling fleets"
-                            : billing?.plan === "enterprise"
-                              ? "Custom limits and dedicated support"
-                              : "Basic tools for small teams"}
-                        </p>
-                      </div>
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-lg">
-                        Active
-                      </span>
-                    </div>
-
-                    <div className="flex gap-3 mt-6">
-                      {billing?.plan !== "pro" && (
-                        <button
-                          onClick={() => changePlan("pro")}
-                          disabled={isMutating}
-                          className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl hover:bg-emerald-700 transition shadow-md"
-                        >
-                          Upgrade to Pro
-                        </button>
-                      )}
-                      {billing?.plan !== "enterprise" && (
-                        <button
-                          onClick={() => changePlan("enterprise")}
-                          disabled={isMutating}
-                          className="px-5 py-2.5 bg-gray-900 text-white font-bold text-[13px] rounded-xl hover:bg-gray-800 transition shadow-md"
-                        >
-                          Go Enterprise
-                        </button>
-                      )}
-                      {billing?.plan !== "free" && (
-                        <button
-                          onClick={() => changePlan("free")}
-                          disabled={isMutating}
-                          className="px-4 py-2 text-gray-500 font-bold text-[13px] hover:text-gray-700 transition"
-                        >
-                          Downgrade to Free
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {billing && billing.subscription_id && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <StaticField
-                        label="Current Period Start"
-                        value={new Date(
-                          billing.current_period_start,
-                        ).toLocaleDateString()}
-                        icon={ClockIcon}
-                      />
-                      <StaticField
-                        label="Current Period End"
-                        value={new Date(
-                          billing.current_period_end,
-                        ).toLocaleDateString()}
-                        icon={ClockIcon}
-                      />
-                    </div>
-                  )}
-
-                  <div className="pt-4 border-t border-gray-100">
-                    <p className="text-[12px] text-gray-400">
-                      All payments are processed securely via Stripe. To update
-                      your payment method or view past invoices, visit the
-                      Stripe Customer Portal.
-                    </p>
-                  </div>
-                </div>
-              </Section>
-            )}
-
-            {activeTab === "danger" && (
-              <div className="bg-red-50/50 border border-red-100 rounded-3xl p-6 md:p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 rounded-full -mr-24 -mt-24 blur-3xl pointer-events-none" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-red-100">
-                      <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-black text-red-900 tracking-tight">
-                        Critical Operations
-                      </h2>
-                      <p className="text-[10px] text-red-600/60 font-black uppercase tracking-widest">
-                        System Danger Zone
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-[13px] text-red-800/70 mb-8 leading-relaxed font-medium max-w-xl">
-                    These actions are strictly irreversible. Executing these
-                    will trigger a formal audit report to the workspace owner.
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setIsDataCleaningOpen(true)}
-                      className="group flex flex-col items-start p-5 bg-white border border-red-100 rounded-2xl text-left hover:border-red-600 transition-all cursor-pointer active:scale-[0.98]"
-                    >
-                      <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-red-600 group-hover:text-white transition-colors">
-                        <TrashIcon className="w-4 h-4" />
-                      </div>
-                      <p className="text-[13px] font-black text-gray-900 mb-0.5">
-                        Purge Workspace Data
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-medium">
-                        Delete history and logs
-                      </p>
-                    </button>
-
-                    <button
-                      onClick={() => setIsDeleteAccountOpen(true)}
-                      className="group flex flex-col items-start p-5 bg-red-600 border border-transparent rounded-2xl text-left hover:bg-red-700 transition-all cursor-pointer active:scale-[0.98]"
-                    >
-                      <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mb-3 text-white">
-                        <XMarkIcon className="w-4 h-4" />
-                      </div>
-                      <p className="text-[13px] font-black text-white mb-0.5">
-                        Deactivate Workspace
-                      </p>
-                      <p className="text-[10px] text-white/60 font-medium">
-                        Permanently close account
-                      </p>
-                    </button>
-                  </div>
-                </div>
+                <PencilIcon className="w-4 h-4" />
+                Edit Profile
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InputField
+                label="Name"
+                value={companyDraft.name}
+                onChange={(v) => setCompanyDraft({ ...companyDraft, name: v })}
+              />
+              <InputField
+                label="Email"
+                value={companyDraft.email}
+                onChange={(v) => setCompanyDraft({ ...companyDraft, email: v })}
+              />
+              <InputField
+                label="Phone"
+                value={companyDraft.phone}
+                onChange={(v) => setCompanyDraft({ ...companyDraft, phone: v })}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <InputField
+                  label="City"
+                  value={companyDraft.city}
+                  onChange={(v) =>
+                    setCompanyDraft({ ...companyDraft, city: v })
+                  }
+                />
+                <InputField
+                  label="State"
+                  value={companyDraft.state}
+                  onChange={(v) =>
+                    setCompanyDraft({ ...companyDraft, state: v })
+                  }
+                />
               </div>
-            )}
+            </div>
+            <div className="flex gap-2 pt-4 border-t border-gray-50">
+              <button
+                onClick={handleSaveCompany}
+                disabled={isMutating}
+                className="px-8 py-3 bg-emerald-600 text-white font-bold text-[13px] rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-70"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditingCompany(false)}
+                className="px-6 py-3 text-gray-400 font-bold text-[13px] hover:text-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </Section>
 
-            <p className="text-center text-[11px] text-gray-400 pt-8 font-black uppercase tracking-widest">
-              VECTOR v2.5.0 Production · PRO Tier ·
-              <a href="#" className="text-emerald-600 hover:underline ml-1">
-                Security Policy
-              </a>
-            </p>
-          </main>
+      {/* Notifications Section */}
+      <Section
+        title="Communications"
+        subtitle="Manage system alerts and automated telemetry"
+      >
+        <div className="space-y-1">
+          <SettingRow
+            label="Real-time Telemetry"
+            subtitle="Get instant updates when drivers go offline."
+          >
+            <Toggle
+              value={notifications?.driverAlerts ?? true}
+              onChange={toggle("driverAlerts")}
+            />
+          </SettingRow>
+          <SettingRow
+            label="Daily Email Snapshot"
+            subtitle="Performance summary sent every morning."
+          >
+            <Toggle
+              value={notifications?.email ?? true}
+              onChange={toggle("email")}
+            />
+          </SettingRow>
+          <SettingRow
+            label="System Push Notifications"
+            subtitle="Browser alerts for live tracking events."
+          >
+            <Toggle
+              value={notifications?.push ?? true}
+              onChange={toggle("push")}
+            />
+          </SettingRow>
+        </div>
+      </Section>
+
+      {/* Simplified Danger Zone Section */}
+      <div className="bg-red-50/30 border border-red-100 rounded-3xl p-6 md:p-8">
+        <h3 className="text-lg font-bold text-red-900 mb-2">Danger Zone</h3>
+        <p className="text-[13px] text-red-700/60 mb-8">
+          Irreversible actions for your workspace data and access.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setIsDataCleaningOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white border border-red-100 rounded-xl text-[12px] font-bold text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Clear Data
+          </button>
+          <button
+            onClick={() => setIsDeleteAccountOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-[12px] font-bold hover:bg-red-700 transition-all cursor-pointer shadow-lg shadow-red-600/10"
+          >
+            <XMarkIcon className="w-4 h-4" />
+            Delete Account
+          </button>
         </div>
       </div>
 
-      <DataCleaningModal
+      <SimpleConfirmModal
         isOpen={isDataCleaningOpen}
         onClose={() => setIsDataCleaningOpen(false)}
-        onConfirm={() => {
-          alert(
-            "Data clearing initiated. A report has been sent to the fleet owner.",
-          );
-          setIsDataCleaningOpen(false);
-        }}
+        title="Clear workspace data?"
+        desc="This will permanently delete all logs and history. This cannot be undone."
+        btnText="Clear Everything"
+        onConfirm={() => {}}
       />
-      <DeleteAccountModal
+
+      <SimpleConfirmModal
         isOpen={isDeleteAccountOpen}
         onClose={() => setIsDeleteAccountOpen(false)}
-      />
-    </>
-  );
-}
-
-/* --- Inline Helper Components --- */
-
-function StaticField({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="p-5 bg-gray-50/30 border border-black/5 rounded-2xl">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-          {label}
-        </span>
-      </div>
-      <p className="text-[15px] font-bold text-gray-900 tracking-tight">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function InputField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-        {label}
-      </label>
-      <input
-        type="text"
-        className="w-full h-12 px-4 bg-white border border-black/8 rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/10 focus:border-emerald-600 transition-all"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        title="Delete your account?"
+        desc="Your workspace will be deactivated. You have 7 days to revert this action."
+        btnText="Delete Account"
+        onConfirm={() => {}}
       />
     </div>
   );

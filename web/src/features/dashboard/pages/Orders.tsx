@@ -10,6 +10,7 @@ import {
   UserIcon,
   ClockIcon,
   DocumentTextIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal, ModalInput } from "../components/NewOrderModal";
 import { Order } from "../../../store/orderStore";
@@ -199,54 +200,72 @@ export function DashboardOrders() {
         <div className="space-y-3 sm:space-y-0">
           {/* Mobile Card List */}
           <div className="grid grid-cols-1 gap-3 sm:hidden">
-            {filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-white border border-black/8 rounded-2xl p-4 shadow-sm"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                      {order.id}
-                    </p>
-                    {order.priority && order.priority === "high" && (
-                      <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md tracking-wider">
-                        Priority
-                      </span>
-                    )}
-                  </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status)}`}
-                  >
-                    {getStatusLabel(order.status)}
-                  </span>
+            {filteredOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                  <ArchiveBoxIcon className="w-7 h-7 text-gray-300" />
                 </div>
-                <h3 className="text-[14px] font-bold text-gray-900 mb-1">
-                  {order.customer_name}
-                </h3>
-                <p className="text-[12px] text-gray-500 mb-4 line-clamp-1">
-                  {order.address}
+                <p className="text-[14px] font-bold text-gray-400 mb-1">
+                  {searchQuery || activeFilter !== "all"
+                    ? "No matching orders"
+                    : "No orders yet"}
                 </p>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <div className="flex gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <ClockIcon className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-[11px] text-gray-500 font-medium">
-                        {order.time_window_start
-                          ? `${order.time_window_start} - ${order.time_window_end}`
-                          : "Any time"}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setEditingOrder(order)}
-                    className="p-2 border border-black/8 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <PencilIcon className="w-3.5 h-3.5 text-gray-400" />
-                  </button>
-                </div>
+                <p className="text-[12px] text-gray-300">
+                  {searchQuery || activeFilter !== "all"
+                    ? "Try adjusting your filters"
+                    : "Create your first order to get started"}
+                </p>
               </div>
-            ))}
+            ) : (
+              filteredOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="bg-white border border-black/8 rounded-2xl p-4 shadow-sm"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                        {order.id}
+                      </p>
+                      {order.priority && order.priority === "high" && (
+                        <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md tracking-wider">
+                          Priority
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status)}`}
+                    >
+                      {getStatusLabel(order.status)}
+                    </span>
+                  </div>
+                  <h3 className="text-[14px] font-bold text-gray-900 mb-1">
+                    {order.customer_name}
+                  </h3>
+                  <p className="text-[12px] text-gray-500 mb-4 line-clamp-1">
+                    {order.address}
+                  </p>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="flex gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <ClockIcon className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-[11px] text-gray-500 font-medium">
+                          {order.time_window_start
+                            ? `${order.time_window_start} - ${order.time_window_end}`
+                            : "Any time"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setEditingOrder(order)}
+                      className="p-2 border border-black/8 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <PencilIcon className="w-3.5 h-3.5 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Desktop Table */}
@@ -274,92 +293,114 @@ export function DashboardOrders() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="transition-colors hover:bg-gray-50/50 group"
-                    >
-                      <td className="px-6 py-4">
-                        <p className="text-[13px] font-bold text-gray-900">
-                          {order.id}
-                        </p>
-                        {order.priority && order.priority === "high" && (
-                          <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md mt-1 tracking-wider">
-                            Priority
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-[13px] font-bold text-gray-800">
-                          {order.customer_name}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-[13px] text-gray-500 max-w-45 truncate">
-                          {order.address}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-[13px] text-gray-500 font-medium">
-                          {order.time_window_start
-                            ? `${order.time_window_start} - ${order.time_window_end}`
-                            : "Any time"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {order.driver_id || order.driver_name ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                              <UserIcon className="w-3.5 h-3.5 text-gray-500" />
-                            </div>
-                            <span className="text-[13px] text-gray-700 font-medium">
-                              {order.driver_name || "Assigned Driver"}
-                            </span>
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-14 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                            <ArchiveBoxIcon className="w-6 h-6 text-gray-300" />
                           </div>
-                        ) : (
-                          <select
-                            onChange={async (e) => {
-                              if (e.target.value) {
-                                // Find driver ID by name from driver store
-                                const matched = drivers.find(
-                                  (d) => d.name === e.target.value,
-                                );
-                                if (matched) {
-                                  await updateOrder(order.id, {
-                                    driver_id: matched.id,
-                                    status: "assigned",
-                                  });
-                                }
-                              }
-                            }}
-                            className="bg-gray-50/50 border border-black/8 rounded-lg px-2.5 py-1 text-[12px] text-gray-500 outline-none hover:border-emerald-600/30 transition-colors"
-                          >
-                            <option value="">Assign driver...</option>
-                            {driverNames.map((d) => (
-                              <option key={d} value={d}>
-                                {d}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusClasses(order.status)}`}
-                        >
-                          {getStatusLabel(order.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setEditingOrder(order)}
-                          className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
-                        >
-                          <PencilIcon className="w-4 h-4" />
-                        </button>
+                          <p className="text-[14px] font-bold text-gray-400">
+                            {searchQuery || activeFilter !== "all"
+                              ? "No matching orders"
+                              : "No orders yet"}
+                          </p>
+                          <p className="text-[12px] text-gray-300">
+                            {searchQuery || activeFilter !== "all"
+                              ? "Try adjusting your search or filters"
+                              : 'Click "New Order" to add your first delivery'}
+                          </p>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredOrders.map((order) => (
+                      <tr
+                        key={order.id}
+                        className="transition-colors hover:bg-gray-50/50 group"
+                      >
+                        <td className="px-6 py-4">
+                          <p className="text-[13px] font-bold text-gray-900">
+                            {order.id}
+                          </p>
+                          {order.priority && order.priority === "high" && (
+                            <span className="inline-flex px-1.5 py-0.5 bg-red-50 text-red-600 text-[9px] font-bold uppercase rounded-md mt-1 tracking-wider">
+                              Priority
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-[13px] font-bold text-gray-800">
+                            {order.customer_name}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-[13px] text-gray-500 max-w-45 truncate">
+                            {order.address}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-[13px] text-gray-500 font-medium">
+                            {order.time_window_start
+                              ? `${order.time_window_start} - ${order.time_window_end}`
+                              : "Any time"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {order.driver_id || order.driver_name ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                                <UserIcon className="w-3.5 h-3.5 text-gray-500" />
+                              </div>
+                              <span className="text-[13px] text-gray-700 font-medium">
+                                {order.driver_name || "Assigned Driver"}
+                              </span>
+                            </div>
+                          ) : (
+                            <select
+                              onChange={async (e) => {
+                                if (e.target.value) {
+                                  // Find driver ID by name from driver store
+                                  const matched = drivers.find(
+                                    (d) => d.name === e.target.value,
+                                  );
+                                  if (matched) {
+                                    await updateOrder(order.id, {
+                                      driver_id: matched.id,
+                                      status: "assigned",
+                                    });
+                                  }
+                                }
+                              }}
+                              className="bg-gray-50/50 border border-black/8 rounded-lg px-2.5 py-1 text-[12px] text-gray-500 outline-none hover:border-emerald-600/30 transition-colors"
+                            >
+                              <option value="">Assign driver...</option>
+                              {driverNames.map((d) => (
+                                <option key={d} value={d}>
+                                  {d}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusClasses(order.status)}`}
+                          >
+                            {getStatusLabel(order.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => setEditingOrder(order)}
+                            className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

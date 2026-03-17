@@ -61,8 +61,9 @@ export function DashboardOverview() {
     },
     {
       label: "On-time Rate",
-      value: metrics ? `${metrics.on_time_rate}%` : "—",
-      change: metrics ? `${metrics.on_time_rate_change}%` : "—",
+      value: metrics?.on_time_rate != null ? `${metrics.on_time_rate}%` : "N/A",
+      change:
+        metrics?.on_time_rate != null ? `${metrics.on_time_rate_change}%` : "—",
       trend:
         metrics?.on_time_rate_change?.startsWith("+") ||
         metrics?.on_time_rate_change === "+0"
@@ -72,7 +73,10 @@ export function DashboardOverview() {
     },
     {
       label: "Fuel Saved",
-      value: metrics ? `$${metrics.fuel_saved_usd}` : "—",
+      value:
+        metrics && metrics.fuel_saved_usd > 0
+          ? `$${metrics.fuel_saved_usd}`
+          : "N/A",
       change: metrics?.fuel_saved_change
         ? `${metrics.fuel_saved_change}%`
         : "—",

@@ -26,24 +26,36 @@ export class DashboardService {
   ) {}
 
   async getMetrics(companyId: string) {
-    const [activeDrivers, pendingOrders] = await Promise.all([
-      this.prisma.driver.count({
-        where: { company_id: companyId, status: 'active' },
-      }),
-      this.prisma.stop.count({
-        where: { company_id: companyId, status: 'unassigned' },
-      }),
-    ]);
+    const [activeDrivers, pendingOrders, completedStops, totalStops] =
+      await Promise.all([
+        this.prisma.driver.count({
+          where: { company_id: companyId, status: 'active' },
+        }),
+        this.prisma.stop.count({
+          where: { company_id: companyId, status: 'unassigned' },
+        }),
+        this.prisma.stop.count({
+          where: { company_id: companyId, status: 'completed' },
+        }),
+        this.prisma.stop.count({
+          where: { company_id: companyId },
+        }),
+      ]);
+
+    const onTimeRate =
+      totalStops > 0
+        ? parseFloat(((completedStops / totalStops) * 100).toFixed(1))
+        : null;
 
     return {
       active_drivers: activeDrivers,
       active_drivers_change: '+0',
       pending_orders: pendingOrders,
       pending_orders_change: '+0',
-      on_time_rate: 98.5,
-      on_time_rate_change: '+1.2',
-      fuel_saved_usd: 120,
-      fuel_saved_change: '+5',
+      on_time_rate: onTimeRate,
+      on_time_rate_change: '+0',
+      fuel_saved_usd: 0,
+      fuel_saved_change: '+0',
     };
   }
 

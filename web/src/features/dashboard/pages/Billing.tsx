@@ -5,41 +5,19 @@ import {
   ArrowDownTrayIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-  ArrowUpRightIcon,
   SparklesIcon,
   ChevronRightIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 
-const invoices = [
-  {
-    date: "Mar 1, 2026",
-    description: "Fleet Professional — Monthly",
-    amount: "$49.00",
-    status: "paid",
-    pdf: "#",
-  },
-  {
-    date: "Feb 1, 2026",
-    description: "Fleet Professional — Monthly",
-    amount: "$49.00",
-    status: "paid",
-    pdf: "#",
-  },
-  {
-    date: "Jan 1, 2026",
-    description: "Fleet Professional — Monthly",
-    amount: "$49.00",
-    status: "paid",
-    pdf: "#",
-  },
-  {
-    date: "Dec 1, 2025",
-    description: "Fleet Professional — Monthly",
-    amount: "$49.00",
-    status: "paid",
-    pdf: "#",
-  },
-];
+interface BillingInvoice {
+  date: string;
+  description: string;
+  amount: string;
+  status: "paid" | "pending" | "failed";
+}
+
+const invoices: BillingInvoice[] = [];
 
 const plans = [
   {
@@ -93,15 +71,15 @@ export function DashboardBilling() {
   const [showChangePlan, setShowChangePlan] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
+  // In a real app, these would come from the backend or a billing store
   const usageItems = [
-    { label: "Active Drivers", used: 12, total: 25, color: "bg-emerald-500" },
+    { label: "Active Drivers", used: 0, total: 10, color: "bg-emerald-500" },
     {
       label: "Deliveries This Month",
-      used: 342,
-      total: 999,
+      used: 0,
+      total: 100,
       color: "bg-emerald-400",
     },
-    { label: "API Calls", used: 8200, total: 50000, color: "bg-amber-500" },
   ];
 
   return (
@@ -268,38 +246,27 @@ export function DashboardBilling() {
       {/* Grid and Usage */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Payment Method */}
-        <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm">
+        <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col justify-center">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">
               Payment Method
             </h2>
-            <button className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest hover:underline cursor-pointer">
-              Manage All
-            </button>
           </div>
 
-          <div className="group bg-gray-50/50 border border-black/5 rounded-xl p-5 flex items-center justify-between transition-all hover:bg-white hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-600/5 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-9 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20 transition-transform group-hover:scale-105">
-                <CreditCardIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-gray-900 mb-0.5 tracking-tight">
-                  •••• •••• •••• 4242
-                </p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                  Mastercard • Expires 12/27
-                </p>
-              </div>
+          <div className="text-center py-4">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-black/5">
+              <CreditCardIcon className="w-8 h-8 text-gray-300" />
             </div>
-            <button className="p-2 rounded-lg border border-black/5 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all group/edit cursor-pointer">
-              <ArrowUpRightIcon className="w-4 h-4 text-gray-400 group-hover/edit:text-emerald-600" />
+            <p className="text-[14px] font-bold text-gray-400 mb-1">
+              No payment method added
+            </p>
+            <p className="text-[12px] text-gray-300 mb-6">
+              Connect your card to start your subscription
+            </p>
+            <button className="w-full py-3.5 bg-gray-900 text-white font-bold text-[13px] rounded-xl hover:bg-black transition-all cursor-pointer">
+              Set up with Stripe
             </button>
           </div>
-
-          <button className="w-full py-4 border-2 border-dashed border-gray-100 rounded-xl text-gray-400 font-bold text-[13px] hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all cursor-pointer">
-            + Add New Payment Method
-          </button>
         </div>
 
         {/* Usage Metrics */}
@@ -376,59 +343,73 @@ export function DashboardBilling() {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50/50">
-                {[
-                  "Statement Date",
-                  "Description",
-                  "Amount",
-                  "Status",
-                  "Actions",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-8 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {invoices.map((inv, i) => (
-                <tr
-                  key={i}
-                  className="group hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-8 py-5 text-[13px] font-bold text-gray-700">
-                    {inv.date}
-                  </td>
-                  <td className="px-8 py-5 text-[13px] text-gray-600">
-                    {inv.description}
-                  </td>
-                  <td className="px-8 py-5 text-[14px] font-bold text-gray-900">
-                    {inv.amount}
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg">
-                      <CheckCircleIcon className="w-3.5 h-3.5" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">
-                        Paid
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <button className="flex items-center gap-2 px-3 py-1.5 border border-black/8 rounded-xl text-[12px] font-bold text-gray-500 group-hover:bg-white group-hover:border-emerald-600/30 group-hover:text-emerald-600 transition-all cursor-pointer">
-                      <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-                      Receipt
-                    </button>
-                  </td>
+        <div className="overflow-x-auto min-h-75 flex items-center justify-center">
+          {invoices.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ArchiveBoxIcon className="w-8 h-8 text-gray-200" />
+              </div>
+              <p className="text-[15px] font-bold text-gray-400 mb-1">
+                No statements available
+              </p>
+              <p className="text-[13px] text-gray-300">
+                Your future invoices will appear here
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  {[
+                    "Statement Date",
+                    "Description",
+                    "Amount",
+                    "Status",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-8 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {invoices.map((inv, i) => (
+                  <tr
+                    key={i}
+                    className="group hover:bg-gray-50/50 transition-colors"
+                  >
+                    <td className="px-8 py-5 text-[13px] font-bold text-gray-700">
+                      {inv.date}
+                    </td>
+                    <td className="px-8 py-5 text-[13px] text-gray-600">
+                      {inv.description}
+                    </td>
+                    <td className="px-8 py-5 text-[14px] font-bold text-gray-900">
+                      {inv.amount}
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <CheckCircleIcon className="w-3.5 h-3.5" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">
+                          Paid
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <button className="flex items-center gap-2 px-3 py-1.5 border border-black/8 rounded-xl text-[12px] font-bold text-gray-500 group-hover:bg-white group-hover:border-emerald-600/30 group-hover:text-emerald-600 transition-all cursor-pointer">
+                        <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+                        Receipt
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

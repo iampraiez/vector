@@ -23,99 +23,6 @@ interface Notification {
   category: "orders" | "drivers" | "system";
 }
 
-const INITIAL: Notification[] = [
-  {
-    id: 1,
-    type: "alert",
-    category: "drivers",
-    title: "Driver went offline",
-    body: "Emma Davis went offline unexpectedly during an active route.",
-    time: "2 min ago",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "order",
-    category: "orders",
-    title: "New order assigned",
-    body: "DEL-007 assigned to Sarah Chen — 890 Oak Avenue, Springfield.",
-    time: "8 min ago",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "success",
-    category: "orders",
-    title: "Delivery completed",
-    body: "DEL-005 delivered successfully by Mike Johnson. Customer rated 5 ★.",
-    time: "14 min ago",
-    read: false,
-  },
-  {
-    id: 4,
-    type: "alert",
-    category: "orders",
-    title: "Delivery missed time window",
-    body: "DEL-003 (Lisa Anderson) was not delivered within the 3:00–5:00 PM window.",
-    time: "32 min ago",
-    read: false,
-  },
-  {
-    id: 5,
-    type: "driver",
-    category: "drivers",
-    title: "Driver back online",
-    body: "Alex Rivera resumed activity after a 15-min break.",
-    time: "1 hour ago",
-    read: true,
-  },
-  {
-    id: 6,
-    type: "success",
-    category: "orders",
-    title: "Route optimised",
-    body: "4 stops re-sequenced for Alex Rivera, saving an estimated 18 min.",
-    time: "1 hour ago",
-    read: true,
-  },
-  {
-    id: 7,
-    type: "system",
-    category: "system",
-    title: "System update applied",
-    body: "Vector platform updated to v2.5.1. Route optimisation accuracy improved by 12%.",
-    time: "3 hours ago",
-    read: true,
-  },
-  {
-    id: 8,
-    type: "driver",
-    category: "drivers",
-    title: "New driver onboarded",
-    body: "Maria Santos completed onboarding and is now available for assignment.",
-    time: "5 hours ago",
-    read: true,
-  },
-  {
-    id: 9,
-    type: "alert",
-    category: "system",
-    title: "Billing renewal upcoming",
-    body: "Your VECTOR Pro plan renews on March 15. Payment method is up to date.",
-    time: "1 day ago",
-    read: true,
-  },
-  {
-    id: 10,
-    type: "driver",
-    category: "drivers",
-    title: "New driver joined",
-    body: "Jordan Lee joined your fleet using company code VECT-2024.",
-    time: "2 days ago",
-    read: true,
-  },
-];
-
 const iconMap = {
   order: ArchiveBoxIcon,
   driver: TruckIcon,
@@ -140,7 +47,7 @@ const CATEGORIES: { key: NotifCategory; label: string }[] = [
 ];
 
 export function DashboardNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeCategory, setActiveCategory] = useState<NotifCategory>("all");
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -250,9 +157,13 @@ export function DashboardNotifications() {
           <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-5">
             <BellIcon className="w-8 h-8 text-gray-300" />
           </div>
-          <p className="text-[15px] font-bold text-gray-400 mb-1">All clear</p>
+          <p className="text-[15px] font-bold text-gray-400 mb-1">
+            {activeCategory === "all" ? "No notifications yet" : "All clear"}
+          </p>
           <p className="text-[13px] text-gray-300 font-medium">
-            No notifications in this category
+            {activeCategory === "all"
+              ? "Activity from your fleet will appear here"
+              : "No notifications in this category"}
           </p>
         </div>
       ) : (

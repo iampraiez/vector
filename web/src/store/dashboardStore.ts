@@ -7,7 +7,7 @@ interface DashboardMetrics {
   active_drivers_change: string;
   pending_orders: number;
   pending_orders_change: string;
-  on_time_rate: number;
+  on_time_rate: number | null;
   on_time_rate_change: string;
   fuel_saved_usd: number;
   fuel_saved_change: string;
