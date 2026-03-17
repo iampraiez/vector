@@ -419,6 +419,20 @@ paths:
         "200":
           description: ""
       tags: *a4
+  /dashboard/reports/request:
+    post:
+      operationId: ReportsController_requestReport
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportQueryDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a4
   /dashboard/reports/export:
     get:
       operationId: ReportsController_exportReport
@@ -1247,6 +1261,17 @@ components:
     Object:
       type: object
       properties: {}
+    ReportQueryDto:
+      type: object
+      properties:
+        start_date:
+          type: string
+        end_date:
+          type: string
+        driver_id:
+          type: string
+        format:
+          type: object
     ChangePlanDto:
       type: object
       properties:

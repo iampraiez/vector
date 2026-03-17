@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   ArrowDownTrayIcon,
-  CalendarDaysIcon,
   TruckIcon,
   ClockIcon,
   MapPinIcon,
@@ -11,10 +10,10 @@ import {
   EnvelopeIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
+import { api } from "../../../lib/api";
 
 const PERIODS = ["7 days", "30 days", "90 days"];
 
-/* --- Export Modal --- */
 function ExportModal({
   isOpen,
   onClose,
@@ -22,107 +21,159 @@ function ExportModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [selectedRange, setSelectedRange] = useState("30 days");
+  const [dateRange, setDateRange] = useState({
+    start: new Date().toISOString().split("T")[0],
+    end: new Date().toISOString().split("T")[0],
+  });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const QUICK_RANGES = [
+    { label: "7D", days: 7 },
+    { label: "30D", days: 30 },
+    { label: "90D", days: 90 },
+  ];
+
+  const handleQuickSelect = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - days);
+    setDateRange({
+      start: start.toISOString().split("T")[0],
+      end: end.toISOString().split("T")[0],
+    });
+  };
+
+  const handleSubmit = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await api.post("/dashboard/reports/request", {
+        start_date: dateRange.start,
+        end_date: dateRange.end,
+      });
       setSubmitted(true);
-    }, 1000);
+    } catch (err) {
+      console.error("Failed to request report:", err);
+      // In a real app, we'd show a toast here
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
     setSubmitted(false);
-    setSelectedRange("30 days");
     onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-4xl w-full max-w-md shadow-2xl border border-black/5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
         {submitted ? (
-          <div className="p-10 text-center">
-            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <EnvelopeIcon className="w-8 h-8 text-emerald-600" />
+          <div className="p-10 text-center animate-in fade-in zoom-in-90 duration-500">
+            <div className="w-20 h-20 bg-emerald-50 rounded-[28px] flex items-center justify-center mx-auto mb-8 relative">
+              <div className="absolute inset-0 bg-emerald-400/20 rounded-[28px] animate-ping" />
+              <CheckCircleIcon className="w-10 h-10 text-emerald-600 relative z-10" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">
-              Report Queued
+            <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">
+              Report Queued!
             </h3>
-            <p className="text-[14px] text-gray-500 leading-relaxed mb-8">
-              Your {selectedRange} report is being generated and will be sent to
-              your registered email address shortly.
+            <p className="text-[14px] text-gray-500 leading-relaxed mb-10 px-4">
+              We're compiling your data. The report will be sent to your
+              registered email address in a few minutes.
             </p>
             <button
               onClick={handleClose}
-              className="w-full py-3.5 bg-emerald-600 text-white font-bold text-[14px] rounded-2xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20"
+              className="w-full py-4 bg-emerald-600 text-white font-bold text-[15px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/10 active:scale-[0.98]"
             >
-              Done
+              Back to Reports
             </button>
           </div>
         ) : (
           <>
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-8 pt-8 pb-6 flex items-center justify-between">
               <div>
-                <h3 className="text-[17px] font-bold text-gray-900 tracking-tight">
-                  Export Report
+                <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+                  Export Settings
                 </h3>
-                <p className="text-[12px] text-gray-400 mt-0.5">
-                  Select a date range for your report
+                <p className="text-[13px] text-gray-400 mt-1 font-medium">
+                  Select your preferred date range
                 </p>
               </div>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors border border-black/5"
               >
-                <XMarkIcon className="w-4 h-4 text-gray-500" />
+                <XMarkIcon className="w-5 h-5 text-gray-400" />
               </button>
             </div>
 
-            <div className="p-6 space-y-3">
-              {["7 days", "30 days", "90 days", "This year"].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setSelectedRange(range)}
-                  className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                    selectedRange === range
-                      ? "border-emerald-600 bg-emerald-50/50"
-                      : "border-gray-100 hover:border-gray-200 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <CalendarDaysIcon
-                      className={`w-5 h-5 ${selectedRange === range ? "text-emerald-600" : "text-gray-400"}`}
-                    />
-                    <span
-                      className={`text-[14px] font-bold ${selectedRange === range ? "text-emerald-700" : "text-gray-700"}`}
+            <div className="px-8 pb-8 space-y-8">
+              {/* Quick Select */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                  Quick Select
+                </label>
+                <div className="flex gap-2">
+                  {QUICK_RANGES.map((range) => (
+                    <button
+                      key={range.label}
+                      onClick={() => handleQuickSelect(range.days)}
+                      className="flex-1 py-2.5 rounded-xl border border-black/5 bg-gray-50 text-[13px] font-bold text-gray-600 hover:bg-white hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
                     >
-                      {range}
-                    </span>
-                  </div>
-                  {selectedRange === range && (
-                    <CheckCircleIcon className="w-5 h-5 text-emerald-600" />
-                  )}
-                </button>
-              ))}
-            </div>
+                      {range.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="p-6 pt-2">
+              {/* Custom Range */}
+              <div className="space-y-4">
+                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                  Custom Range
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <span className="text-[12px] font-bold text-gray-500 pl-1">
+                      Start Date
+                    </span>
+                    <input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={(e) =>
+                        setDateRange({ ...dateRange, start: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-black/5 rounded-xl text-[13px] font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-[12px] font-bold text-gray-500 pl-1">
+                      End Date
+                    </span>
+                    <input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={(e) =>
+                        setDateRange({ ...dateRange, end: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-black/5 rounded-xl text-[13px] font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full py-3.5 bg-emerald-600 text-white font-bold text-[14px] rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
+                className="w-full mt-4 py-4 bg-emerald-600 text-white font-bold text-[15px] rounded-[20px] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    <ArrowDownTrayIcon className="w-4.5 h-4.5" />
-                    Send Report to Email
+                    <EnvelopeIcon className="w-5 h-5" />
+                    Send to my Email
                   </>
                 )}
               </button>
@@ -216,10 +267,11 @@ export function DashboardReports() {
             </div>
             <button
               onClick={() => setShowExportModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 rounded-xl text-[13px] font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all cursor-pointer"
+              className="group relative flex items-center gap-2.5 px-6 py-3 bg-emerald-600 rounded-2xl text-[14px] font-bold text-white shadow-2xl shadow-emerald-600/30 hover:bg-emerald-500 hover:shadow-emerald-600/40 hover:-translate-y-0.5 transition-all active:scale-95 cursor-pointer overflow-hidden"
             >
-              <ArrowDownTrayIcon className="w-4.5 h-4.5" />
-              Export Report
+              <div className="absolute inset-0 bg-linear-to-tr from-emerald-400/0 via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowDownTrayIcon className="w-4.5 h-4.5 relative z-10" />
+              <span className="relative z-10">Export Report</span>
             </button>
           </div>
         </div>

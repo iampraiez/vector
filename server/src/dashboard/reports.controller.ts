@@ -1,4 +1,12 @@
-import { Controller, Get, Query, UseGuards, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+  Res,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -35,6 +43,16 @@ export class ReportsController {
     @Query() query: ReportQueryDto & PaginationDto,
   ) {
     return this.dashboardService.getDriverPerformance(companyId, query);
+  }
+
+  @Post('request')
+  async requestReport(
+    @CurrentUser('email') email: string,
+    @CurrentUser('company_id') companyId: string,
+    @Body() query: ReportQueryDto,
+  ) {
+    await this.dashboardService.queueReportEmail(email, companyId, query);
+    return { message: 'Report requested successfully' };
   }
 
   @Get('export')

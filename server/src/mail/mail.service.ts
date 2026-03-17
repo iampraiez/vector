@@ -26,6 +26,7 @@ export class MailService {
     subject: string,
     html: string,
     text?: string,
+    attachments?: { content: string; filename: string; type: string }[],
   ): Promise<{ messageId: string }> {
     try {
       await sgMail.send({
@@ -41,6 +42,12 @@ export class MailService {
         subject,
         text: text || html.replace(/<[^>]*>?/gm, ''),
         html,
+        attachments: attachments?.map((a) => ({
+          content: Buffer.from(a.content).toString('base64'),
+          filename: a.filename,
+          type: a.type,
+          disposition: 'attachment',
+        })),
         headers: {
           'X-Mailer': 'VectorFleet/1.0',
           'X-Priority': '3',

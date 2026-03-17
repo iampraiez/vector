@@ -12,6 +12,7 @@ import {
   BellIcon,
 } from "@heroicons/react/24/outline";
 import { TruckIcon } from "@heroicons/react/24/solid";
+import { useAuthStore } from "../../../store/authStore";
 import {
   Sidebar,
   SidebarContent,
@@ -30,17 +31,17 @@ interface DashboardLayoutProps {
   children?: React.ReactNode;
 }
 
-const USER_NAME = "Fleet Manager";
-const USER_EMAIL = "manager@vector.com";
-
-function getInitial(name: string) {
-  return name.trim().charAt(0).toUpperCase();
+// Helper to get initials from email or name
+function getInitial(identifier: string) {
+  if (!identifier) return "U";
+  return identifier.trim().charAt(0).toUpperCase();
 }
 
 function DashboardSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setOpenMobile, isMobile } = useSidebar();
+  const { user, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const navItems = [
@@ -70,11 +71,15 @@ function DashboardSidebar() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setIsLoggingOut(true);
-    setTimeout(() => {
-      navigate("/dashboard/signin");
-    }, 1000);
+    try {
+      logout();
+      navigate("/");
+    } catch (err) {
+      console.error("Logout failed", err);
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -124,18 +129,18 @@ function DashboardSidebar() {
 
       {/* ── User footer ── */}
       <SidebarFooter className="p-3 border-t border-black/5">
-        <div className="bg-gray-50 rounded-xl p-3">
-          <div className="flex items-center gap-3">
+        <div className="bg-white border border-black/5 rounded-xl p-2.5 shadow-sm">
+          <div className="flex items-center gap-2.5">
             {/* Avatar — single initial */}
-            <div className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-linear-to-br from-emerald-600 to-emerald-800 text-white text-[14px] font-black tracking-tight select-none">
-              {getInitial(USER_NAME)}
+            <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-emerald-600 to-emerald-800 text-white text-[13px] font-black tracking-tight select-none shadow-sm">
+              {getInitial(user?.email || "User")}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-gray-900 leading-tight truncate">
-                {USER_NAME}
+              <p className="text-[12px] font-bold text-gray-900 leading-none truncate mb-1">
+                {user?.email.split("@")[0] || "Fleet Manager"}
               </p>
-              <p className="text-[11px] text-gray-400 truncate font-medium">
-                {USER_EMAIL}
+              <p className="text-[10px] text-gray-400 truncate font-medium tracking-tight">
+                {user?.email || "manager@vector.com"}
               </p>
             </div>
             {/* Sign out icon button */}

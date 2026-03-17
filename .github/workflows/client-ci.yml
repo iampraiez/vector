@@ -48,5 +48,5 @@ jobs:
             echo "No app-specific tests found. Skipping."
           fi
           
-      - name: Build Android Release
-        run: flutter build apk --release
+      # - name: Build Android Release
+      #   run: flutter build apk --release

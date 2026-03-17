@@ -61,7 +61,7 @@ export function DashboardOverview() {
     },
     {
       label: "On-time Rate",
-      value: metrics?.on_time_rate != null ? `${metrics.on_time_rate}%` : "N/A",
+      value: metrics?.on_time_rate != null ? `${metrics.on_time_rate}%` : "—",
       change:
         metrics?.on_time_rate != null ? `${metrics.on_time_rate_change}%` : "—",
       trend:
@@ -76,7 +76,7 @@ export function DashboardOverview() {
       value:
         metrics && metrics.fuel_saved_usd > 0
           ? `$${metrics.fuel_saved_usd}`
-          : "N/A",
+          : "—",
       change: metrics?.fuel_saved_change
         ? `${metrics.fuel_saved_change}%`
         : "—",

@@ -18,12 +18,29 @@ import {
 } from './dto/dashboard.dto';
 import * as bcrypt from 'bcrypt';
 
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bullmq';
+import { generateReportCsv } from './utils/report.util';
+
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    @InjectQueue('email') private readonly emailQueue: Queue,
   ) {}
+
+  async queueReportEmail(
+    email: string,
+    companyId: string,
+    query: ReportQueryDto,
+  ) {
+    await this.emailQueue.add('sendReport', {
+      email,
+      companyId,
+      query,
+    });
+  }
 
   async getMetrics(companyId: string) {
     const [activeDrivers, pendingOrders, completedStops, totalStops] =
@@ -544,41 +561,8 @@ export class DashboardService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async generateReportCsv(companyId: string, _query: ReportQueryDto) {
-    const stops = await this.prisma.stop.findMany({
-      where: { company_id: companyId },
-      include: { driver: { include: { user: true } }, route: true },
-      orderBy: { created_at: 'desc' },
-      take: 2000,
-    });
-
-    const header = [
-      'ID',
-      'External ID',
-      'Customer',
-      'Address',
-      'Status',
-      'Driver',
-      'Route',
-      'Created At',
-    ];
-    const rows = stops.map((s) => {
-      const driverName = s.driver?.user.full_name || 'Unassigned';
-      const routeName = s.route?.name || 'Unrouted';
-      return [
-        s.id,
-        s.external_id || '',
-        `"${s.customer_name.replace(/"/g, '""')}"`,
-        `"${s.address.replace(/"/g, '""')}"`,
-        s.status,
-        `"${driverName}"`,
-        `"${routeName}"`,
-        s.created_at.toISOString(),
-      ];
-    });
-
-    return [header.join(','), ...rows.map((r) => r.join(','))].join('\\n');
+  async generateReportCsv(companyId: string, query: ReportQueryDto) {
+    return generateReportCsv(this.prisma, companyId, query);
   }
 
   async importBulkOrders(companyId: string, orders: CreateOrderDto[]) {

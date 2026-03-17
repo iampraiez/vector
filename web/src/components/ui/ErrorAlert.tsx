@@ -3,7 +3,6 @@ import {
   XCircleIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 type AlertVariant = "error" | "success" | "warning";
@@ -66,7 +65,7 @@ export function ErrorAlert({
     >
       {icon}
       <p className="flex-1 leading-relaxed">{message}</p>
-      <button
+      {/* <button
         type="button"
         onClick={() => {
           setVisible(false);
@@ -75,7 +74,7 @@ export function ErrorAlert({
         className="ml-auto text-current/50 hover:text-current/80 transition-colors shrink-0"
       >
         <XMarkIcon className="w-4 h-4" />
-      </button>
+      </button> */}
     </div>
   );
 }

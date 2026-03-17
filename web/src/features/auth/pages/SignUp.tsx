@@ -486,8 +486,8 @@ export function DashboardSignUp() {
                   disabled={isSubmitting}
                   className={`w-full h-12 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
                     isSubmitting
-                      ? "bg-gray-800 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-900 text-white shadow-xl shadow-black/10 hover:bg-black hover:-translate-y-0.5 active:translate-y-0"
+                      ? "bg-emerald-400 text-white/70 cursor-not-allowed"
+                      : "bg-emerald-600 text-white shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5 active:translate-y-0"
                   }`}
                 >
                   {isSubmitting ? (

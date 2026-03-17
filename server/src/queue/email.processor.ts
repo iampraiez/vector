@@ -2,12 +2,18 @@ import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { generateReportCsv } from '../dashboard/utils/report.util';
+import { ReportQueryDto } from '../dashboard/dto/dashboard.dto';
 
 @Processor('email')
 export class EmailProcessor {
   private readonly logger = new Logger(EmailProcessor.name);
 
-  constructor(private readonly mailService: MailService) {}
+  constructor(
+    private readonly mailService: MailService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private generateBaseTemplate(content: string, title: string) {
     return `
@@ -112,5 +118,59 @@ export class EmailProcessor {
       this.generateBaseTemplate(content, 'Password Reset'),
       text,
     );
+  }
+
+  @Process('sendReport')
+  async handleSendReport(
+    job: Job<{ email: string; companyId: string; query: ReportQueryDto }>,
+  ) {
+    const { email, companyId, query } = job.data;
+    this.logger.log(`Generating report for ${email}`);
+
+    try {
+      const csvContent = await generateReportCsv(this.prisma, companyId, query);
+
+      const startDateLabel = query.start_date || 'All time';
+      const endDateLabel = query.end_date || 'Now';
+
+      const content = `
+        <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Your Fleet Report is Ready</h2>
+        <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">As requested, we've generated a performance report for your fleet based on the selected criteria.</p>
+        
+        <div style="background-color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 32px;">
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; padding-bottom: 8px;">Parameters</td>
+            </tr>
+            <tr>
+              <td style="color: #0f172a; font-size: 14px; font-weight: 500;">
+                Range: ${startDateLabel} &rarr; ${endDateLabel}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="color: #475569; font-size: 14px;">The report is attached to this email in CSV format. You can open it with Excel, Google Sheets, or any text editor.</p>
+      `;
+
+      await this.mailService.sendMail(
+        email,
+        'Your Vector Fleet Report',
+        this.generateBaseTemplate(content, 'Fleet Report'),
+        `Your Vector report is ready and attached. Range: ${startDateLabel} to ${endDateLabel}.`,
+        [
+          {
+            content: csvContent,
+            filename: 'vector_report.csv',
+            type: 'text/csv',
+          },
+        ],
+      );
+
+      this.logger.log(`Report sent successfully to ${email}`);
+    } catch (err) {
+      this.logger.error(`Failed to generate/send report for ${email}: ${err}`);
+      throw err;
+    }
   }
 }

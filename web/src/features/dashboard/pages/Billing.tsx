@@ -2,22 +2,11 @@ import { useState } from "react";
 
 import {
   CreditCardIcon,
-  ArrowDownTrayIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
   SparklesIcon,
   ChevronRightIcon,
-  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
-
-interface BillingInvoice {
-  date: string;
-  description: string;
-  amount: string;
-  status: "paid" | "pending" | "failed";
-}
-
-const invoices: BillingInvoice[] = [];
 
 const plans = [
   {
@@ -263,7 +252,7 @@ export function DashboardBilling() {
             <p className="text-[12px] text-gray-300 mb-6">
               Connect your card to start your subscription
             </p>
-            <button className="w-full py-3.5 bg-gray-900 text-white font-bold text-[13px] rounded-xl hover:bg-black transition-all cursor-pointer">
+            <button className="w-full py-3.5 bg-emerald-600 text-white font-bold text-[13px] rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
               Set up with Stripe
             </button>
           </div>
@@ -323,93 +312,6 @@ export function DashboardBilling() {
               );
             })}
           </div>
-        </div>
-      </div>
-
-      {/* Invoices */}
-      <div className="bg-white border border-black/5 rounded-2xl overflow-hidden shadow-sm">
-        <div className="p-6 md:p-8 border-b border-gray-50 flex flex-wrap items-center justify-between gap-4 bg-gray-50/30">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-              Recent Statements
-            </h2>
-            <p className="text-[12px] text-gray-400">
-              Download and review your past billing records
-            </p>
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer capitalize shadow-sm">
-            <ArrowDownTrayIcon className="w-4 h-4" />
-            Download History
-          </button>
-        </div>
-
-        <div className="overflow-x-auto min-h-75 flex items-center justify-center">
-          {invoices.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <ArchiveBoxIcon className="w-8 h-8 text-gray-200" />
-              </div>
-              <p className="text-[15px] font-bold text-gray-400 mb-1">
-                No statements available
-              </p>
-              <p className="text-[13px] text-gray-300">
-                Your future invoices will appear here
-              </p>
-            </div>
-          ) : (
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50/50">
-                  {[
-                    "Statement Date",
-                    "Description",
-                    "Amount",
-                    "Status",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-8 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {invoices.map((inv, i) => (
-                  <tr
-                    key={i}
-                    className="group hover:bg-gray-50/50 transition-colors"
-                  >
-                    <td className="px-8 py-5 text-[13px] font-bold text-gray-700">
-                      {inv.date}
-                    </td>
-                    <td className="px-8 py-5 text-[13px] text-gray-600">
-                      {inv.description}
-                    </td>
-                    <td className="px-8 py-5 text-[14px] font-bold text-gray-900">
-                      {inv.amount}
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg">
-                        <CheckCircleIcon className="w-3.5 h-3.5" />
-                        <span className="text-[11px] font-bold uppercase tracking-wider">
-                          Paid
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <button className="flex items-center gap-2 px-3 py-1.5 border border-black/8 rounded-xl text-[12px] font-bold text-gray-500 group-hover:bg-white group-hover:border-emerald-600/30 group-hover:text-emerald-600 transition-all cursor-pointer">
-                        <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-                        Receipt
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
         </div>
       </div>
 

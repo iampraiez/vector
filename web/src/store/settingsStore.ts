@@ -12,7 +12,7 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
-interface CompanyInfo {
+export interface CompanyInfo {
   name: string;
   email: string;
   phone: string;
