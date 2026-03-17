@@ -15,18 +15,30 @@ export class PaginationDto {
   @IsOptional()
   @Type(() => Number)
   @Min(1)
-  page?: number = 1;
+  page: number = 1;
 
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
   @Min(1)
   @Max(100)
-  limit?: number = 20;
+  limit: number = 20;
 
   @IsString()
   @IsOptional()
   search?: string;
+}
+
+export class DriverQueryDto extends PaginationDto {
+  @IsString()
+  @IsOptional()
+  status?: string;
+}
+
+export class OrderQueryDto extends PaginationDto {
+  @IsString()
+  @IsOptional()
+  status?: string;
 }
 
 export class CreateOrderDto {

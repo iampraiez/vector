@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import clsx from "clsx";
 import {
   MapPinIcon,
   BoltIcon,
   ChartBarIcon,
-  TruckIcon,
   CheckCircleIcon,
   ArrowRightIcon,
   Bars3Icon,
@@ -18,6 +17,7 @@ import {
 import {
   CheckCircleIcon as CheckSolid,
   StarIcon as StarSolid,
+  TruckIcon,
 } from "@heroicons/react/24/solid";
 
 const DELIVERY_IMAGE = "/landing_page.jpeg";
@@ -183,7 +183,7 @@ export function WebLanding() {
             onClick={() => navigate("/")}
           >
             <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
-              <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
+              <TruckIcon className="w-5 h-5 text-white" />
             </div>
             <span className="text-[16px] font-extrabold tracking-[0.04em] text-[#121212]">
               VECTOR
@@ -323,7 +323,7 @@ export function WebLanding() {
                 onClick={() => navigate("/driver")}
                 className="flex items-center gap-2 px-7 py-3.5 bg-transparent border border-black/12 rounded-xl text-[15px] font-semibold text-[#212121] cursor-pointer transition-all duration-250 hover:border-emerald-600 hover:text-emerald-600"
               >
-                <TruckIcon className="w-4 h-4" />
+                <TruckIcon className="w-4.5 h-4.5" />
                 Driver app
               </button>
             </div>
@@ -526,7 +526,7 @@ export function WebLanding() {
       <section className="bg-linear-to-br from-emerald-900 via-emerald-800 to-emerald-700 py-20 px-6 overflow-hidden">
         <div className="max-w-225 mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/12 border border-white/15 rounded-full px-4 py-1.25 mb-6">
-            <TruckIcon className="w-3.5 h-3.5 text-emerald-400" />
+            <TruckIcon className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-emerald-400 tracking-widest uppercase">
               For Drivers
             </span>
@@ -543,7 +543,7 @@ export function WebLanding() {
               onClick={() => navigate("/driver")}
               className="flex items-center gap-2 px-7 py-3 bg-emerald-400 border-none rounded-xl text-[15px] font-bold text-emerald-900 cursor-pointer transition-all duration-250 hover:bg-emerald-300 hover:-translate-y-0.5 tap-scale"
             >
-              <TruckIcon className="w-4 h-4" />
+              <TruckIcon className="w-4.5 h-4.5" />
               Open driver app
             </button>
             <button
@@ -758,10 +758,7 @@ export function WebLanding() {
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-6">
                 <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
-                  <TruckIcon
-                    className="w-4.5 h-4.5 text-white"
-                    strokeWidth={2.4}
-                  />
+                  <TruckIcon className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[16px] font-extrabold text-[#121212] tracking-[0.04em]">
                   VECTOR

@@ -15,14 +15,4 @@ export class OverviewController {
   getMetrics(@CurrentUser('company_id') companyId: string) {
     return this.dashboardService.getMetrics(companyId);
   }
-
-  @Get('active-drivers')
-  getActiveDrivers(@CurrentUser('company_id') companyId: string) {
-    return this.dashboardService.getActiveDrivers(companyId);
-  }
-
-  @Get('recent-orders')
-  getRecentOrders(@CurrentUser('company_id') companyId: string) {
-    return this.dashboardService.getRecentOrders(companyId);
-  }
 }

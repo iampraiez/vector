@@ -243,12 +243,23 @@ export class AuthService {
     await this.redis.del(`verify:${dto.email}`);
 
     // Mark the user's email as verified in the database
-    await this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { email: dto.email },
       data: { email_verified: true },
     });
 
-    return { message: 'Email verified successfully.' };
+    // Generate tokens for auto-login
+    const tokens = await this.generateTokens({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      company_id: user.company_id,
+    });
+
+    return {
+      message: 'Email verified successfully.',
+      ...tokens,
+    };
   }
 
   async resendVerification(dto: ResendVerificationDto) {

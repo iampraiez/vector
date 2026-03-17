@@ -8,6 +8,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import {
   CreateOrderDto,
+  OrderQueryDto,
+  DriverQueryDto,
   PaginationDto,
   UpdateOrderDto,
   ReportQueryDto,
@@ -84,12 +86,9 @@ export class DashboardService {
     });
   }
 
-  async getOrders(
-    companyId: string,
-    query: PaginationDto & { status?: string; search?: string },
-  ) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+  async getOrders(companyId: string, query: OrderQueryDto) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
     const where: Prisma.StopWhereInput = { company_id: companyId };
@@ -176,12 +175,9 @@ export class DashboardService {
     await this.prisma.stop.delete({ where: { id: stopId } });
   }
 
-  async getDrivers(
-    companyId: string,
-    query: PaginationDto & { status?: string; search?: string },
-  ) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+  async getDrivers(companyId: string, query: DriverQueryDto) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
     const where: Prisma.DriverWhereInput = { company_id: companyId };

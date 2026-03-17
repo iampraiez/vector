@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { TruckIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { TruckIcon } from "@heroicons/react/24/solid";
 
 export function Terms() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export function Terms() {
           className="flex items-center gap-2.5 cursor-pointer group"
         >
           <div className="w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-            <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
+            <TruckIcon className="w-5 h-5 text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
             VECTOR

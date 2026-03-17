@@ -8,10 +8,10 @@ import {
   LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
-  TruckIcon,
   CheckCircleIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
+import { TruckIcon } from "@heroicons/react/24/solid";
 
 import { useAuthStore } from "../../../store/authStore";
 import { api } from "../../../lib/api";
@@ -79,7 +79,7 @@ export function DashboardSignIn() {
           className="flex items-center gap-2.5 cursor-pointer group"
         >
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
+            <TruckIcon className="w-5 h-5 text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
             VECTOR

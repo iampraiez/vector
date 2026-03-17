@@ -18,7 +18,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import {
   CreateOrderDto,
-  PaginationDto,
+  OrderQueryDto,
   UpdateOrderDto,
 } from './dto/dashboard.dto';
 
@@ -31,9 +31,14 @@ export class OrdersController {
   @Get()
   getOrders(
     @CurrentUser('company_id') companyId: string,
-    @Query() query: PaginationDto & { status?: string },
+    @Query() query: OrderQueryDto,
   ) {
     return this.dashboardService.getOrders(companyId, query);
+  }
+
+  @Get('recent')
+  getRecentOrders(@CurrentUser('company_id') companyId: string) {
+    return this.dashboardService.getRecentOrders(companyId);
   }
 
   @Post()

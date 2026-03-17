@@ -18,7 +18,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import {
   CreateDriverDto,
-  PaginationDto,
+  DriverQueryDto,
   UpdateDriverDto,
 } from './dto/dashboard.dto';
 
@@ -31,9 +31,13 @@ export class DriversController {
   @Get()
   getDrivers(
     @CurrentUser('company_id') companyId: string,
-    @Query() query: PaginationDto & { status?: string },
+    @Query() query: DriverQueryDto,
   ) {
     return this.dashboardService.getDrivers(companyId, query);
+  }
+  @Get('active')
+  getActiveDrivers(@CurrentUser('company_id') companyId: string) {
+    return this.dashboardService.getActiveDrivers(companyId);
   }
 
   @Post('invite')

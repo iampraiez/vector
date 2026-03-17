@@ -79,6 +79,20 @@ paths:
         "200":
           description: ""
       tags: *a1
+  /auth/resend-verification:
+    post:
+      operationId: AuthController_resendVerification
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a1
   /auth/forgot-password:
     post:
       operationId: AuthController_forgotPassword
@@ -136,32 +150,41 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a2
+      tags:
         - Overview
-  /dashboard/active-drivers:
-    get:
-      operationId: OverviewController_getActiveDrivers
-      parameters: []
-      responses:
-        "200":
-          description: ""
-      tags: *a2
-  /dashboard/recent-orders:
-    get:
-      operationId: OverviewController_getRecentOrders
-      parameters: []
-      responses:
-        "200":
-          description: ""
-      tags: *a2
   /dashboard/orders:
     get:
       operationId: OrdersController_getOrders
-      parameters: []
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: page
+          required: true
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            type: number
+        - name: limit
+          required: true
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: number
+        - name: search
+          required: false
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: ""
-      tags: &a3
+      tags: &a2
         - Orders
     post:
       operationId: OrdersController_createOrder
@@ -175,7 +198,15 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a3
+      tags: *a2
+  /dashboard/orders/recent:
+    get:
+      operationId: OrdersController_getRecentOrders
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a2
   /dashboard/orders/{stop_id}:
     patch:
       operationId: OrdersController_updateOrder
@@ -194,7 +225,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a3
+      tags: *a2
     delete:
       operationId: OrdersController_deleteOrder
       parameters:
@@ -206,7 +237,7 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a3
+      tags: *a2
   /dashboard/orders/bulk:
     post:
       operationId: OrdersController_importBulk
@@ -214,16 +245,49 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a3
+      tags: *a2
   /dashboard/drivers:
     get:
       operationId: DriversController_getDrivers
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: page
+          required: true
+          in: query
+          schema:
+            minimum: 1
+            default: 1
+            type: number
+        - name: limit
+          required: true
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: number
+        - name: search
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: &a3
+        - Drivers
+  /dashboard/drivers/active:
+    get:
+      operationId: DriversController_getActiveDrivers
       parameters: []
       responses:
         "200":
           description: ""
-      tags: &a4
-        - Drivers
+      tags: *a3
   /dashboard/drivers/invite:
     post:
       operationId: DriversController_createDriverInvite
@@ -237,7 +301,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a4
+      tags: *a3
   /dashboard/drivers/{driver_id}:
     get:
       operationId: DriversController_getDriverDetail
@@ -250,7 +314,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a3
     patch:
       operationId: DriversController_updateDriver
       parameters:
@@ -268,7 +332,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a4
+      tags: *a3
     delete:
       operationId: DriversController_deleteDriver
       parameters:
@@ -280,7 +344,7 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a4
+      tags: *a3
   /dashboard/tracking/drivers:
     get:
       operationId: TrackingController_getLiveTracking
@@ -317,7 +381,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a5
+      tags: &a4
         - Reports
   /dashboard/reports/charts:
     get:
@@ -346,7 +410,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a4
   /dashboard/reports/performance:
     get:
       operationId: ReportsController_getDriverPerformance
@@ -354,7 +418,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a4
   /dashboard/reports/export:
     get:
       operationId: ReportsController_exportReport
@@ -382,7 +446,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a5
+      tags: *a4
   /dashboard/billing:
     get:
       operationId: BillingController_getBillingInfo
@@ -394,7 +458,7 @@ paths:
             application/json:
               schema:
                 type: object
-      tags: &a6
+      tags: &a5
         - Billing
   /dashboard/billing/invoices:
     get:
@@ -403,7 +467,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a6
+      tags: *a5
   /dashboard/billing/plan:
     post:
       operationId: BillingController_changePlan
@@ -417,7 +481,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a6
+      tags: *a5
   /dashboard/billing/payment-method:
     post:
       operationId: BillingController_updatePaymentMethod
@@ -425,7 +489,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a6
+      tags: *a5
   /dashboard/billing/cancel:
     delete:
       operationId: BillingController_cancelPlan
@@ -433,7 +497,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a6
+      tags: *a5
   /dashboard/settings:
     get:
       operationId: SettingsController_getSettings
@@ -441,7 +505,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a7
+      tags: &a6
         - Settings
     patch:
       operationId: SettingsController_updateSettings
@@ -455,7 +519,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a7
+      tags: *a6
   /dashboard/settings/api-keys:
     post:
       operationId: SettingsController_createApiKey
@@ -469,7 +533,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a7
+      tags: *a6
   /dashboard/settings/api-keys/{key_id}:
     delete:
       operationId: SettingsController_revokeApiKey
@@ -482,20 +546,20 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a7
+      tags: *a6
   /dashboard/notifications:
     get:
       operationId: DashboardNotificationsController_getNotifications
       parameters:
         - name: page
-          required: false
+          required: true
           in: query
           schema:
             minimum: 1
             default: 1
             type: number
         - name: limit
-          required: false
+          required: true
           in: query
           schema:
             minimum: 1
@@ -510,7 +574,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a8
+      tags: &a7
         - DashboardNotifications
   /dashboard/notifications/{notification_id}/read:
     patch:
@@ -528,7 +592,7 @@ paths:
             application/json:
               schema:
                 type: object
-      tags: *a8
+      tags: *a7
   /dashboard/notifications/read-all:
     post:
       operationId: DashboardNotificationsController_markAllRead
@@ -540,7 +604,7 @@ paths:
             application/json:
               schema:
                 type: object
-      tags: *a8
+      tags: *a7
   /dashboard/notifications/{notification_id}:
     delete:
       operationId: DashboardNotificationsController_deleteNotification
@@ -553,7 +617,7 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a8
+      tags: *a7
   /driver/home:
     get:
       operationId: HomeController_getHome
@@ -576,7 +640,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a9
+      tags: &a8
         - Status
   /driver/status/location:
     patch:
@@ -591,7 +655,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
+      tags: *a8
   /driver/assignments:
     get:
       operationId: AssignmentsController_getAssignments
@@ -618,7 +682,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a10
+      tags: &a9
         - Routes
   /driver/routes/{route_id}/start:
     post:
@@ -632,7 +696,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a10
+      tags: *a9
   /driver/navigation/stops/{stop_id}:
     get:
       operationId: NavigationController_getStop
@@ -645,7 +709,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a11
+      tags: &a10
         - Navigation
   /driver/navigation/stops/{stop_id}/arrive:
     patch:
@@ -659,7 +723,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a10
   /driver/navigation/stops/{stop_id}/skip:
     patch:
       operationId: NavigationController_skipStop
@@ -672,7 +736,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a10
   /driver/delivery/{stop_id}/complete:
     post:
       operationId: DeliveryController_completeDelivery
@@ -691,7 +755,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a12
+      tags: &a11
         - Delivery
   /driver/delivery/{stop_id}/fail:
     post:
@@ -711,7 +775,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a12
+      tags: *a11
   /driver/history:
     get:
       operationId: HistoryController_getHistory
@@ -738,7 +802,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a13
+      tags: &a12
         - Profile
     patch:
       operationId: ProfileController_updateProfile
@@ -746,7 +810,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a13
+      tags: *a12
   /driver/profile/avatar:
     post:
       operationId: ProfileController_uploadAvatar
@@ -754,7 +818,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a13
+      tags: *a12
   /driver/settings:
     get:
       operationId: SettingsController_getSettings
@@ -762,7 +826,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a14
+      tags: &a13
         - Settings
     patch:
       operationId: SettingsController_updateSettings
@@ -770,7 +834,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a14
+      tags: *a13
   /driver/notifications:
     get:
       operationId: DriverNotificationsController_getNotifications
@@ -788,7 +852,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a15
+      tags: &a14
         - DriverNotifications
   /driver/notifications/{notification_id}/read:
     patch:
@@ -802,7 +866,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a15
+      tags: *a14
   /driver/notifications/read-all:
     post:
       operationId: DriverNotificationsController_markAllRead
@@ -810,7 +874,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a15
+      tags: *a14
   /driver/onboarding:
     post:
       operationId: OnboardingController_completeOnboarding
@@ -839,15 +903,21 @@ paths:
                 type: array
                 items:
                   type: object
-      tags: &a16
+      tags: &a15
         - Routes
     post:
       operationId: RoutesController_createRoute
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRouteDto"
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a15
   /routes/{route_id}:
     get:
       operationId: RoutesController_getRoute
@@ -860,7 +930,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a16
+      tags: *a15
     patch:
       operationId: RoutesController_updateRoute
       parameters:
@@ -869,10 +939,16 @@ paths:
           in: path
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRouteDto"
       responses:
         "200":
           description: ""
-      tags: *a16
+      tags: *a15
     delete:
       operationId: RoutesController_deleteRoute
       parameters:
@@ -884,7 +960,7 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a16
+      tags: *a15
   /routes/{route_id}/optimize:
     post:
       operationId: RoutesController_optimizeRoute
@@ -897,7 +973,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a15
   /routes/{route_id}/assign:
     post:
       operationId: RoutesController_assignRoute
@@ -907,10 +983,16 @@ paths:
           in: path
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignRouteDto"
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a15
   /track:
     get:
       operationId: TrackingController_getTrackingData
@@ -923,7 +1005,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a17
+      tags: &a16
         - Tracking
   /track/rate:
     post:
@@ -937,7 +1019,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a17
+      tags: *a16
 info:
   title: Vector API
   description: Full API specification for the Vector fleet management platform
@@ -1026,6 +1108,14 @@ components:
       required:
         - email
         - token
+    ResendVerificationDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
     ForgotPasswordDto:
       type: object
       properties:
@@ -1229,3 +1319,50 @@ components:
       required:
         - vehicle_type
         - vehicle_plate
+    RouteStopDto:
+      type: object
+      properties:
+        stop_id:
+          type: string
+        sequence:
+          type: number
+      required:
+        - stop_id
+        - sequence
+    CreateRouteDto:
+      type: object
+      properties:
+        name:
+          type: string
+        driver_id:
+          type: string
+        date:
+          type: string
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteStopDto"
+      required:
+        - name
+    UpdateRouteDto:
+      type: object
+      properties:
+        name:
+          type: string
+        driver_id:
+          type: string
+        status:
+          type: object
+        date:
+          type: string
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteStopDto"
+    AssignRouteDto:
+      type: object
+      properties:
+        driver_id:
+          type: string
+      required:
+        - driver_id

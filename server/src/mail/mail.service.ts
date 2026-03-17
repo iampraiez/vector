@@ -55,6 +55,9 @@ export class MailService {
     } catch (error: unknown) {
       if (typeof error === 'object' && error !== null) {
         const err = error as SendGridError;
+        this.logger.error(
+          `FULL SENDGRID ERROR: ${JSON.stringify(error, null, 2)}`,
+        );
         if (err.response && err.response.body) {
           this.logger.error(
             `Failed to send email to ${to}: ${JSON.stringify(err.response.body)}`,

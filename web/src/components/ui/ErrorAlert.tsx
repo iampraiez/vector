@@ -13,6 +13,7 @@ interface ErrorAlertProps {
   variant?: AlertVariant;
   autoDismissMs?: number;
   onDismiss?: () => void;
+  className?: string;
 }
 
 const variantStyles: Record<
@@ -42,6 +43,7 @@ export function ErrorAlert({
   variant = "error",
   autoDismissMs = 6000,
   onDismiss,
+  className = "",
 }: ErrorAlertProps) {
   const [visible, setVisible] = useState(!!message);
 
@@ -60,7 +62,7 @@ export function ErrorAlert({
 
   return (
     <div
-      className={`flex items-start gap-3 p-3.5 border rounded-xl text-[13px] font-medium animate-in slide-in-from-top-2 fade-in duration-300 ${container}`}
+      className={`flex items-start gap-3 p-3.5 border rounded-xl text-[13px] font-medium animate-in slide-in-from-top-2 fade-in duration-300 ${container} ${className}`}
     >
       {icon}
       <p className="flex-1 leading-relaxed">{message}</p>

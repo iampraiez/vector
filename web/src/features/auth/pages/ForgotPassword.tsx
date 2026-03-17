@@ -1,29 +1,43 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
-  TruckIcon,
   EnvelopeIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   CheckCircleIcon,
   InboxIcon,
 } from "@heroicons/react/24/outline";
+import { TruckIcon } from "@heroicons/react/24/solid";
+import { api } from "../../../lib/api";
+import { AxiosError } from "axios";
+import { ErrorAlert } from "../../../components/ui/ErrorAlert";
 
 export function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!emailValid || loading) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+
+    try {
+      await api.post("/auth/forgot-password", { email });
       setSent(true);
-    }, 1500);
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      setError(
+        axiosError.response?.data?.message ||
+          "Failed to send reset link. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,7 +49,7 @@ export function ForgotPassword() {
           className="flex items-center gap-2.5 cursor-pointer group"
         >
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <TruckIcon className="w-4.5 h-4.5 text-white" strokeWidth={2.4} />
+            <TruckIcon className="w-5 h-5 text-white" />
           </div>
           <span className="text-[18px] font-extrabold tracking-tight text-gray-900">
             VECTOR
@@ -54,6 +68,10 @@ export function ForgotPassword() {
       {/* Main Form Area */}
       <main className="flex-1 flex flex-col items-center justify-start p-6 md:p-12 pt-12 md:pt-16">
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {error && (
+            <ErrorAlert message={error} variant="error" className="mb-6" />
+          )}
+
           <div className="bg-white border border-black/8 rounded-2xl p-8 md:p-10 shadow-xl shadow-black/5">
             {!sent ? (
               <>

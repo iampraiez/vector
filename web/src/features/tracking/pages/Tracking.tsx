@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import {
   CheckCircleIcon,
   ClockIcon,
-  TruckIcon,
   MapPinIcon,
   PhoneIcon,
   StarIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { StarIcon as StarSolid } from "@heroicons/react/24/solid";
+import {
+  StarIcon as StarSolid,
+  TruckIcon,
+  CheckCircleIcon as CheckSolid,
+} from "@heroicons/react/24/solid";
 
 type DeliveryStatus =
   | "pending"
@@ -122,9 +125,11 @@ export function CustomerTracking() {
     <div className="min-h-screen bg-gray-100 font-sans">
       {/* Top Brand Bar */}
       <div className="bg-white border-b border-black/8 px-5 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-1.75 h-1.75 rounded-full bg-emerald-600" />
-          <span className="text-base font-bold tracking-tight text-[#212121]">
+        <div className="flex items-center gap-2.5">
+          <div className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
+            <TruckIcon className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-base font-extrabold tracking-[0.04em] text-[#121212]">
             VECTOR
           </span>
         </div>
@@ -202,9 +207,7 @@ export function CustomerTracking() {
                       : "bg-white border-black/15"
                   }`}
                 >
-                  {step.done && (
-                    <CheckCircleIcon className="w-3.5 h-3.5 text-white" />
-                  )}
+                  {step.done && <CheckSolid className="w-4 h-4 text-white" />}
                 </div>
                 <div className="flex-1 pt-0.5">
                   <div className="flex justify-between items-center">

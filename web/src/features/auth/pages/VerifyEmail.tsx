@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router";
 import { AxiosError } from "axios";
 import {
-  ShieldCheckIcon,
   ArrowPathIcon,
   CheckCircleIcon,
   ArrowLeftIcon,
   EnvelopeIcon,
 } from "@heroicons/react/24/outline";
+import { TruckIcon } from "@heroicons/react/24/solid";
 import { api } from "../../../lib/api";
+import { useAuthStore } from "../../../store/authStore";
 
 export function VerifyEmail() {
   const navigate = useNavigate();
@@ -63,15 +64,24 @@ export function VerifyEmail() {
     setIsSubmitting(true);
     setGlobalError("");
     try {
-      await api.post("/auth/verify-email", {
+      const res = await api.post("/auth/verify-email", {
         email,
         token: code,
       });
 
-      setSuccessMessage("Email verified successfully!");
-      setTimeout(() => {
-        navigate("/dashboard/signin");
-      }, 2000);
+      const { user, access_token, refresh_token } = res.data;
+      if (user && access_token) {
+        useAuthStore.getState().setAuth(user, access_token, refresh_token);
+        setSuccessMessage("Account verified! Logging you in...");
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
+      } else {
+        setSuccessMessage("Email verified successfully!");
+        setTimeout(() => {
+          navigate("/dashboard/signin");
+        }, 2000);
+      }
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       setGlobalError(
@@ -109,10 +119,7 @@ export function VerifyEmail() {
       <nav className="px-6 py-4 md:px-12 bg-white border-b border-black/5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <ShieldCheckIcon
-              className="w-4.5 h-4.5 text-white"
-              strokeWidth={2.4}
-            />
+            <TruckIcon className="w-5 h-5 text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900 uppercase">
             Vector
