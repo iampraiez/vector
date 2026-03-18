@@ -140,10 +140,15 @@ export function DashboardOrders() {
                       setSelectedOrders([]);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] font-bold shadow-sm transition-all hover:bg-red-100 hover:shadow-md cursor-pointer"
+                  disabled={isMutating}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] font-bold shadow-sm transition-all hover:bg-red-100 hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <TrashIcon className="w-4 h-4" />
-                  Delete
+                  {isMutating ? (
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <TrashIcon className="w-4 h-4" />
+                  )}
+                  {isMutating ? "Deleting..." : "Delete"}
                 </button>
               </div>
             )}
@@ -618,6 +623,19 @@ function FilterButton({
   );
 }
 
+function formatDateForInput(dateStr: string | null) {
+  if (!dateStr) return "";
+  // Check if it's already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+}
+
 function EditOrderModal({
   order,
   drivers,
@@ -629,7 +647,10 @@ function EditOrderModal({
   onClose: () => void;
   onSave: (order: Order) => void;
 }) {
-  const [form, setForm] = useState(order);
+  const [form, setForm] = useState({
+    ...order,
+    delivery_date: formatDateForInput(order.delivery_date),
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSave = () => {

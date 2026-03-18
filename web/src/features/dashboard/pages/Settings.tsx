@@ -4,6 +4,7 @@ import {
   NotificationsConfig,
   CompanyInfo,
 } from "../../../store/settingsStore";
+import { useAuthStore } from "../../../store/authStore";
 import {
   BuildingOfficeIcon,
   BellIcon,
@@ -151,12 +152,19 @@ function EditProfileModal({
   onSave: (data: Partial<CompanyInfo>) => Promise<void>;
   isMutating: boolean;
 }) {
-  const [draft, setDraft] = useState<CompanyInfo>(initialData);
+  const { user } = useAuthStore();
+  const [draft, setDraft] = useState<CompanyInfo>({
+    ...initialData,
+    contact_email: initialData.contact_email || user?.email || "",
+  });
   const [prevInitialData, setPrevInitialData] =
     useState<CompanyInfo>(initialData);
 
   if (initialData !== prevInitialData) {
-    setDraft(initialData);
+    setDraft({
+      ...initialData,
+      contact_email: initialData.contact_email || user?.email || "",
+    });
     setPrevInitialData(initialData);
   }
 
@@ -300,6 +308,8 @@ export function DashboardSettings() {
     regenerateAccessCode,
   } = useSettingsStore();
 
+  const { user } = useAuthStore();
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isDataCleaningOpen, setIsDataCleaningOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
@@ -411,7 +421,7 @@ export function DashboardSettings() {
           />
           <StaticField
             label="Operations Email"
-            value={company?.contact_email || ""}
+            value={company?.contact_email || user?.email || ""}
             icon={EnvelopeIcon}
           />
           <StaticField
