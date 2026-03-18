@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:client/core/theme/colors.dart';
 import 'package:client/core/theme/spacing.dart';
+import 'package:client/main.dart';
 import 'package:client/shared/widgets/inputs.dart';
 import 'package:client/shared/widgets/buttons.dart';
 
@@ -51,17 +52,29 @@ class _SignInScreenState extends State<SignInScreen> {
   bool get _isValid => _emailError == null && _passwordError == null && 
                        _emailController.text.isNotEmpty && _passwordController.text.isNotEmpty;
 
-  void _handleSignIn() {
+  void _handleSignIn() async {
     _validate();
     if (!_isValid || _loading) return;
 
     setState(() => _loading = true);
-    Future.delayed(const Duration(milliseconds: 1400), () {
+    try {
+      await AuthScope.of(context).login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      // Redirection is handled by the router
+    } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        context.go('/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-    });
+    }
   }
 
   @override

@@ -18,8 +18,34 @@ import '../features/driver_app/profile.dart';
 import '../features/driver_app/settings.dart' as driver_settings;
 import '../features/driver_app/notifications.dart' as driver_notifications;
 
+import 'package:client/main.dart';
+
 final GoRouter appRouter = GoRouter(
   initialLocation: '/driver',
+  refreshListenable: authProvider,
+  redirect: (context, state) {
+    final auth = authProvider;
+    final isAuth = auth.isAuthenticated;
+
+    final authPaths = ['/driver', '/signin', '/signup'];
+    // We explicitly allow /forgot-password even if authenticated as per user request
+    // and /verify-email might be needed after signup
+
+    final isGoingToAuth = authPaths.contains(state.uri.path);
+
+    if (!isAuth &&
+        !isGoingToAuth &&
+        state.uri.path != '/forgot-password' &&
+        state.uri.path != '/verify-email') {
+      return '/driver';
+    }
+
+    if (isAuth && isGoingToAuth) {
+      return '/home';
+    }
+
+    return null;
+  },
   routes: <RouteBase>[
     // Driver App - Welcome & Auth
     GoRoute(

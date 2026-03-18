@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/core/theme/theme_controller.dart';
 import 'package:client/core/providers/route_progress_provider.dart';
+import 'package:client/core/providers/auth_provider.dart';
 import 'package:client/navigation/router.dart';
 
 final themeController = ThemeController();
@@ -11,8 +12,14 @@ final themeController = ThemeController();
 /// Accessed from any screen using RouteProgressScope.of(context).
 final routeProgressProvider = RouteProgressProvider();
 
-void main() {
+/// Global auth provider — handles login state and token persistence.
+final authProvider = AuthProvider();
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize auth state before app startup
+  await authProvider.initialize();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -33,19 +40,37 @@ class VectorApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: themeController,
       builder: (context, _) {
-        return RouteProgressScope(
-          provider: routeProgressProvider,
-          child: MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            title: 'Vector',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeController.themeMode,
-            routerConfig: appRouter,
+        return AuthScope(
+          provider: authProvider,
+          child: RouteProgressScope(
+            provider: routeProgressProvider,
+            child: MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              title: 'Vector',
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeController.themeMode,
+              routerConfig: appRouter,
+            ),
           ),
         );
       },
     );
+  }
+}
+
+/// InheritedWidget for AuthProvider
+class AuthScope extends InheritedNotifier<AuthProvider> {
+  const AuthScope({
+    super.key,
+    required AuthProvider provider,
+    required super.child,
+  }) : super(notifier: provider);
+
+  static AuthProvider of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<AuthScope>();
+    assert(scope != null, 'No AuthScope found in the widget tree.');
+    return scope!.notifier!;
   }
 }
 

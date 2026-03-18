@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:client/core/theme/colors.dart';
 import 'package:client/core/theme/spacing.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:client/main.dart';
 import 'package:client/shared/widgets/inputs.dart';
 import 'package:client/shared/widgets/buttons.dart';
 
@@ -137,17 +138,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
   }
 
-  void _handleSignUp() {
+  void _handleSignUp() async {
     _validate();
     if (!_isValid || _loading) return;
 
     setState(() => _loading = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
+    try {
+      await AuthScope.of(context).signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        name: _fullNameController.text.trim(),
+        phone: '+$_selectedCountryCode${_phoneController.text.trim()}',
+        companyCode: _companyCodeController.text.trim(),
+      );
+      // Success leads to /home via router redirect
+    } catch (e) {
       if (mounted) {
-        final email = Uri.encodeComponent(_emailController.text);
-        context.push('/verify-email?email=$email');
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-    });
+    }
   }
 
   void _showPicker() {
