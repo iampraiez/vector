@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
+import '../../shared/widgets/buttons.dart';
+import '../../main.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -11,290 +13,173 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  final List<Map<String, dynamic>> _steps = [
-    {
-      'icon': Icons.directions_car_filled_rounded,
-      'title': 'Optimize Every Route',
-      'desc':
-          'AI-powered algorithms calculate the most efficient delivery routes, saving you time and fuel costs instantly.',
-      'color': const Color(0xFFF0FDF4),
-      'accent': AppColors.primary,
-    },
-    {
-      'icon': Icons.bolt_rounded,
-      'title': 'Real-Time Updates',
-      'desc':
-          'Track your progress with precise GPS navigation and automatic route adjustments that adapt on the fly.',
-      'color': const Color(0xFFEFF6FF),
-      'accent': const Color(0xFF3B82F6),
-    },
-    {
-      'icon': Icons.map_rounded,
-      'title': 'Live Tracking',
-      'desc':
-          'Capture signatures and photos instantly. Keep detailed records for every successful delivery with ease.',
-      'color': const Color(0xFFF5F3FF),
-      'accent': const Color(0xFF8B5CF6),
-    },
-    {
-      'icon': Icons.rocket_launch_rounded,
-      'title': 'Ready to Deliver?',
-      'desc':
-          'Your dashboard is set up. Start your first route and experience a smarter way to manage deliveries today.',
-      'color': const Color(0xFFF0FDF4),
-      'accent': AppColors.primary,
-    },
-  ];
+  final _formKey = GlobalKey<FormState>();
+  final _vehicleTypeController = TextEditingController();
+  final _vehicleMakeController = TextEditingController();
+  final _vehicleModelController = TextEditingController();
+  final _vehiclePlateController = TextEditingController();
+  final _vehicleColorController = TextEditingController();
+  final _licenseNumberController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _vehicleTypeController.dispose();
+    _vehicleMakeController.dispose();
+    _vehicleModelController.dispose();
+    _vehiclePlateController.dispose();
+    _vehicleColorController.dispose();
+    _licenseNumberController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await AuthScope.of(context).updateDriverProfile({
+        'vehicle_type': _vehicleTypeController.text.trim(),
+        'vehicle_make': _vehicleMakeController.text.trim(),
+        'vehicle_model': _vehicleModelController.text.trim(),
+        'vehicle_plate': _vehiclePlateController.text.trim(),
+        'vehicle_color': _vehicleColorController.text.trim(),
+        'license_number': _licenseNumberController.text.trim(),
+      });
+      if (mounted) context.go('/home');
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Stack(
-        children: [
-          // Background atmospheric glow
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeOutCubic,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [
-                  (_steps[_currentPage]['accent'] as Color).withValues(
-                    alpha: 0.08,
-                  ),
-                  AppColors.white,
-                ],
-                center: const Alignment(0, -0.2),
-                radius: 1.0,
+      backgroundColor: const Color(0xFFFAFAFA),
+      appBar: AppBar(
+        title: const Text('Driver Onboarding'),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.p6),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Complete your profile',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Header (Skip)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.p6,
-                    vertical: AppSpacing.p4,
+              const SizedBox(height: AppSpacing.p2),
+              const Text(
+                'Please provide your vehicle and license details to start receiving delivery assignments.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.p8),
+              if (_errorMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      if (_currentPage < _steps.length - 1)
-                        GestureDetector(
-                          onTap: () => context.go('/home'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Skip',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: AppColors.textMuted,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
+                      const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red, fontSize: 13),
                         ),
-                    ],
-                  ),
-                ),
-
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    physics: const BouncingScrollPhysics(),
-                    onPageChanged: (index) {
-                      setState(() => _currentPage = index);
-                    },
-                    itemCount: _steps.length,
-                    itemBuilder: (context, index) {
-                      final step = _steps[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.p8,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Icon Illustration
-                            TweenAnimationBuilder<double>(
-                              duration: const Duration(milliseconds: 600),
-                              tween: Tween(begin: 0.9, end: 1.0),
-                              curve: Curves.elasticOut,
-                              builder: (context, value, child) {
-                                return Transform.scale(
-                                  scale: value,
-                                  child: child,
-                                );
-                              },
-                              child: Container(
-                                width: 180,
-                                height: 180,
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: (step['accent'] as Color)
-                                          .withValues(alpha: 0.1),
-                                      blurRadius: 30,
-                                      offset: const Offset(0, 15),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  step['icon'] as IconData,
-                                  size: 72,
-                                  color: step['accent'] as Color,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 60),
-                            // Text Content
-                            Text(
-                              step['title'] as String,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.textPrimary,
-                                letterSpacing: -1.2,
-                                height: 1.1,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Text(
-                                step['desc'] as String,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: AppColors.textSecondary,
-                                  height: 1.6,
-                                  fontFamily: 'Inter',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Bottom Area
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
-                  child: Column(
-                    children: [
-                      // Indicators
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(_steps.length, (index) {
-                          final isActive = index == _currentPage;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            height: 6,
-                            width: isActive ? 24 : 6,
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? (_steps[_currentPage]['accent'] as Color)
-                                  : const Color(0xFFE5E7EB),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          );
-                        }),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Bottom Button
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: _currentPage == _steps.length - 1
-                            ? AnimatedContainer(
-                                key: const ValueKey('get-started'),
-                                duration: const Duration(milliseconds: 300),
-                                width: double.infinity,
-                                height: 52,
-                                decoration: BoxDecoration(
-                                  color: _steps[_currentPage]['accent'] as Color,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: (_steps[_currentPage]['accent'] as Color).withValues(alpha: 0.3),
-                                      offset: const Offset(0, 4),
-                                      blurRadius: 12,
-                                    ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-                                    onTap: () => context.go('/home'),
-                                    child: const Center(
-                                      child: Text(
-                                        'Get Started',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : SizedBox(
-                                key: const ValueKey('continue'),
-                                width: double.infinity,
-                                height: 52,
-                                child: TextButton(
-                                  onPressed: () {
-                                    _pageController.nextPage(
-                                      duration: const Duration(milliseconds: 500),
-                                      curve: Curves.easeInOutCubic,
-                                    );
-                                  },
-                                  child: Text(
-                                    'Continue',
-                                    style: TextStyle(
-                                      color: _steps[_currentPage]['accent'] as Color,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: AppSpacing.p6),
               ],
+              _buildField('Vehicle Type', _vehicleTypeController, 'e.g. Car, Van, Bike'),
+              _buildField('Vehicle Make', _vehicleMakeController, 'e.g. Toyota, Mercedes'),
+              _buildField('Vehicle Model', _vehicleModelController, 'e.g. Camry, Sprinter'),
+              _buildField('License Plate', _vehiclePlateController, 'e.g. ABC-1234'),
+              _buildField('Vehicle Color', _vehicleColorController, 'e.g. White, Silver'),
+              _buildField('License Number', _licenseNumberController, 'Enter your driving license number'),
+              const SizedBox(height: AppSpacing.p8),
+              AppButton(
+                label: 'Save Profile & Start',
+                isFullWidth: true,
+                isLoading: _isLoading,
+                onPressed: _submitProfile,
+              ),
+              const SizedBox(height: AppSpacing.p8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController controller, String hint) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.p6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
             ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+              filled: true,
+              fillColor: AppColors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+            ),
+            validator: (value) => value == null || value.isEmpty ? 'This field is required' : null,
           ),
         ],
       ),

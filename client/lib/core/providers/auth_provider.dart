@@ -9,6 +9,8 @@ class UserModel {
   final String name;
   final String role;
   final String? companyId;
+  final bool emailVerified;
+  final bool isOnboarded;
 
   UserModel({
     required this.id,
@@ -16,15 +18,19 @@ class UserModel {
     required this.name,
     required this.role,
     this.companyId,
+    required this.emailVerified,
+    required this.isOnboarded,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
-      email: json['email'],
-      name: json['name'] ?? '',
+      id: json['id'] ?? json['sub'] ?? '',
+      email: json['email'] ?? '',
+      name: json['full_name'] ?? json['name'] ?? '',
       role: json['role'] ?? 'driver',
       companyId: json['company_id'],
+      emailVerified: json['email_verified'] ?? false,
+      isOnboarded: json['is_onboarded'] ?? (json['driver_profile']?['vehicle_plate'] != null),
     );
   }
 
@@ -34,6 +40,8 @@ class UserModel {
     'name': name,
     'role': role,
     'company_id': companyId,
+    'email_verified': emailVerified,
+    'is_onboarded': isOnboarded,
   };
 }
 
@@ -88,14 +96,42 @@ class AuthProvider extends ChangeNotifier {
     required String phone,
     required String companyCode,
   }) async {
-    final data = await _authService.signUpDriver(
+    await _authService.signUpDriver(
       email: email,
       password: password,
       name: name,
       phone: phone,
       companyCode: companyCode,
     );
+  }
+
+  Future<void> verifyEmail(String email, String token) async {
+    final data = await _authService.verifyEmail(email, token);
     await _handleAuthResponse(data);
+  }
+
+  Future<void> resendVerification(String email) async {
+    await _authService.resendVerification(email);
+  }
+
+  Future<void> updateDriverProfile(Map<String, dynamic> profileData) async {
+    if (_accessToken == null) return;
+    await _authService.updateDriverProfile(_accessToken!, profileData);
+    
+    // Update local user state
+    if (_user != null) {
+      _user = UserModel(
+        id: _user!.id,
+        email: _user!.email,
+        name: _user!.name,
+        role: _user!.role,
+        companyId: _user!.companyId,
+        emailVerified: _user!.emailVerified,
+        isOnboarded: true,
+      );
+      await _storage.write(key: 'user', value: jsonEncode(_user!.toJson()));
+      notifyListeners();
+    }
   }
 
   Future<void> refresh() async {

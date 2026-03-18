@@ -41,7 +41,20 @@ final GoRouter appRouter = GoRouter(
     }
 
     if (isAuth && isGoingToAuth) {
+      if (!auth.user!.emailVerified) return '/verify-email?email=${auth.user!.email}';
+      if (!auth.user!.isOnboarded) return '/onboarding';
       return '/home';
+    }
+
+    if (isAuth) {
+      if (!auth.user!.emailVerified && state.uri.path != '/verify-email') {
+        return '/verify-email?email=${auth.user!.email}';
+      }
+      if (auth.user!.emailVerified &&
+          !auth.user!.isOnboarded &&
+          state.uri.path != '/onboarding') {
+        return '/onboarding';
+      }
     }
 
     return null;

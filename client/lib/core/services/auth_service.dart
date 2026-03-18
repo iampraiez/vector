@@ -7,8 +7,8 @@ class AuthService {
 
   final Dio _dio = Dio(BaseOptions(
     baseUrl: ApiConstants.baseUrl,
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 3),
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 10),
   ));
 
   Future<Map<String, dynamic>> signIn({
@@ -37,10 +37,58 @@ class AuthService {
       final response = await _dio.post('/auth/sign-up/driver', data: {
         'email': email,
         'password': password,
-        'name': name,
+        'full_name': name,
         'phone': phone,
         'company_code': companyCode,
       });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> validateCompanyCode(String code) async {
+    try {
+      final response = await _dio.get('/auth/company/validate/$code');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyEmail(String email, String token) async {
+    try {
+      final response = await _dio.post('/auth/verify-email', data: {
+        'email': email,
+        'token': token,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> resendVerification(String email) async {
+    try {
+      final response = await _dio.post('/auth/resend-verification', data: {
+        'email': email,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateDriverProfile(
+    String accessToken,
+    Map<String, dynamic> profileData,
+  ) async {
+    try {
+      final response = await _dio.patch(
+        '/auth/driver/profile',
+        data: profileData,
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -70,11 +118,19 @@ class AuthService {
   }
 
   String _handleError(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      return 'Connection timed out. Please check your internet and try again.';
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return 'Unable to connect to the server. Please ensure you are online.';
+    }
+
     if (e.response?.data != null && e.response?.data['message'] != null) {
       final message = e.response?.data['message'];
       if (message is List) return message.join(', ');
       return message.toString();
     }
-    return e.message ?? 'An unexpected error occurred';
+    return 'An unexpected error occurred. Please try again later.';
   }
 }

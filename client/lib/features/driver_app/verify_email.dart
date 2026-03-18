@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/buttons.dart';
+import '../../main.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   final String email;
@@ -19,6 +20,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _isResending = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -37,6 +40,48 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
+    }
+  }
+
+  Future<void> _verifyCode() async {
+    final code = _controllers.map((c) => c.text).join();
+    if (code.length < 6) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await AuthScope.of(context).verifyEmail(widget.email, code);
+      if (mounted) context.go('/home');
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
+  Future<void> _resendCode() async {
+    if (_isResending) return;
+    setState(() => _isResending = true);
+
+    try {
+      await AuthScope.of(context).resendVerification(widget.email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification code resent!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isResending = false);
     }
   }
 
@@ -109,6 +154,14 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ],
                   ),
                 ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.p4),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.p8),
 
                 // Code inputs
@@ -168,7 +221,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 AppButton(
                   label: 'Verify Email',
                   isFullWidth: true,
-                  onPressed: () => context.push('/onboarding'),
+                  isLoading: _isLoading,
+                  onPressed: _verifyCode,
                 ),
                 const SizedBox(height: AppSpacing.p6),
 
@@ -183,13 +237,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        if (_isResending) return;
-                        setState(() => _isResending = true);
-                        Future.delayed(const Duration(seconds: 2), () {
-                          if (mounted) setState(() => _isResending = false);
-                        });
-                      },
+                      onTap: _resendCode,
                       child: Text(
                         _isResending ? 'Sending...' : 'Resend',
                         style: const TextStyle(

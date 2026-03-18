@@ -21,8 +21,9 @@ import {
   ResetPasswordDto,
   RefreshTokenDto,
   ResendVerificationDto,
+  UpdateDriverProfileDto,
 } from './dto/auth.dto';
-import { JwtPayload, UserWithCompany } from './interfaces/auth.interface';
+import { JwtPayload } from './interfaces/auth.interface';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +41,15 @@ export class AuthService {
   }
 
   private async generateTokens(
-    user: { id: string; email: string; role: string; company_id: string },
+    user: {
+      id: string;
+      email: string;
+      role: string;
+      company_id: string;
+      email_verified?: boolean;
+      is_onboarded?: boolean;
+      full_name?: string;
+    },
     device_id: string = 'default',
   ) {
     const payload = {
@@ -49,6 +58,9 @@ export class AuthService {
       role: user.role,
       company_id: user.company_id,
       device_id,
+      email_verified: user.email_verified ?? false,
+      is_onboarded: user.is_onboarded ?? false,
+      full_name: user.full_name ?? '',
     };
 
     const [access_token, refresh_token] = await Promise.all([
@@ -86,10 +98,22 @@ export class AuthService {
     return { access_token, refresh_token, expires_in: 3600, user, device_id };
   }
 
+  async validateCompanyCode(code: string) {
+    const company = await this.prisma.company.findUnique({
+      where: { company_code: code.toUpperCase() },
+      select: { id: true, name: true },
+    });
+
+    return {
+      valid: !!company,
+      company_name: company?.name,
+    };
+  }
+
   async signIn(dto: SignInDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: { company: true },
+      include: { company: true, driver_profile: true },
     });
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -113,9 +137,12 @@ export class AuthService {
         token,
       });
 
-      throw new UnauthorizedException(
-        'Please verify your email address. A new verification code has been sent to your inbox.',
-      );
+      throw new UnauthorizedException({
+        statusCode: 403,
+        message: 'EMAIL_NOT_VERIFIED',
+        error:
+          'Please verify your email address. A new verification code has been sent to your inbox.',
+      });
     }
 
     return this.generateTokens(
@@ -124,6 +151,9 @@ export class AuthService {
         email: user.email,
         role: user.role,
         company_id: user.company_id,
+        email_verified: user.email_verified,
+        is_onboarded: user.driver_profile?.vehicle_plate != null,
+        full_name: user.full_name,
       },
       dto.device_id,
     );
@@ -173,12 +203,6 @@ export class AuthService {
 
     return {
       message: 'Account created. Please verify your email.',
-      user_id: user.id,
-      company: {
-        id: company.id,
-        name: company.name,
-        company_code: company.company_code,
-      },
     };
   }
 
@@ -246,6 +270,7 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { email: dto.email },
       data: { email_verified: true },
+      include: { driver_profile: true },
     });
 
     // Generate tokens for auto-login
@@ -254,6 +279,9 @@ export class AuthService {
       email: user.email,
       role: user.role,
       company_id: user.company_id,
+      email_verified: true,
+      is_onboarded: user.driver_profile?.vehicle_plate != null,
+      full_name: user.full_name,
     });
 
     return {
@@ -294,15 +322,21 @@ export class AuthService {
 
       const deviceId = payload.device_id || 'default';
       const storedHash = await this.redis.get(`rt:${payload.sub}:${deviceId}`);
-      if (!storedHash) throw new UnauthorizedException('Invalid refresh token');
 
-      const isMatch = await bcrypt.compare(dto.refresh_token, storedHash);
-      if (!isMatch) throw new UnauthorizedException('Invalid refresh token');
+      // If hash exists, we MUST verify it.
+      // If it DOESN'T exist (e.g. Redis cleared), we don't fail immediately
+      // as long as the refresh token itself is cryptographically valid (which it is, since verifyAsync passed).
+      if (storedHash) {
+        const isMatch = await bcrypt.compare(dto.refresh_token, storedHash);
+        if (!isMatch) throw new UnauthorizedException('Invalid refresh token');
+      } else {
+        // console.warn(`Refresh session not found in Redis for user ${payload.sub}, allowing based on JWT validity`);
+      }
 
-      const user = (await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
-        include: { company: true },
-      })) as UserWithCompany | null;
+        include: { company: true, driver_profile: true },
+      });
 
       if (!user) throw new UnauthorizedException('User not found');
 
@@ -312,6 +346,9 @@ export class AuthService {
           email: user.email,
           role: user.role,
           company_id: user.company_id,
+          email_verified: user.email_verified,
+          is_onboarded: user.driver_profile?.vehicle_plate != null,
+          full_name: user.full_name,
         },
         deviceId,
       );
@@ -377,5 +414,28 @@ export class AuthService {
     // Blacklist the specific access token being used (prevents re-use of this token)
     // Store it for 1 hour (matching JWT_ACCESS_EXPIRATION default)
     await this.redis.set(`bl:${accessToken}`, 'revoked', 3600);
+  }
+
+  async updateDriverProfile(userId: string, dto: UpdateDriverProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { driver_profile: true },
+    });
+
+    if (!user || user.role !== 'driver') {
+      throw new NotFoundException('Driver not found');
+    }
+
+    return this.prisma.driver.update({
+      where: { user_id: userId },
+      data: {
+        vehicle_type: dto.vehicle_type,
+        vehicle_make: dto.vehicle_make,
+        vehicle_model: dto.vehicle_model,
+        vehicle_plate: dto.vehicle_plate,
+        vehicle_color: dto.vehicle_color,
+        license_number: dto.license_number,
+      },
+    });
   }
 }

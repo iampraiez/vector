@@ -1,7 +1,10 @@
 import {
   Controller,
+  Get,
   Post,
+  Patch,
   Body,
+  Param,
   HttpCode,
   HttpStatus,
   Request,
@@ -18,6 +21,7 @@ import {
   ResetPasswordDto,
   RefreshTokenDto,
   ResendVerificationDto,
+  UpdateDriverProfileDto,
 } from './dto/auth.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -38,6 +42,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   signIn(@Body() dto: SignInDto) {
     return this.authService.signIn(dto);
+  }
+
+  @Public()
+  @Get('company/validate/:code')
+  @HttpCode(HttpStatus.OK)
+  validateCompanyCode(@Param('code') code: string) {
+    return this.authService.validateCompanyCode(code);
   }
 
   @Public()
@@ -85,6 +96,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('driver/profile')
+  updateDriverProfile(
+    @Request() req: RequestWithUser,
+    @Body() dto: UpdateDriverProfileDto,
+  ) {
+    return this.authService.updateDriverProfile(req.user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)

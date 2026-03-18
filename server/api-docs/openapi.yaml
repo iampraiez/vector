@@ -37,6 +37,19 @@ paths:
           description: ""
       tags: &a1
         - Auth
+  /auth/company/validate/{code}:
+    get:
+      operationId: AuthController_validateCompanyCode
+      parameters:
+        - name: code
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a1
   /auth/sign-up/driver:
     post:
       operationId: AuthController_signUpDriver
@@ -131,6 +144,20 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RefreshTokenDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+  /auth/driver/profile:
+    patch:
+      operationId: AuthController_updateDriverProfile
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDriverProfileDto"
       responses:
         "200":
           description: ""
@@ -1182,6 +1209,28 @@ components:
           type: string
       required:
         - refresh_token
+    UpdateDriverProfileDto:
+      type: object
+      properties:
+        vehicle_type:
+          type: string
+        vehicle_make:
+          type: string
+        vehicle_model:
+          type: string
+        vehicle_plate:
+          type: string
+        vehicle_color:
+          type: string
+        license_number:
+          type: string
+      required:
+        - vehicle_type
+        - vehicle_make
+        - vehicle_model
+        - vehicle_plate
+        - vehicle_color
+        - license_number
     CreateOrderDto:
       type: object
       properties:

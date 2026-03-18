@@ -6,6 +6,7 @@ import 'package:country_picker/country_picker.dart';
 import 'package:client/main.dart';
 import 'package:client/shared/widgets/inputs.dart';
 import 'package:client/shared/widgets/buttons.dart';
+import 'package:client/core/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -110,11 +111,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _passwordController.text.isNotEmpty &&
       _confirmPasswordController.text.isNotEmpty;
 
-  void _onCompanyCodeChanged(String value) {
-    if (value.isEmpty) {
+  void _onCompanyCodeChanged(String value) async {
+    if (value.length < 3) {
       setState(() {
         _companyCodeValid = null;
         _isCheckingCompanyCode = false;
+        _companyCodeError = null;
       });
       return;
     }
@@ -123,24 +125,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     final currentCounter = ++_validationCounter;
 
-    // Mock API call
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      // Small debounce of 500ms
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted || currentCounter != _validationCounter) return;
+
+      final result = await AuthService.instance.validateCompanyCode(value);
+      
       if (mounted && currentCounter == _validationCounter) {
         setState(() {
           _isCheckingCompanyCode = false;
-          // Valid if matches ACM-2026
-          _companyCodeValid = value.toUpperCase() == 'ACM-2026';
+          _companyCodeValid = result['valid'] == true;
           if (_companyCodeValid!) {
             _companyCodeError = null;
+          } else {
+            _companyCodeError = 'Invalid company code';
           }
         });
       }
-    });
+    } catch (e) {
+      if (mounted && currentCounter == _validationCounter) {
+        setState(() {
+          _isCheckingCompanyCode = false;
+          _companyCodeValid = false;
+          _companyCodeError = 'Error validating code';
+        });
+      }
+    }
   }
 
   void _handleSignUp() async {
     _validate();
-    if (!_isValid || _loading) return;
+    if (!_isValid || _loading || _companyCodeValid != true) {
+      if (_companyCodeValid == false) {
+        setState(() => _companyCodeError = 'Please enter a valid company code');
+      }
+      return;
+    }
 
     setState(() => _loading = true);
     try {
@@ -151,7 +172,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         phone: '+$_selectedCountryCode${_phoneController.text.trim()}',
         companyCode: _companyCodeController.text.trim(),
       );
-      // Success leads to /home via router redirect
+      if (mounted) {
+        context.push('/verify-email?email=${_emailController.text}');
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
@@ -324,7 +347,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       ),
                                     )
                                   : null,
-                              errorText: _companyCodeError,
+                              errorText: _companyCodeError == 'Invalid company code'
+                                  ? null
+                                  : _companyCodeError,
                             ),
                             if (_companyCodeValid != null && !_isCheckingCompanyCode)
                               Padding(
@@ -332,17 +357,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 child: Row(
                                   children: [
                                     Icon(
-                                      _companyCodeValid! ? Icons.check_circle : Icons.error,
+                                      _companyCodeValid!
+                                          ? Icons.check_circle
+                                          : Icons.error,
                                       size: 14,
-                                      color: _companyCodeValid! ? AppColors.success : AppColors.error,
+                                      color: _companyCodeValid!
+                                          ? AppColors.success
+                                          : AppColors.error,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      _companyCodeValid! ? 'Valid company code' : 'Invalid company code',
+                                      _companyCodeValid!
+                                          ? 'Valid company code'
+                                          : 'Invalid company code',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: _companyCodeValid! ? AppColors.success : AppColors.error,
+                                        color: _companyCodeValid!
+                                            ? AppColors.success
+                                            : AppColors.error,
                                       ),
                                     ),
                                   ],

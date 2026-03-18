@@ -66,9 +66,16 @@ class _SignInScreenState extends State<SignInScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
+        
+        final errorMsg = e.toString().replaceFirst('Exception: ', '');
+        if (errorMsg.contains('verify your email address')) {
+          context.push('/verify-email?email=${_emailController.text}');
+          return;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(errorMsg),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

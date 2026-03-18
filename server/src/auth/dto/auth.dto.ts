@@ -115,3 +115,29 @@ export class RefreshTokenDto {
   @IsOptional()
   device_id?: string;
 }
+
+export class UpdateDriverProfileDto {
+  @IsString()
+  @IsNotEmpty()
+  vehicle_type!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  vehicle_make!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  vehicle_model!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  vehicle_plate!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  vehicle_color!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  license_number!: string;
+}

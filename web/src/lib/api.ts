@@ -97,6 +97,8 @@ api.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError, null);
         useAuthStore.getState().logout();
+
+        // If the refresh call itself failed with 401, we MUST stop and not retry
         return Promise.reject(refreshError);
       }
     }

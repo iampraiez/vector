@@ -53,10 +53,6 @@ export class MailService {
           type: a.type,
           disposition: 'attachment',
         })),
-        headers: {
-          'X-Mailer': 'VectorFleet/1.0',
-          'X-Priority': '3',
-        },
       });
 
       this.logger.log(`Email sent via SendGrid to ${to}`);
