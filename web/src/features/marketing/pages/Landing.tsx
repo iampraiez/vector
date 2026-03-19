@@ -185,7 +185,7 @@ export function WebLanding() {
       {/* ── Navigation ─────────────────────────────────────────────── */}
       <nav
         className={clsx(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+          "absolute top-0 left-0 right-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
           scrolled
             ? "bg-white/95 backdrop-blur-md border-b border-black/5"
             : "bg-transparent",

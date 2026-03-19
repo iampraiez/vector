@@ -173,7 +173,7 @@ export function Privacy() {
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-emerald-100">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <div
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 cursor-pointer group"

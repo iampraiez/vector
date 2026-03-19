@@ -21,6 +21,9 @@
   --color-sidebar-accent-foreground: var(--color-gray-900);
   --color-sidebar-border: var(--color-border-subtle);
   --color-sidebar-ring: var(--color-primary);
+
+  --color-background: var(--color-white);
+  --color-card: var(--color-white);
 }
 
 @layer base {
