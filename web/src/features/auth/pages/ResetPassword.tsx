@@ -8,7 +8,7 @@ import {
   ArrowPathIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
-import { TruckIcon } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 import { AxiosError } from "axios";
 import { ErrorAlert } from "../../../components/ui/ErrorAlert";
@@ -94,8 +94,8 @@ export function ResetPassword() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <TruckIcon className="w-5 h-5 text-white" />
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity translate-y-[-1px]">
+            <LocalShippingIcon size={18} className="text-white" />
           </div>
           <span className="text-[18px] font-extrabold tracking-tight text-gray-900">
             VECTOR

@@ -7,11 +7,11 @@ import {
   UserIcon,
   PhoneIcon,
   EnvelopeIcon,
-  TruckIcon,
   StarIcon,
   ClockIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
 interface DeliveryHistory {
   id: string;
@@ -187,7 +187,7 @@ export function DashboardDriverDetail() {
               {[
                 { icon: EnvelopeIcon, text: driver.email },
                 { icon: PhoneIcon, text: driver.phone },
-                { icon: TruckIcon, text: driver.vehicle },
+                { icon: LocalShippingIcon, text: driver.vehicle },
               ].map(({ icon: Icon, text }) => (
                 <div
                   key={text}

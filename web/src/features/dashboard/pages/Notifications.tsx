@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import {
   BellIcon,
-  TruckIcon,
   ArchiveBoxIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
@@ -10,6 +9,7 @@ import {
   TrashIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
 type NotifCategory = "all" | "orders" | "drivers" | "system";
 
@@ -25,7 +25,7 @@ interface Notification {
 
 const iconMap = {
   order: ArchiveBoxIcon,
-  driver: TruckIcon,
+  driver: LocalShippingIcon,
   alert: ExclamationTriangleIcon,
   success: CheckCircleIcon,
   system: InformationCircleIcon,

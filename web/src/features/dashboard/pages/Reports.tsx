@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   ArrowDownTrayIcon,
-  TruckIcon,
   ClockIcon,
   MapPinIcon,
   BanknotesIcon,
@@ -10,6 +9,7 @@ import {
   EnvelopeIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 
 const PERIODS = ["7 days", "30 days", "90 days"];
@@ -280,7 +280,11 @@ export function DashboardReports() {
           <>
             {/* KPI Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-              <KPICard label="Total Deliveries" value="—" icon={TruckIcon} />
+              <KPICard
+                label="Total Deliveries"
+                value="—"
+                icon={LocalShippingIcon}
+              />
               <KPICard label="On-Time Rate" value="—" icon={ClockIcon} />
               <KPICard label="Avg. Delivery Time" value="—" icon={MapPinIcon} />
               <KPICard label="Distance Saved" value="—" icon={BanknotesIcon} />

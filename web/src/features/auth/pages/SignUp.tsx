@@ -8,13 +8,13 @@ import {
   LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
-  TruckIcon,
   UserIcon,
   BuildingOffice2Icon,
   CheckCircleIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { CheckCircleIcon as CheckSolid } from "@heroicons/react/24/solid";
 
 import { signUpFleetSchema, SignUpFleetValues } from "../../../lib/validations";
@@ -141,8 +141,8 @@ export function DashboardSignUp() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <TruckIcon className="w-5 h-5 text-white" />
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px">
+            <LocalShippingIcon size={18} className="text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
             VECTOR

@@ -5,6 +5,7 @@ import {
   MinLength,
   MaxLength,
   IsOptional,
+  Matches,
 } from 'class-validator';
 
 export class SignInDto {
@@ -27,6 +28,8 @@ export class SignUpDriverDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(50)
   full_name!: string;
 
   @IsEmail()
@@ -34,6 +37,9 @@ export class SignUpDriverDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^\+\d{1,3}\d{10}$/, {
+    message: 'Phone number must be in format +2349166072665',
+  })
   phone!: string;
 
   @IsString()
@@ -53,6 +59,8 @@ export class SignUpDriverDto {
 export class SignUpFleetDto {
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(50)
   full_name!: string;
 
   @IsEmail()
@@ -65,6 +73,8 @@ export class SignUpFleetDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(100)
   company_name!: string;
 
   @IsString()
@@ -73,6 +83,7 @@ export class SignUpFleetDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(1)
   plan_id!: string;
 }
 
@@ -119,25 +130,37 @@ export class RefreshTokenDto {
 export class UpdateDriverProfileDto {
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(30)
   vehicle_type!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(30)
   vehicle_make!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(30)
   vehicle_model!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(15)
   vehicle_plate!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(20)
   vehicle_color!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(5)
+  @MaxLength(30)
   license_number!: string;
 }

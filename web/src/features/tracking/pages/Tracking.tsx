@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -9,9 +10,11 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   StarIcon as StarSolid,
-  TruckIcon,
   CheckCircleIcon as CheckSolid,
 } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
+import { api } from "../../../lib/api";
+import { AxiosError } from "axios";
 
 type DeliveryStatus =
   | "pending"
@@ -20,33 +23,53 @@ type DeliveryStatus =
   | "delivered"
   | "failed";
 
-const mockDelivery = {
-  trackingId: "VCT-20260306-1234",
-  status: "out_for_delivery" as DeliveryStatus,
-  customerName: "Sarah Chen",
-  packageCount: 2,
-  estimatedTime: "2:30 PM – 4:00 PM",
-  address: "742 Evergreen Terrace, Springfield, IL",
-  driver: {
-    name: "Alex Rivera",
-    phone: "+1 (555) 123-4567",
-    photo: null as null,
-    rating: 4.9,
-    deliveries: 234,
-    vehicle: "Ford Transit · ABC-1234",
-  },
-  timeline: [
-    { label: "Order received", time: "8:00 AM", done: true },
-    { label: "Route assigned", time: "8:45 AM", done: true },
-    { label: "Driver picked up", time: "9:30 AM", done: true },
-    { label: "Out for delivery", time: "11:15 AM", done: true },
-    { label: "Delivered", time: null, done: false },
-  ],
-  company: "Acme Logistics",
-  companyLogo: null as null,
+const formatTime = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
+interface TrackingData {
+  trackingId: string;
+  status: DeliveryStatus;
+  customerName: string;
+  packageCount: number;
+  estimatedTime: string;
+  address: string;
+  arrivedAt: string | null;
+  completedAt: string | null;
+  company: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  driver: {
+    name: string;
+    phone: string;
+    rating: number;
+    deliveries: number;
+    vehicle: string;
+  } | null;
+  liveLocation: { lat: number; lng: number } | null;
+  timeline: {
+    created_at: string;
+    assigned_at: string | null;
+    started_at: string | null;
+    arrived_at: string | null;
+    completed_at: string | null;
+  };
+}
+
 export function CustomerTracking() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+
+  const [delivery, setDelivery] = useState<TrackingData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -58,7 +81,95 @@ export function CustomerTracking() {
   });
   const [submitted, setSubmitted] = useState(false);
 
-  const status = mockDelivery.status;
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!token) {
+        setError(
+          "No tracking token provided. Please check your tracking link.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await api.get(`/track?token=${token}`);
+        setDelivery(res.data);
+      } catch (err: unknown) {
+        const error = err as AxiosError<{ message: string }>;
+        setError(
+          error.response?.data?.message ||
+            "Unable to find this delivery. Please verify your tracking ID.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
+  const handleSubmitRating = async () => {
+    if (selectedRating === 0 || !token) return;
+    try {
+      await api.post(`/track/rate?token=${token}`, {
+        rating: selectedRating,
+        comment,
+      });
+      setSubmitted(true);
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message: string }>;
+      alert(error.response?.data?.message || "Failed to submit rating.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-500 font-medium">Fetching tracking data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !delivery) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl border border-black/8 p-10 max-w-md w-full text-center shadow-xl">
+          <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-emerald-600/10">
+            <LocalShippingIcon size={32} className="text-emerald-600/40" />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">
+            Invalid Tracking Link
+          </h2>
+          <p className="text-sm text-gray-500 mb-10 leading-relaxed px-4">
+            {error ||
+              "We couldn't find a delivery associated with this link. Please check the URL or contact the sender for assistance."}
+          </p>
+
+          <div className="pt-8 border-t border-black/5">
+            <p className="text-[11px] font-bold text-gray-300 uppercase tracking-[0.15em] mb-4">
+              POWERED BY VECTOR
+            </p>
+            <p className="text-[13px] text-gray-400 mb-6 px-6">
+              The all-in-one delivery platform for modern logistics fleets.
+            </p>
+            <a
+              href="https://vector-logistics.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[13px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+            >
+              Learn more about Vector
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const status = delivery.status as DeliveryStatus;
 
   const statusConfig: Record<
     DeliveryStatus,
@@ -81,14 +192,14 @@ export function CustomerTracking() {
       label: "Assigned",
       color: "#3B82F6",
       bg: "#EFF6FF",
-      icon: <TruckIcon className="w-5 h-5" />,
+      icon: <LocalShippingIcon size={20} />,
       desc: "A driver has been assigned",
     },
     out_for_delivery: {
       label: "Out for Delivery",
       color: "#059669",
       bg: "#ECFDF5",
-      icon: <TruckIcon className="w-5 h-5" />,
+      icon: <LocalShippingIcon size={20} />,
       desc: "Your driver is on the way",
     },
     delivered: {
@@ -107,13 +218,15 @@ export function CustomerTracking() {
     },
   };
 
-  const sc = statusConfig[status];
+  const sc = statusConfig[status] || statusConfig.pending;
 
-  const handleSubmitRating = () => {
-    if (selectedRating === 0) return;
-    setSubmitted(true);
-  };
-
+  const timelineSteps = [
+    { label: "Order received", time: delivery.timeline.created_at },
+    { label: "Driver assigned", time: delivery.timeline.assigned_at },
+    { label: "Out for delivery", time: delivery.timeline.started_at },
+    { label: "Driver arrived", time: delivery.timeline.arrived_at },
+    { label: "Delivered", time: delivery.timeline.completed_at },
+  ];
   const categoryLabels: Record<keyof typeof categories, string> = {
     on_time: "⏱ On time",
     handled_with_care: "📦 Handled with care",
@@ -127,15 +240,25 @@ export function CustomerTracking() {
       <div className="bg-white border-b border-black/8 px-5 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
-            <TruckIcon className="w-4 h-4 text-white" />
+            <LocalShippingIcon size={16} className="text-white" />
           </div>
           <span className="text-base font-extrabold tracking-[0.04em] text-[#121212]">
             VECTOR
           </span>
         </div>
-        <p className="text-xs text-gray-400">
-          Powered by {mockDelivery.company}
-        </p>
+        <div className="text-right">
+          <p className="text-xs text-gray-500 font-bold tracking-tight">
+            {delivery.company.name}
+          </p>
+          <div className="flex items-center gap-3 mt-0.5">
+            <p className="text-[10px] text-gray-400 font-medium">
+              {delivery.company.email}
+            </p>
+            <p className="text-[10px] text-gray-400 font-medium">
+              {delivery.company.phone}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="max-w-120 mx-auto p-4">
@@ -151,12 +274,12 @@ export function CustomerTracking() {
           </div>
 
           <h1 className="text-xl font-bold text-[#212121] mb-1 tracking-tight">
-            Hey {mockDelivery.customerName.split(" ")[0]}! 👋
+            Hey {delivery.customerName.split(" ")[0]}! 👋
           </h1>
           <p className="text-sm text-gray-500 mb-4">{sc.desc}</p>
 
           {/* ETA */}
-          {status === "out_for_delivery" && (
+          {(status === "out_for_delivery" || status === "assigned") && (
             <div className="bg-emerald-50 rounded-xl p-3 px-4 flex items-center gap-2.5 mb-4 border border-emerald-600/15">
               <ClockIcon className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
               <div>
@@ -164,7 +287,7 @@ export function CustomerTracking() {
                   Estimated Arrival
                 </p>
                 <p className="text-[15px] font-semibold text-[#212121]">
-                  {mockDelivery.estimatedTime}
+                  {delivery.estimatedTime}
                 </p>
               </div>
             </div>
@@ -178,13 +301,13 @@ export function CustomerTracking() {
                 Delivering to
               </p>
               <p className="text-[13px] text-[#212121] font-medium leading-normal">
-                {mockDelivery.address}
+                {delivery.address}
               </p>
             </div>
           </div>
 
           <p className="text-[11px] text-gray-300 mt-2.5">
-            Tracking ID: {mockDelivery.trackingId}
+            Tracking ID: {delivery.trackingId}
           </p>
         </div>
 
@@ -195,30 +318,30 @@ export function CustomerTracking() {
           </h2>
           <div className="relative">
             <div className="absolute left-2.75 top-3.5 w-0.5 h-[calc(100%-28px)] bg-black/8" />
-            {mockDelivery.timeline.map((step, i) => (
+            {timelineSteps.map((step, i) => (
               <div
                 key={i}
-                className={`flex gap-3.5 items-start ${i < mockDelivery.timeline.length - 1 ? "pb-5" : ""}`}
+                className={`flex gap-3.5 items-start ${i < timelineSteps.length - 1 ? "pb-5" : ""}`}
               >
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 border-2 ${
-                    step.done
+                    step.time
                       ? "bg-emerald-600 border-emerald-600"
                       : "bg-white border-black/15"
                   }`}
                 >
-                  {step.done && <CheckSolid className="w-4 h-4 text-white" />}
+                  {step.time && <CheckSolid className="w-4 h-4 text-white" />}
                 </div>
                 <div className="flex-1 pt-0.5">
                   <div className="flex justify-between items-center">
                     <p
-                      className={`text-[13px] ${step.done ? "font-bold text-[#212121]" : "text-gray-400"}`}
+                      className={`text-[13px] ${step.time ? "font-bold text-[#212121]" : "text-gray-400"}`}
                     >
                       {step.label}
                     </p>
                     {step.time && (
                       <span className="text-xs text-gray-400 font-medium">
-                        {step.time}
+                        {formatTime(step.time)}
                       </span>
                     )}
                   </div>
@@ -229,46 +352,47 @@ export function CustomerTracking() {
         </div>
 
         {/* Driver Info */}
-        {(status === "out_for_delivery" || status === "delivered") && (
-          <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">
-            <h2 className="text-sm font-bold text-[#212121] mb-4">
-              Your Driver
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="w-13 h-13 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-                <span className="text-white text-lg font-bold">
-                  {mockDelivery.driver.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </span>
-              </div>
-              <div className="flex-1">
-                <p className="text-[15px] font-bold text-[#212121]">
-                  {mockDelivery.driver.name}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <StarSolid className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-xs text-gray-400 font-medium">
-                    {mockDelivery.driver.rating} ·{" "}
-                    {mockDelivery.driver.deliveries} deliveries
+        {(status === "out_for_delivery" || status === "delivered") &&
+          delivery.driver && (
+            <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">
+              <h2 className="text-sm font-bold text-[#212121] mb-4">
+                Your Driver
+              </h2>
+              <div className="flex items-center gap-4">
+                <div className="w-13 h-13 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <span className="text-white text-lg font-bold">
+                    {delivery.driver.name
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")}
                   </span>
                 </div>
-                <p className="text-[12px] text-gray-300 mt-1">
-                  {mockDelivery.driver.vehicle}
-                </p>
+                <div className="flex-1">
+                  <p className="text-[15px] font-bold text-[#212121]">
+                    {delivery.driver.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <StarSolid className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-xs text-gray-400 font-medium">
+                      {delivery.driver.rating} · {delivery.driver.deliveries}{" "}
+                      deliveries
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-gray-300 mt-1">
+                    {delivery.driver.vehicle}
+                  </p>
+                </div>
+                {status === "out_for_delivery" && (
+                  <a
+                    href={`tel:${delivery.driver.phone}`}
+                    className="w-11 h-11 rounded-full bg-emerald-50 border border-emerald-600/15 flex items-center justify-center transition-all duration-200 hover:bg-emerald-100 hover:scale-105"
+                  >
+                    <PhoneIcon className="w-5 h-5 text-emerald-600" />
+                  </a>
+                )}
               </div>
-              {status === "out_for_delivery" && (
-                <a
-                  href={`tel:${mockDelivery.driver.phone}`}
-                  className="w-11 h-11 rounded-full bg-emerald-50 border border-emerald-600/15 flex items-center justify-center transition-all duration-200 hover:bg-emerald-100 hover:scale-105"
-                >
-                  <PhoneIcon className="w-5 h-5 text-emerald-600" />
-                </a>
-              )}
             </div>
-          </div>
-        )}
+          )}
 
         {/* Rating Section */}
         {status === "delivered" && !submitted && (
@@ -277,7 +401,7 @@ export function CustomerTracking() {
               How was your delivery?
             </h2>
             <p className="text-[13px] text-gray-500 mb-4.5">
-              Help {mockDelivery.driver.name.split(" ")[0]} improve with your
+              Help {delivery.driver?.name?.split(" ")[0]} improve with your
               feedback
             </p>
 
@@ -370,13 +494,23 @@ export function CustomerTracking() {
           </div>
         )}
 
-        {/* Footer */}
-        <p className="text-center text-[12px] text-gray-300 py-2 pb-4">
-          Powered by VECTOR ·{" "}
-          <a href="/" className="text-emerald-600 no-underline hover:underline">
-            Learn more
+        {/* Professional Footer / Branding */}
+        <div className="mt-12 mb-8 pt-8 border-t border-black/5 text-center">
+          <p className="text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em] mb-3">
+            Powered by Vector
+          </p>
+          <p className="text-[13px] text-gray-400 mb-5 px-8 leading-relaxed max-w-80 mx-auto">
+            Real-time logistics and fleet management for modern delivery teams.
+          </p>
+          <a
+            href="https://vector-logistics.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-[13px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+          >
+            Learn more about Vector
           </a>
-        </p>
+        </div>
       </div>
     </div>
   );

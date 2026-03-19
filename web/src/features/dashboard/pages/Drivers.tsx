@@ -13,7 +13,7 @@ import {
   ListBulletIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
-import { TruckIcon } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
 export function DashboardDrivers() {
   const navigate = useNavigate();
@@ -208,7 +208,10 @@ export function DashboardDrivers() {
                   </div>
                   <div className="flex items-center gap-3 text-gray-400 group-hover:text-gray-600 transition-colors">
                     <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
-                      <TruckIcon className="w-4 h-4 shrink-0 opacity-60" />
+                      <LocalShippingIcon
+                        size={16}
+                        className="shrink-0 opacity-60"
+                      />
                     </div>
                     <span className="text-[13px] font-semibold tracking-tight">
                       {driver.vehicle_type

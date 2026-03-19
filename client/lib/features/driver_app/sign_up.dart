@@ -74,9 +74,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _emailError = null;
       }
 
-      _phoneError = _phoneController.text.isEmpty
-          ? 'Phone number is required'
-          : null;
+      final phone = _phoneController.text.trim();
+      if (phone.isEmpty) {
+        _phoneError = 'Phone number is required';
+      } else if (phone.length != 10) {
+        _phoneError = 'Enter exactly 10 digits';
+      } else {
+        _phoneError = null;
+      }
 
       final password = _passwordController.text;
       if (password.isEmpty) {

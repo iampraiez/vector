@@ -11,7 +11,7 @@ import {
   ArrowRightStartOnRectangleIcon,
   BellIcon,
 } from "@heroicons/react/24/outline";
-import { TruckIcon } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { useAuthStore } from "../../../store/authStore";
 import { useSettingsStore } from "../../../store/settingsStore";
 import {
@@ -99,8 +99,8 @@ function DashboardSidebar() {
           onClick={() => handleNav("/")}
           className="flex items-center gap-2.5 cursor-pointer group w-fit"
         >
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <TruckIcon className="w-5 h-5 text-white" />
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
+            <LocalShippingIcon size={18} className="text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
             VECTOR
@@ -141,7 +141,7 @@ function DashboardSidebar() {
         <div className="bg-white border border-black/5 rounded-xl p-2.5 shadow-sm">
           <div className="flex items-center gap-2.5">
             {/* Avatar — single initial */}
-            <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-emerald-600 to-emerald-800 text-white text-[13px] font-black tracking-tight select-none shadow-sm">
+            <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 text-white text-[13px] font-black tracking-tight select-none shadow-sm">
               {getInitial(user?.email || "User")}
             </div>
             <div className="flex-1 min-w-0">
@@ -188,8 +188,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => navigate("/")}
             className="flex items-center gap-2.5 cursor-pointer"
           >
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
-              <TruckIcon className="w-5 h-5 text-white" />
+            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 -translate-y-px shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
+              <LocalShippingIcon size={18} className="text-white" />
             </div>
             <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
               VECTOR

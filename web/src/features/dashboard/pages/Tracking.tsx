@@ -10,7 +10,7 @@ import {
   XMarkIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { TruckIcon } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Driver } from "../../../store/driverStore";
 
 export function DashboardTracking() {
@@ -63,19 +63,19 @@ export function DashboardTracking() {
 
   return (
     <div className="p-4 md:p-8 max-w-350 mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
-          Live Tracking
-        </h1>
-        <p className="text-[13px] text-gray-500">
-          Monitor your drivers in real-time
-        </p>
-      </div>
+      {/* Header & Toggle */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div>
+          <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+            Live Tracking
+          </h1>
+          <p className="text-[13px] text-gray-500">
+            Monitor your drivers in real-time
+          </p>
+        </div>
 
-      {/* View Toggle */}
-      <div className="flex justify-end mb-6">
-        <div className="flex bg-gray-50 border border-black/8 rounded-xl p-0.75 gap-0.5">
+        {/* View Toggle */}
+        <div className="flex bg-gray-50 border border-black/8 rounded-xl p-0.75 gap-0.5 self-start md:self-auto">
           {(
             [
               { mode: "board", label: "Board" },
@@ -199,7 +199,7 @@ export function DashboardTracking() {
                           top: `${30 + i * 15}%`,
                         }}
                       >
-                        <TruckIcon className="w-5 h-5 text-white" />
+                        <LocalShippingIcon size={20} className="text-white" />
                       </button>
                     ))}
 
@@ -213,7 +213,7 @@ export function DashboardTracking() {
                         transform: "translate(-50%, -50%)",
                       }}
                     >
-                      <TruckIcon className="w-6 h-6 text-white" />
+                      <LocalShippingIcon size={24} className="text-white" />
                     </div>
                   )}
                 </div>
@@ -315,7 +315,7 @@ export function DashboardTracking() {
             {drivers.length === 0 ? (
               <div className="bg-white border border-black/8 rounded-2xl flex flex-col items-center justify-center py-16 text-center shadow-sm">
                 <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-                  <TruckIcon className="w-7 h-7 text-gray-300" />
+                  <LocalShippingIcon size={28} className="text-gray-300" />
                 </div>
                 <p className="text-[15px] font-bold text-gray-400 mb-1">
                   No active fleet
@@ -340,7 +340,7 @@ export function DashboardTracking() {
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300 ${getStatusClasses(d.status)}`}
                       >
-                        <TruckIcon className="w-5 h-5 text-white" />
+                        <LocalShippingIcon size={20} className="text-white" />
                       </div>
                       <ChevronRightIcon
                         className={`w-4 h-4 text-gray-300 transition-transform group-hover:translate-x-1 ${selectedDriver?.id === d.id ? "text-emerald-500 translate-x-1" : ""}`}

@@ -619,6 +619,22 @@ paths:
         "204":
           description: ""
       tags: *a6
+  /dashboard/settings/otp/request:
+    post:
+      operationId: SettingsController_requestOtp
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a6
+  /dashboard/settings/otp/verify:
+    post:
+      operationId: SettingsController_verifyOtp
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a6
   /dashboard/notifications:
     get:
       operationId: DashboardNotificationsController_getNotifications
@@ -907,6 +923,22 @@ paths:
         "200":
           description: ""
       tags: *a13
+  /driver/settings/otp/request:
+    post:
+      operationId: SettingsController_requestOtp
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a13
+  /driver/settings/otp/verify:
+    post:
+      operationId: SettingsController_verifyOtp
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a13
   /driver/notifications:
     get:
       operationId: DriverNotificationsController_getNotifications
@@ -1126,11 +1158,14 @@ components:
           type: string
         full_name:
           type: string
+          minLength: 2
+          maxLength: 50
         email:
           type: string
           format: email
         phone:
           type: string
+          pattern: /^\+\d{1,3}\d{10}$/
         password:
           type: string
           minLength: 8
@@ -1150,6 +1185,8 @@ components:
       properties:
         full_name:
           type: string
+          minLength: 2
+          maxLength: 50
         email:
           type: string
           format: email
@@ -1159,10 +1196,13 @@ components:
           maxLength: 32
         company_name:
           type: string
+          minLength: 2
+          maxLength: 100
         company_size:
           type: string
         plan_id:
           type: string
+          minLength: 1
       required:
         - full_name
         - email
@@ -1222,16 +1262,28 @@ components:
       properties:
         vehicle_type:
           type: string
+          minLength: 2
+          maxLength: 30
         vehicle_make:
           type: string
+          minLength: 2
+          maxLength: 30
         vehicle_model:
           type: string
+          minLength: 1
+          maxLength: 30
         vehicle_plate:
           type: string
+          minLength: 2
+          maxLength: 15
         vehicle_color:
           type: string
+          minLength: 3
+          maxLength: 20
         license_number:
           type: string
+          minLength: 5
+          maxLength: 30
       required:
         - vehicle_type
         - vehicle_make

@@ -7,7 +7,7 @@ import {
   ArrowLeftIcon,
   EnvelopeIcon,
 } from "@heroicons/react/24/outline";
-import { TruckIcon } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 import { useAuthStore } from "../../../store/authStore";
 
@@ -118,8 +118,8 @@ export function VerifyEmail() {
       {/* Top Nav */}
       <nav className="px-6 py-4 md:px-12 bg-white border-b border-black/5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 group-hover:opacity-90 transition-opacity">
-            <TruckIcon className="w-5 h-5 text-white" />
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px">
+            <LocalShippingIcon size={18} className="text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900 uppercase">
             Vector

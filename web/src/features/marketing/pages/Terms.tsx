@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { TruckIcon } from "@heroicons/react/24/solid";
+import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
 export function TermsContent({
   className = "py-16 px-6 max-w-4xl mx-auto space-y-12",
@@ -169,8 +169,8 @@ export function Terms() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="w-8 h-8 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-            <TruckIcon className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-md bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform -translate-y-px">
+            <LocalShippingIcon size={18} className="text-white" />
           </div>
           <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
             VECTOR
