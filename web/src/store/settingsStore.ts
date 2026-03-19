@@ -123,17 +123,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   updateNotifications: async (data: Partial<NotificationsConfig>) => {
-    set({ isMutating: true, error: null });
+    const original = get().notifications;
+    set({
+      notifications: original ? { ...original, ...data } : null,
+      isMutating: true,
+      error: null,
+    });
+
     try {
       await api.patch("/dashboard/settings/notifications", data);
       await get().fetchSettings();
       set({ isMutating: false });
     } catch (err: unknown) {
+      set({ notifications: original, isMutating: false });
       const error = err as AxiosError<{ message?: string }>;
       set({
         error:
           error.response?.data?.message || "Failed to update notifications",
-        isMutating: false,
       });
       throw err;
     }

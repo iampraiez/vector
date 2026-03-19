@@ -25,24 +25,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'voiceGuidance': true,
   };
 
-  Future<void> _handleOtpAction(String action) async {
-    showDialog(
-      context: context, 
-      barrierDismissible: false, 
-      builder: (_) => const Center(child: CircularProgressIndicator())
-    );
-    try {
-      await DriverApiService.instance.requestSettingsOtp(action);
+  void _handleOtpAction(String action) {
+    // Show verification dialog immediately
+    _showEmailVerificationDialog(action);
+
+    // Request OTP in background
+    DriverApiService.instance.requestSettingsOtp(action).catchError((e) {
       if (mounted) {
-        Navigator.pop(context); // close loading
-        _showEmailVerificationDialog(action);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send OTP: $e'))
+        );
       }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // close loading
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
-    }
+    });
   }
 
   void _showClearDataConfirmation() {

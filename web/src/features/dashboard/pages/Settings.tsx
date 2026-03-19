@@ -103,7 +103,7 @@ function StaticField({
           {label}
         </span>
       </div>
-      <p className="text-[13px] font-bold text-gray-900 tracking-tight leading-none">
+      <p className="text-[13px] font-medium text-gray-900 tracking-tight leading-none">
         {value}
       </p>
     </div>
@@ -389,7 +389,11 @@ export function DashboardSettings() {
   const toggle = (key: keyof NotificationsConfig) => async () => {
     if (notifications) {
       const newSettings = { ...notifications, [key]: !notifications[key] };
-      await updateNotifications(newSettings);
+      try {
+        await updateNotifications(newSettings);
+      } catch {
+        alert("Failed to update notification setting.");
+      }
     }
   };
 
@@ -417,15 +421,18 @@ export function DashboardSettings() {
   const handleRequestOtp = async (
     action: "clear_workspace_data" | "deactivate_workspace",
   ) => {
-    try {
-      if (action === "clear_workspace_data") setIsDataCleaningOpen(false);
-      if (action === "deactivate_workspace") setIsDeleteAccountOpen(false);
-      await requestOtp(action);
-      setOtpAction(action);
-      setIsOtpOpen(true);
-    } catch {
-      alert("Failed to request OTP. Check credentials or try again later.");
-    }
+    if (action === "clear_workspace_data") setIsDataCleaningOpen(false);
+    if (action === "deactivate_workspace") setIsDeleteAccountOpen(false);
+
+    // Show modal immediately
+    setOtpAction(action);
+    setIsOtpOpen(true);
+
+    // Request OTP in background
+    requestOtp(action).catch(() => {
+      alert("Failed to send verification code. Please try again.");
+      setIsOtpOpen(false);
+    });
   };
 
   const handleVerifyOtp = async (otp: string) => {
