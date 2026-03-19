@@ -11,6 +11,7 @@ class UserModel {
   final String? companyId;
   final bool emailVerified;
   final bool isOnboarded;
+  final String? phone;
   final String? vehicleType;
   final String? vehicleMake;
   final String? vehicleModel;
@@ -26,6 +27,7 @@ class UserModel {
     this.companyId,
     required this.emailVerified,
     required this.isOnboarded,
+    this.phone,
     this.vehicleType,
     this.vehicleMake,
     this.vehicleModel,
@@ -44,6 +46,7 @@ class UserModel {
       companyId: json['company_id'],
       emailVerified: json['email_verified'] ?? false,
       isOnboarded: json['is_onboarded'] ?? false,
+      phone: json['phone'] as String?,
       vehicleType: profile['vehicle_type'],
       vehicleMake: profile['vehicle_make'],
       vehicleModel: profile['vehicle_model'],
@@ -53,20 +56,52 @@ class UserModel {
     );
   }
 
+  UserModel copyWith({
+    String? name,
+    String? phone,
+    String? vehicleType,
+    String? vehicleMake,
+    String? vehicleModel,
+    String? vehiclePlate,
+    String? vehicleColor,
+    String? licenseNumber,
+    bool? isOnboarded,
+  }) {
+    return UserModel(
+      id: id,
+      email: email,
+      name: name ?? this.name,
+      role: role,
+      companyId: companyId,
+      emailVerified: emailVerified,
+      isOnboarded: isOnboarded ?? this.isOnboarded,
+      phone: phone ?? this.phone,
+      vehicleType: vehicleType ?? this.vehicleType,
+      vehicleMake: vehicleMake ?? this.vehicleMake,
+      vehicleModel: vehicleModel ?? this.vehicleModel,
+      vehiclePlate: vehiclePlate ?? this.vehiclePlate,
+      vehicleColor: vehicleColor ?? this.vehicleColor,
+      licenseNumber: licenseNumber ?? this.licenseNumber,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'email': email,
-    'name': name,
+    'full_name': name,
     'role': role,
     'company_id': companyId,
     'email_verified': emailVerified,
     'is_onboarded': isOnboarded,
-    'vehicle_type': vehicleType,
-    'vehicle_make': vehicleMake,
-    'vehicle_model': vehicleModel,
-    'vehicle_plate': vehiclePlate,
-    'vehicle_color': vehicleColor,
-    'license_number': licenseNumber,
+    'phone': phone,
+    'driver_profile': {
+      'vehicle_type': vehicleType,
+      'vehicle_make': vehicleMake,
+      'vehicle_model': vehicleModel,
+      'vehicle_plate': vehiclePlate,
+      'vehicle_color': vehicleColor,
+      'license_number': licenseNumber,
+    },
   };
 }
 
@@ -177,21 +212,18 @@ class AuthProvider extends ChangeNotifier {
     
     // Update local user state
     if (_user != null) {
-      _user = UserModel(
-        id: _user!.id,
-        email: _user!.email,
-        name: _user!.name,
-        role: _user!.role,
-        companyId: _user!.companyId,
-        emailVerified: _user!.emailVerified,
-        isOnboarded: true,
+      _user = _user!.copyWith(
+        name: profileData['full_name'],
+        phone: profileData['phone'],
         vehicleType: profileData['vehicle_type'],
         vehicleMake: profileData['vehicle_make'],
         vehicleModel: profileData['vehicle_model'],
         vehiclePlate: profileData['vehicle_plate'],
         vehicleColor: profileData['vehicle_color'],
         licenseNumber: profileData['license_number'],
+        isOnboarded: true,
       );
+      
       await _storage.write(key: 'user', value: jsonEncode(_user!.toJson()));
       notifyListeners();
     }

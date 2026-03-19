@@ -3,6 +3,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import 'package:client/main.dart';
 import '../../shared/widgets/bottom_nav.dart';
+import '../../core/services/driver_api_service.dart';
+import '../../core/services/offline_service.dart';
+import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,6 +17,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final _api = DriverApiService.instance;
   late TextEditingController _nameCtrl;
   late TextEditingController _emailCtrl;
   late TextEditingController _phoneCtrl;
@@ -22,20 +28,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _vColorCtrl;
   late TextEditingController _licenseCtrl;
   bool _isSavingVehicle = false;
+  bool _isSavingProfile = false;
+
+  int _totalDeliveries = 0;
+  double _rating = 0.0;
+  bool _statsLoading = true;
+  bool _isInitialized = false;
+  String? _fleetName;
+  String? _fleetCode;
+  String? _memberSince;
+  bool _isOffline = false;
+  static const String _cacheKey = 'driver_profile_cache';
+  static const int _cacheTtlMs = 3600000; // 1 hour
 
   @override
   void initState() {
     super.initState();
-    final user = AuthScope.of(context).user;
-    _nameCtrl = TextEditingController(text: user?.name);
-    _emailCtrl = TextEditingController(text: user?.email);
-    _phoneCtrl = TextEditingController();
-    _vTypeCtrl = TextEditingController(text: user?.vehicleType);
-    _vMakeCtrl = TextEditingController(text: user?.vehicleMake);
-    _vModelCtrl = TextEditingController(text: user?.vehicleModel);
-    _vPlateCtrl = TextEditingController(text: user?.vehiclePlate);
-    _vColorCtrl = TextEditingController(text: user?.vehicleColor);
-    _licenseCtrl = TextEditingController(text: user?.licenseNumber);
+    _fetchLiveStats();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      final user = AuthScope.of(context).user;
+      _nameCtrl = TextEditingController(text: user?.name);
+      _emailCtrl = TextEditingController(text: user?.email);
+      _phoneCtrl = TextEditingController(text: user?.phone ?? '');
+      _vTypeCtrl = TextEditingController(text: user?.vehicleType);
+      _vMakeCtrl = TextEditingController(text: user?.vehicleMake);
+      _vModelCtrl = TextEditingController(text: user?.vehicleModel);
+      _vPlateCtrl = TextEditingController(text: user?.vehiclePlate);
+      _vColorCtrl = TextEditingController(text: user?.vehicleColor);
+      _licenseCtrl = TextEditingController(text: user?.licenseNumber);
+      _isInitialized = true;
+    }
+  }
+
+  Future<void> _fetchLiveStats() async {
+    // Try live data first
+    try {
+      final profile = await _api.getProfile();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode({
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'data': profile,
+      }));
+      
+      if (mounted) {
+        _applyProfileData(profile);
+        setState(() {
+          _statsLoading = false;
+          _isOffline = false;
+        });
+      }
+      return;
+    } catch (_) {}
+
+    // Fallback to cache
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw != null) {
+        final cached = jsonDecode(raw) as Map<String, dynamic>;
+        final ts = cached['ts'] as int;
+        if (DateTime.now().millisecondsSinceEpoch - ts < _cacheTtlMs) {
+          if (mounted) {
+            _applyProfileData(cached['data'] as Map<String, dynamic>);
+            setState(() {
+              _statsLoading = false;
+              _isOffline = true;
+            });
+          }
+          return;
+        }
+      }
+    } catch (_) {}
+
+    if (mounted) setState(() => _statsLoading = false);
+  }
+
+  void _applyProfileData(Map<String, dynamic> profile) {
+    _totalDeliveries = (profile['deliveries'] as num?)?.toInt() ?? 0;
+    _rating = (profile['rating'] as num?)?.toDouble() ?? 0.0;
+    _fleetName = profile['fleet_name'] as String?;
+    _fleetCode = profile['fleet_code'] as String?;
+    // Parse joined date
+    final raw = profile['joined_at'] as String?
+        ?? profile['created_at'] as String?;
+    if (raw != null) {
+      try {
+        final dt = DateTime.parse(raw);
+        _memberSince = '${_monthName(dt.month)} ${dt.year}';
+      } catch (_) {}
+    }
+  }
+
+  String _monthName(int m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[(m - 1).clamp(0, 11)];
   }
 
   @override
@@ -53,8 +144,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveVehicleInfo() async {
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (!mounted) return;
     setState(() => _isSavingVehicle = true);
     try {
+      if (!context.mounted) return;
       await AuthScope.of(context).updateDriverProfile({
         'vehicle_type': _vTypeCtrl.text.trim(),
         'vehicle_make': _vMakeCtrl.text.trim(),
@@ -74,6 +168,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     } finally {
       if (mounted) setState(() => _isSavingVehicle = false);
+    }
+  }
+
+  Future<void> _saveProfileInfo() async {
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (!mounted) return;
+    setState(() => _isSavingProfile = true);
+    try {
+      if (!context.mounted) return;
+      await AuthScope.of(context).updateDriverProfile({
+        'full_name': _nameCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingProfile = false);
     }
   }
 
@@ -114,9 +232,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _EditField(controller: _phoneCtrl, hint: 'Phone Number', icon: Icons.phone_outlined),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                // In a real app, you would call an update API here
-                Navigator.pop(ctx);
+              onPressed: _isSavingProfile ? null : () async {
+                setState(() => _isSavingProfile = true);
+                await _saveProfileInfo();
+                setState(() => _isSavingProfile = false);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -124,7 +244,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
-              child: const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+              child: _isSavingProfile
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ],
         ),
@@ -211,253 +333,322 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool hasVehicleInfo = user?.vehiclePlate != null && user!.vehiclePlate!.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.surface,
       bottomNavigationBar: const AppBottomNav(),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    border: const Border(bottom: BorderSide(color: AppColors.border)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        offset: const Offset(0, 4),
-                        blurRadius: 12,
-                      ),
+        child: Column(
+          children: [
+            if (_isOffline) OfflineService.offlineBanner(),
+            
+            // Header
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: const Border(bottom: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Profile', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.6, color: AppColors.textPrimary)),
+                      SizedBox(height: 2),
+                      Text('Account & preferences', style: TextStyle(fontSize: 13, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
                     ],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Profile', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.6, color: AppColors.textPrimary)),
-                          SizedBox(height: 2),
-                          Text('Account & preferences', style: TextStyle(fontSize: 13, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
-                        ],
-                      ),
-                      InkWell(
-                        onTap: () {
-                          _nameCtrl.text = name;
-                          _emailCtrl.text = email;
-                          _openEditSheet();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                          decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+                  InkWell(
+                    onTap: () {
+                      _nameCtrl.text = name;
+                      _emailCtrl.text = email;
+                      _openEditSheet();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
+                    ),
+                  )
+                ],
+              ),
+            ),
 
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Profile Card
-                      Container(
-                        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 60, height: 60,
-                                    decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [AppColors.primary, Color(0xFF34D399)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-                                    alignment: Alignment.center,
-                                    child: Text(initials, style: const TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Profile Card
+                  Container(
+                    decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 60, height: 60,
+                                decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [AppColors.primary, Color(0xFF34D399)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+                                alignment: Alignment.center,
+                                child: Text(initials, style: const TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary, letterSpacing: -0.5)),
+                                    const SizedBox(height: 6),
+                                    Row(
                                       children: [
-                                        Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary, letterSpacing: -0.5)),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.email_outlined, size: 15, color: AppColors.textMuted),
-                                            const SizedBox(width: 8),
-                                            Expanded(child: Text(email, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                          ]
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.phone_outlined, size: 15, color: AppColors.textMuted),
-                                            const SizedBox(width: 8),
-                                            const Expanded(child: Text('+1 (555) 123-4567', style: TextStyle(fontSize: 14, color: AppColors.textSecondary))),
-                                          ]
+                                        const Icon(Icons.email_outlined, size: 15, color: AppColors.textMuted),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(email, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                      ]
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.phone_outlined, size: 15, color: AppColors.textMuted),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            (user?.phone != null && user!.phone!.isNotEmpty)
+                                                ? user.phone!
+                                                : 'No phone number added',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: (user?.phone != null && user!.phone!.isNotEmpty)
+                                                  ? AppColors.textSecondary
+                                                  : AppColors.textHint,
+                                              fontStyle: (user?.phone != null && user!.phone!.isNotEmpty)
+                                                  ? FontStyle.normal
+                                                  : FontStyle.italic,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            Row(
-                              children: [
-                                Expanded(child: _ProfileStat(label: 'Deliveries', value: '248')),
-                                Container(width: 1, height: 40, color: AppColors.border),
-                                Expanded(child: _ProfileStat(label: 'This week', value: '42')),
-                                Container(width: 1, height: 40, color: AppColors.border),
-                                Expanded(child: _ProfileStat(label: 'Rating', value: '4.9', icon: Icons.star)),
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Fleet Info
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                        decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF064E3B), Color(0xFF065F46)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(16)),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('FLEET', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white54, letterSpacing: 0.5)),
-                                SizedBox(height: 4),
-                                Text('Acme Logistics', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
-                                SizedBox(height: 2),
-                                Text('Code: ACM-2026', style: TextStyle(fontSize: 12, color: Colors.white54)),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withValues(alpha: 0.2))),
-                              child: Row(
-                                children: [
-                                  Container(width: 7, height: 7, decoration: BoxDecoration(color: const Color(0xFF6EE7B7), shape: BoxShape.circle, boxShadow: [BoxShadow(color: const Color(0xFF6EE7B7).withValues(alpha: 0.4), spreadRadius: 2)])),
-                                  const SizedBox(width: 6),
-                                  const Text('Active', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Menus
-                      _SectionCard(
-                        label: 'Account',
-                        children: [
-                          _MenuItem(icon: Icons.notifications_none, label: 'Notifications', sub: 'Push, email, SMS', onTap: () => context.push('/notifications')),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      _SectionCard(
-                        label: 'Vehicle Information',
-                        children: [
-                          if (!hasVehicleInfo)
-                            Container(
-                              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFFBEB),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFFEF3C7)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.info_outline, size: 16, color: Color(0xFFD97706)),
-                                  const SizedBox(width: 10),
-                                  const Expanded(
-                                    child: Text(
-                                      'Complete your vehicle profile to help managers track assets efficiently.',
-                                      style: TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                if (hasVehicleInfo) ...[
-                                  _VehicleSummaryRow(icon: Icons.directions_car_outlined, label: 'Vehicle', value: '${user.vehicleMake} ${user.vehicleModel}'),
-                                  const SizedBox(height: 12),
-                                  _VehicleSummaryRow(icon: Icons.pin_outlined, label: 'Plate Number', value: user.vehiclePlate!),
-                                ] else
-                                  const Text(
-                                    'No vehicle information provided yet.',
-                                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
-                                  ),
-                                const SizedBox(height: 20),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton(
-                                    onPressed: _openVehicleEditSheet,
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      side: const BorderSide(color: AppColors.border),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                    child: Text(
-                                      hasVehicleInfo ? 'Edit Vehicle Details' : 'Add Vehicle Details',
-                                      style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      _SectionCard(
-                        label: 'Support',
-                        children: [
-                          _MenuItem(icon: Icons.help_outline, label: 'Help Centre', sub: 'FAQs and guides'),
-                          const Divider(height: 1, indent: 66),
-                          _MenuItem(icon: Icons.security, label: 'Privacy & Security', sub: 'Manage your data', onTap: () => context.push('/settings')),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      InkWell(
-                        onTap: () => AuthScope.of(context).logout(),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.power_settings_new, size: 16, color: AppColors.error),
-                              SizedBox(width: 8),
-                              Text('Sign out', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.error)),
+                              )
                             ],
                           ),
                         ),
+                        const Divider(height: 1),
+                        Row(
+                          children: [
+                            Expanded(child: _ProfileStat(label: 'Deliveries', value: _statsLoading ? '--' : '$_totalDeliveries')),
+                            Container(width: 1, height: 40, color: AppColors.border),
+                            Expanded(child: _ProfileStat(
+                              label: 'Member since',
+                              value: _statsLoading ? '--' : (_memberSince ?? 'Driver'),
+                            )),
+                            Container(width: 1, height: 40, color: AppColors.border),
+                            Expanded(child: _ProfileStat(label: 'Rating', value: _statsLoading ? '--' : (_rating > 0 ? _rating.toStringAsFixed(1) : '--'), icon: _rating > 0 ? Icons.star : null)),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Fleet Info
+                  if (_fleetName != null || !_statsLoading)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.85)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(height: 24),
-                      const Center(child: Text('VECTOR v1.0.0 · © 2026', style: TextStyle(fontSize: 12, color: AppColors.textHint))),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('FLEET', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white54, letterSpacing: 0.5)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _fleetName ?? 'No fleet assigned',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (_fleetCode != null) ...[
+                                  const SizedBox(height: 2),
+                                  Text('Code: $_fleetCode', style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (_fleetName != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 7, height: 7,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFA7F3D0),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: const Color(0xFFA7F3D0).withValues(alpha: 0.5), spreadRadius: 2)],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text('Enrolled', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Menus
+                  _SectionCard(
+                    label: 'Account',
+                    children: [
+                      _MenuItem(icon: Icons.notifications_none, label: 'Notifications', sub: 'Push, email, SMS', onTap: () => context.push('/notifications')),
                     ],
                   ),
-                )
-              ],
+                  const SizedBox(height: 16),
+
+                  _SectionCard(
+                    label: 'Vehicle Information',
+                    children: [
+                      if (!hasVehicleInfo)
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFEF3C7)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, size: 16, color: Color(0xFFD97706)),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Complete your vehicle profile to help managers track assets efficiently.',
+                                  style: TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            if (hasVehicleInfo) ...[
+                              _VehicleSummaryRow(icon: Icons.directions_car_outlined, label: 'Vehicle', value: '${user.vehicleMake} ${user.vehicleModel}'),
+                              const SizedBox(height: 12),
+                              _VehicleSummaryRow(icon: Icons.pin_outlined, label: 'Plate Number', value: user.vehiclePlate!),
+                            ] else
+                              const Text(
+                                'No vehicle information provided yet.',
+                                style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                              ),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: _openVehicleEditSheet,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  side: const BorderSide(color: AppColors.border),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: Text(
+                                  hasVehicleInfo ? 'Edit Vehicle Details' : 'Add Vehicle Details',
+                                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  _SectionCard(
+                    label: 'Support',
+                    children: [
+                      _MenuItem(
+                        icon: Icons.help_outline,
+                        label: 'Help Centre',
+                        sub: 'FAQs and guides',
+                        onTap: () async {
+                          final Uri emailUri = Uri(
+                            scheme: 'mailto',
+                            path: 'support@vectorapp.io',
+                            queryParameters: {
+                              'subject': 'Help Request – Vector Driver App',
+                            },
+                          );
+                          try {
+                            if (await canLaunchUrl(emailUri)) {
+                              await launchUrl(emailUri);
+                            } else {
+                              throw 'Could not launch $emailUri';
+                            }
+                          } catch (_) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Could not open mail app. Please email support@vectorapp.io')),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                      const Divider(height: 1, indent: 66),
+                      _MenuItem(icon: Icons.security, label: 'Privacy & Security', sub: 'Manage your data', onTap: () => context.push('/settings')),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  InkWell(
+                    onTap: () => AuthScope.of(context).logout(),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.power_settings_new, size: 16, color: AppColors.error),
+                          SizedBox(width: 8),
+                          Text('Sign out', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.error)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Center(child: Text('VECTOR v1.0.0 · © 2026', style: TextStyle(fontSize: 12, color: AppColors.textHint))),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

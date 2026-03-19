@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:client/core/theme/colors.dart';
 import 'package:client/main.dart';
 import 'package:client/core/services/driver_api_service.dart';
+import 'package:client/core/services/offline_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,7 +26,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'voiceGuidance': true,
   };
 
-  void _handleOtpAction(String action) {
+  void _handleOtpAction(String action) async {
+    // Block dangerous actions if offline
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (!mounted) return;
     // Show verification dialog immediately
     _showEmailVerificationDialog(action);
 

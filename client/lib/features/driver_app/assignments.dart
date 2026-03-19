@@ -7,6 +7,7 @@ import '../../core/theme/spacing.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/offline_service.dart';
 
 import '../../main.dart' show RouteProgressScope;
 
@@ -144,6 +145,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     BuildContext context,
     Map<String, dynamic> route,
   ) async {
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
     final routeId = route['id'] as String;
     setState(() => _startingRoutes.add(routeId));
 
@@ -391,7 +393,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           EmptyState(
             title: 'No completed routes',
             message: 'Routes you finish today will appear here.',
-            icon: Icons.check_circle_outline,
+            icon: Icons.inventory_2_outlined,
           ),
         ],
       );

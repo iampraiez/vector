@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/colors.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/offline_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -47,6 +50,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<_NotificationItem> _notifications = [];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isOffline = false;
+
+  static const _cacheKey = 'cache_notifications';
+  static const _cacheTtlMs = 10 * 60 * 1000; // 10 min
 
   @override
   void initState() {
@@ -59,30 +66,67 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _isOffline = false;
     });
+
+    // Try live data
     try {
       final data = await _api.getNotifications();
       final items = (data['data'] as List? ?? [])
           .cast<Map<String, dynamic>>()
           .map(_NotificationItem.fromJson)
           .toList();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode({
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'data': (data['data'] as List? ?? []).cast<Map<String, dynamic>>(),
+      }));
       if (mounted) {
         setState(() {
           _notifications = items;
           _isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = e.toString();
-        });
+      return;
+    } catch (_) {}
+
+    // Fallback to cache
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw != null) {
+        final cached = jsonDecode(raw) as Map<String, dynamic>;
+        final ts = cached['ts'] as int;
+        if (DateTime.now().millisecondsSinceEpoch - ts < _cacheTtlMs) {
+          final items = (cached['data'] as List)
+              .cast<Map<String, dynamic>>()
+              .map(_NotificationItem.fromJson)
+              .toList();
+          if (mounted) {
+            setState(() {
+              _notifications = items;
+              _isLoading = false;
+              _isOffline = true;
+            });
+          }
+          return;
+        }
       }
+    } catch (_) {}
+
+    // No cache — show error
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Unable to connect. Please check your internet connection.';
+      });
     }
   }
 
   Future<void> _markAllAsRead() async {
+    // Guard for offline
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (!mounted) return;
     // Optimistic UI update
     setState(() {
       for (final n in _notifications) {
@@ -92,7 +136,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       await _api.markAllNotificationsRead();
     } catch (_) {
-      // Silently fail — UI is already updated
+      // Silently fail — UI already updated
     }
   }
 
@@ -156,6 +200,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
             children: [
+              if (_isOffline) OfflineService.offlineBanner(),
               // Header
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),

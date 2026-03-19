@@ -432,16 +432,31 @@ export class AuthService {
       throw new NotFoundException('Driver not found');
     }
 
-    return this.prisma.driver.update({
-      where: { user_id: userId },
-      data: {
-        vehicle_type: dto.vehicle_type,
-        vehicle_make: dto.vehicle_make,
-        vehicle_model: dto.vehicle_model,
-        vehicle_plate: dto.vehicle_plate,
-        vehicle_color: dto.vehicle_color,
-        license_number: dto.license_number,
-      },
+    return this.prisma.$transaction(async (prisma) => {
+      // Update basic user info
+      const userUpdates: { full_name?: string; phone?: string } = {};
+      if (dto.full_name) userUpdates.full_name = dto.full_name;
+      if (dto.phone) userUpdates.phone = dto.phone;
+
+      if (Object.keys(userUpdates).length > 0) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: userUpdates,
+        });
+      }
+
+      // Update driver profile info
+      return prisma.driver.update({
+        where: { user_id: userId },
+        data: {
+          vehicle_type: dto.vehicle_type,
+          vehicle_make: dto.vehicle_make,
+          vehicle_model: dto.vehicle_model,
+          vehicle_plate: dto.vehicle_plate,
+          vehicle_color: dto.vehicle_color,
+          license_number: dto.license_number,
+        },
+      });
     });
   }
 

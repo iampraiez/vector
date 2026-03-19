@@ -646,9 +646,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(width: 1, height: 40, color: AppColors.border),
                 _FooterStat(
                   icon: Icons.circle,
-                  label: 'Status',
-                  value: s.status[0].toUpperCase() + s.status.substring(1),
-                  iconColor: s.status == 'active' ? AppColors.success : AppColors.textMuted,
+                  label: 'Duty Status',
+                  value: s.status == 'offline'
+                      ? 'Off Duty'
+                      : s.status[0].toUpperCase() + s.status.substring(1),
+                  iconColor: s.status == 'active'
+                      ? AppColors.success
+                      : AppColors.textMuted,
                 ),
               ],
             ),

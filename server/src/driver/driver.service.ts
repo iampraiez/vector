@@ -13,6 +13,7 @@ import {
   CompleteDeliveryDto,
   FailDeliveryDto,
   OnboardingDto,
+  ExportHistoryDto,
 } from './dto/driver.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
@@ -30,7 +31,7 @@ export class DriverService {
   private async getDriverOrThrow(userId: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { user_id: userId },
-      include: { user: true },
+      include: { user: true, company: true },
     });
     if (!driver) throw new NotFoundException('Driver profile not found.');
     return driver;
@@ -301,9 +302,15 @@ export class DriverService {
       avatar_url: driver.user.avatar_url,
       vehicle_type: driver.vehicle_type,
       vehicle_plate: driver.vehicle_plate,
+      vehicle_make: driver.vehicle_make,
+      vehicle_model: driver.vehicle_model,
+      vehicle_color: driver.vehicle_color,
+      license_number: driver.license_number,
       rating: driver.avg_rating,
       deliveries: driver.total_deliveries,
       joined_at: driver.created_at,
+      fleet_name: driver.company.name,
+      fleet_code: driver.company.company_code,
     };
   }
 
@@ -506,5 +513,22 @@ export class DriverService {
 
       return { message: 'Account scheduled for deletion in 10 days' };
     }
+  }
+
+  async exportHistory(userId: string, dto: ExportHistoryDto) {
+    const driver = await this.getDriverOrThrow(userId);
+    await this.accountQueue.add('exportHistory', {
+      userId,
+      driverId: driver.id,
+      email: driver.user.email,
+      range: dto.range,
+      startDate: dto.startDate,
+      endDate: dto.endDate,
+    });
+
+    return {
+      message:
+        'Your history report is being generated and will be emailed to you shortly.',
+    };
   }
 }

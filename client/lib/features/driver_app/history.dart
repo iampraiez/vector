@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/colors.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/offline_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -33,6 +36,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isOffline = false;
+
+  static const _cacheKey = 'cache_history';
+  static const _cacheTtlMs = 30 * 60 * 1000; // 30 min
 
   @override
   void initState() {
@@ -45,53 +52,89 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _isOffline = false;
     });
+
+    // Try live data first
     try {
       final data = await _api.getHistory(limit: 50);
-      final routes = (data['data'] as List? ?? [])
-          .cast<Map<String, dynamic>>()
-          .map((r) {
-        final stops = (r['stops'] as List? ?? []);
-        final completedStops =
-            stops.where((s) => (s as Map)['status'] == 'completed').length;
-        return {
-          'id': r['id'] ?? '',
-          'name': r['name'] ?? 'Route',
-          'date': _formatDate(r['date'] as String? ?? r['completed_at'] as String? ?? ''),
-          'stops': stops.length,
-          'completed': completedStops,
-          'duration': '--',
-          'distance': r['total_distance_km'] != null
-              ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
-              : '--',
-          'earnings': '--',
-          'rating': 0.0,
-          'timeline': stops.take(3).map((s) {
-            final sm = s as Map<String, dynamic>;
-            return {
-              'address': sm['address'] ?? '',
-              'time': '--',
-              'customer': sm['customer_name'] ?? '',
-              'status': sm['status'] ?? 'delivered',
-            };
-          }).toList(),
-        };
-      }).toList();
-
+      final routes = _parseRoutes(data);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode({
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'data': routes,
+      }));
       if (mounted) {
         setState(() {
           _completedRoutes = routes;
           _isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = e.toString();
-        });
+      return;
+    } catch (_) {}
+
+    // Fallback to cache
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw != null) {
+        final cached = jsonDecode(raw) as Map<String, dynamic>;
+        final ts = cached['ts'] as int;
+        if (DateTime.now().millisecondsSinceEpoch - ts < _cacheTtlMs) {
+          final routes = (cached['data'] as List)
+              .cast<Map<String, dynamic>>()
+              .toList();
+          if (mounted) {
+            setState(() {
+              _completedRoutes = routes;
+              _isLoading = false;
+              _isOffline = true;
+            });
+          }
+          return;
+        }
       }
+    } catch (_) {}
+
+    // No cache available — show error
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Unable to connect. Please check your internet connection.';
+      });
     }
+  }
+
+  List<Map<String, dynamic>> _parseRoutes(Map<String, dynamic> data) {
+    return (data['data'] as List? ?? [])
+        .cast<Map<String, dynamic>>()
+        .map((r) {
+      final stops = (r['stops'] as List? ?? []);
+      final completedStops =
+          stops.where((s) => (s as Map)['status'] == 'completed').length;
+      return {
+        'id': r['id'] ?? '',
+        'name': r['name'] ?? 'Route',
+        'date': _formatDate(r['date'] as String? ?? r['completed_at'] as String? ?? ''),
+        'stops': stops.length,
+        'completed': completedStops,
+        'duration': '--',
+        'distance': r['total_distance_km'] != null
+            ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
+            : '--',
+        'earnings': '--',
+        'rating': 0.0,
+        'timeline': stops.take(3).map((s) {
+          final sm = s as Map<String, dynamic>;
+          return {
+            'address': sm['address'] ?? '',
+            'time': '--',
+            'customer': sm['customer_name'] ?? '',
+            'status': sm['status'] ?? 'delivered',
+          };
+        }).toList(),
+      };
+    }).toList();
   }
 
   String _formatDate(String raw) {
@@ -175,6 +218,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
             children: [
+              if (_isOffline) OfflineService.offlineBanner(),
               // Header
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -354,53 +398,77 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          SizedBox(
-                            height: 80,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: _weekBarData.asMap().entries.map((e) {
-                                int i = e.key;
-                                int val = e.value;
-                                return Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Expanded(
-                                        child: Align(
-                                          alignment: Alignment.bottomCenter,
-                                          child: Container(
-                                            width: double.infinity,
-                                            margin: const EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                            ),
-                                            height:
-                                                (val / maxBar) *
-                                                70, // proportional height
-                                            decoration: BoxDecoration(
-                                              color: i == 6
-                                                  ? AppColors.primary
-                                                  : AppColors.primaryLight,
-                                              borderRadius:
-                                                  const BorderRadius.vertical(
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                height: 80,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: _weekBarData.asMap().entries.map((e) {
+                                    int i = e.key;
+                                    int val = e.value;
+                                    return Expanded(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          Expanded(
+                                            child: Align(
+                                              alignment: Alignment.bottomCenter,
+                                              child: Container(
+                                                width: double.infinity,
+                                                margin: const EdgeInsets.symmetric(
+                                                  horizontal: 4,
+                                                ),
+                                                height: (val / maxBar) * 70, // proportional height
+                                                decoration: BoxDecoration(
+                                                  color: i == 6
+                                                      ? AppColors.primary
+                                                      : AppColors.primaryLight,
+                                                  borderRadius: const BorderRadius.vertical(
                                                     top: Radius.circular(4),
                                                   ),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _weekLabels[i],
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: AppColors.textMuted,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _weekLabels[i],
-                                        style: const TextStyle(
-                                          fontSize: 10,
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              if (_weekBarData.every((v) => v == 0))
+                                Positioned.fill(
+                                  bottom: 20,
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.white.withValues(alpha: 0.8),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+                                      ),
+                                      child: const Text(
+                                        'No activity this week',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
                                           color: AppColors.textMuted,
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                );
-                              }).toList(),
-                            ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -972,11 +1040,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _handleExport(BuildContext context, String range) async {
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (!context.mounted) return;
     context.pop();
 
-    String dateStr = '';
+    DateTimeRange? picked;
     if (range == 'custom') {
-      final DateTimeRange? picked = await showDateRangePicker(
+      picked = await showDateRangePicker(
         context: context,
         firstDate: DateTime(2020),
         lastDate: DateTime.now(),
@@ -994,24 +1064,43 @@ class _HistoryScreenState extends State<HistoryScreen> {
         },
       );
       if (picked == null) return;
-      dateStr = ' for ${picked.start.toString().split(' ')[0]} to ${picked.end.toString().split(' ')[0]}';
-    } else if (range == 'week') {
-      dateStr = ' for this week';
-    } else if (range == 'month') {
-      dateStr = ' for this month';
     }
 
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Export report$dateStr will be sent to your email'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+    try {
+      final res = await _api.exportHistory(
+        range: range,
+        startDate: picked?.start.toIso8601String(),
+        endDate: picked?.end.toIso8601String(),
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message'] ?? 'Export report shared!'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
   }
 }
 

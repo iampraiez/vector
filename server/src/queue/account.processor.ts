@@ -83,6 +83,100 @@ export class AccountProcessor {
     }
   }
 
+  @Process('exportHistory')
+  async handleExportHistory(
+    job: Job<{
+      userId: string;
+      driverId: string;
+      email: string;
+      range: string;
+      startDate?: string;
+      endDate?: string;
+    }>,
+  ) {
+    const { userId, email, range, startDate, endDate } = job.data;
+    this.logger.log(
+      `Generating history export for user ${userId}, range: ${range}`,
+    );
+
+    try {
+      let start: Date;
+      const end = endDate ? new Date(endDate) : new Date();
+
+      if (range === 'week') {
+        start = new Date();
+        start.setDate(start.getDate() - 7);
+      } else if (range === 'month') {
+        start = new Date();
+        start.setMonth(start.getMonth() - 1);
+      } else if (startDate) {
+        start = new Date(startDate);
+      } else {
+        start = new Date(0); // All time
+      }
+
+      const routes = await this.prisma.route.findMany({
+        where: {
+          driver_id: job.data.driverId,
+          status: 'completed',
+          completed_at: {
+            gte: start,
+            lte: end,
+          },
+        },
+        include: { stops: true },
+        orderBy: { completed_at: 'desc' },
+      });
+
+      if (routes.length === 0) {
+        await this.mailService.sendMail(
+          email,
+          'Vector History Export',
+          this.generateBaseTemplate(
+            `
+            <h2 style="color: #0f172a;">History Export</h2>
+            <p>You requested a history export for <b>${range}</b>, but we couldn't find any completed routes in that period.</p>
+          `,
+            'History Export',
+          ),
+          'No history found for the requested period.',
+        );
+        return;
+      }
+
+      // Generate simple CSV
+      let csv = 'Date,Route Name,Stops,Distance (km),Completed At\n';
+      routes.forEach((r) => {
+        csv += `${r.date},"${r.name.replace(/"/g, '""')}",${r.stops.length},${r.total_distance_km || 0},${r.completed_at?.toISOString() || ''}\n`;
+      });
+
+      const content = `
+        <h2 style="color: #0f172a;">History Export</h2>
+        <p>Your delivery history report for <b>${range}</b> is ready. We found ${routes.length} completed routes.</p>
+        <p>Please find the attached CSV file for full details.</p>
+      `;
+
+      await this.mailService.sendMail(
+        email,
+        'Vector History Export',
+        this.generateBaseTemplate(content, 'History Export'),
+        `Your history report for ${range} is attached.`,
+        [
+          {
+            content: csv,
+            filename: `vector_history_${range}_${new Date().toISOString().split('T')[0]}.csv`,
+            type: 'text/csv',
+          },
+        ],
+      );
+
+      this.logger.log(`History export sent to ${email}`);
+    } catch (err) {
+      this.logger.error(`Failed to export history for ${email}: ${err}`);
+      throw err;
+    }
+  }
+
   @Process('deleteAccount')
   async handleDeleteAccount(job: Job<{ userId: string }>) {
     const { userId } = job.data;

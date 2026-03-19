@@ -50,3 +50,16 @@ export class OnboardingDto {
   @IsString()
   vehicle_plate!: string;
 }
+
+export class ExportHistoryDto {
+  @IsString()
+  range!: string;
+
+  @IsString()
+  @IsOptional()
+  startDate?: string;
+
+  @IsString()
+  @IsOptional()
+  endDate?: string;
+}

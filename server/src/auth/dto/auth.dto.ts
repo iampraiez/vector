@@ -129,38 +129,51 @@ export class RefreshTokenDto {
 
 export class UpdateDriverProfileDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(2)
-  @MaxLength(30)
-  vehicle_type!: string;
+  @MaxLength(50)
+  full_name?: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MinLength(2)
-  @MaxLength(30)
-  vehicle_make!: string;
+  @IsOptional()
+  @Matches(/^\+\d{1,3}\d{10}$/, {
+    message: 'Phone number must be in format +2349166072665',
+  })
+  phone?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
+  @MinLength(2)
+  @MaxLength(30)
+  vehicle_type?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(2)
+  @MaxLength(30)
+  vehicle_make?: string;
+
+  @IsString()
+  @IsOptional()
   @MinLength(1)
   @MaxLength(30)
-  vehicle_model!: string;
+  vehicle_model?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(2)
   @MaxLength(15)
-  vehicle_plate!: string;
+  vehicle_plate?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(3)
   @MaxLength(20)
-  vehicle_color!: string;
+  vehicle_color?: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(5)
   @MaxLength(30)
-  license_number!: string;
+  license_number?: string;
 }

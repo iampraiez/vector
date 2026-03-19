@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme/colors.dart';
 import '../../core/providers/route_progress_provider.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/offline_service.dart';
 import '../../main.dart' show RouteProgressScope;
 
 class ProofDeliveryScreen extends StatefulWidget {
@@ -28,6 +29,12 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
 
   Future<void> _handleSubmit() async {
     if (!_photo || !_qrScanned) return;
+
+    // Guard offline writes
+    if (!context.mounted) return;
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (!mounted) return;
+
     setState(() => _submitting = true);
 
     final progress = RouteProgressScope.of(context);

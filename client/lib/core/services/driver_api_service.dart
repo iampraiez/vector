@@ -130,6 +130,22 @@ class DriverApiService {
     }
   }
 
+  Future<Map<String, dynamic>> exportHistory({
+    required String range,
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/driver/history/export',
+        data: {'range': range, 'startDate': ?startDate, 'endDate': ?endDate},
+      );
+      return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── Profile ───────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getProfile() async {

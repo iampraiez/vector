@@ -1,9 +1,10 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Query, Body } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { ExportHistoryDto } from './dto/driver.dto';
 
 @Controller('driver/history')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -18,5 +19,13 @@ export class HistoryController {
     @Query('limit') limit: string,
   ) {
     return this.driverService.getHistory(userId, page, limit);
+  }
+
+  @Post('export')
+  exportHistory(
+    @CurrentUser('id') userId: string,
+    @Body() dto: ExportHistoryDto,
+  ) {
+    return this.driverService.exportHistory(userId, dto);
   }
 }
