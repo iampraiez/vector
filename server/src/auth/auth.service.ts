@@ -152,7 +152,9 @@ export class AuthService {
         role: user.role,
         company_id: user.company_id,
         email_verified: user.email_verified,
-        is_onboarded: user.driver_profile?.vehicle_plate != null,
+        is_onboarded: Boolean(
+          (user as unknown as { is_onboarded: boolean }).is_onboarded,
+        ),
         full_name: user.full_name,
       },
       dto.device_id,
@@ -280,7 +282,9 @@ export class AuthService {
       role: user.role,
       company_id: user.company_id,
       email_verified: true,
-      is_onboarded: user.driver_profile?.vehicle_plate != null,
+      is_onboarded: Boolean(
+        (user as unknown as { is_onboarded: boolean }).is_onboarded,
+      ),
       full_name: user.full_name,
     });
 
@@ -347,7 +351,9 @@ export class AuthService {
           role: user.role,
           company_id: user.company_id,
           email_verified: user.email_verified,
-          is_onboarded: user.driver_profile?.vehicle_plate != null,
+          is_onboarded: Boolean(
+            (user as unknown as { is_onboarded: boolean }).is_onboarded,
+          ),
           full_name: user.full_name,
         },
         deviceId,
@@ -436,6 +442,13 @@ export class AuthService {
         vehicle_color: dto.vehicle_color,
         license_number: dto.license_number,
       },
+    });
+  }
+
+  async completeOnboarding(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { is_onboarded: true },
     });
   }
 }

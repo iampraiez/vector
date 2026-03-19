@@ -70,4 +70,31 @@ export class SettingsController {
   ) {
     return this.dashboardService.revokeApiKey(companyId, keyId);
   }
+
+  @Post('otp/request')
+  requestOtp(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('company_id') companyId: string,
+    @Body() dto: { action: string },
+  ) {
+    return this.dashboardService.requestSettingsOtp(
+      userId,
+      companyId,
+      dto.action,
+    );
+  }
+
+  @Post('otp/verify')
+  verifyOtp(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('company_id') companyId: string,
+    @Body() dto: { action: string; otp: string },
+  ) {
+    return this.dashboardService.verifySettingsOtp(
+      userId,
+      companyId,
+      dto.action,
+      dto.otp,
+    );
+  }
 }

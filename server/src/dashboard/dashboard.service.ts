@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Prisma, DriverStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -25,13 +26,16 @@ import * as bcrypt from 'bcrypt';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { generateReportCsv } from './utils/report.util';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly mailService: MailService,
     @InjectQueue('email') private readonly emailQueue: Queue,
+    @InjectQueue('account') private readonly accountQueue: Queue,
   ) {}
 
   async queueReportEmail(
@@ -213,7 +217,10 @@ export class DashboardService {
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.DriverWhereInput = { company_id: companyId };
+    const where: Prisma.DriverWhereInput = {
+      company_id: companyId,
+      user: { is_active: true },
+    };
     if (query.status && query.status !== 'all') {
       where.status = query.status as Prisma.EnumDriverStatusFilter;
     }
@@ -408,7 +415,11 @@ export class DashboardService {
 
   async getLiveTracking(companyId: string) {
     const drivers = await this.prisma.driver.findMany({
-      where: { company_id: companyId, status: { in: ['active', 'idle'] } },
+      where: {
+        company_id: companyId,
+        status: { in: ['active', 'idle'] },
+        user: { is_active: true },
+      },
       select: {
         id: true,
         user: { select: { full_name: true } },
@@ -852,5 +863,91 @@ export class DashboardService {
     await this.prisma.notification.delete({
       where: { id: notificationId, user_id: userId },
     });
+  }
+
+  async requestSettingsOtp(userId: string, companyId: string, action: string) {
+    if (!['deactivate_workspace', 'clear_workspace_data'].includes(action)) {
+      throw new BadRequestException('Invalid action');
+    }
+
+    const admin = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!admin) throw new NotFoundException('Admin not found');
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redisKey = `otp:admin:${userId}:${action}`;
+
+    await this.redis.set(redisKey, otp, 300);
+
+    const email = admin.email;
+    const content = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Workspace Verification Code</h2>
+        <p>You requested to ${action.replace(/_/g, ' ')}. Please use this code to confirm your request.</p>
+        <h1 style="background: #fef2f2; padding: 20px; text-align: center; color: #991b1b; letter-spacing: 5px;">${otp}</h1>
+        <p>This code expires in 5 minutes.</p>
+      </div>
+    `;
+
+    await this.mailService.sendMail(
+      email,
+      'Vector Workspace Settings Verification',
+      content,
+      `Your code is ${otp}`,
+    );
+
+    return { message: 'OTP sent' };
+  }
+
+  async verifySettingsOtp(
+    userId: string,
+    companyId: string,
+    action: string,
+    otp: string,
+  ) {
+    const admin = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!admin) throw new NotFoundException('Admin not found');
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    const redisKey = `otp:admin:${userId}:${action}`;
+    const storedOtp = await this.redis.get(redisKey);
+    if (!storedOtp || storedOtp !== otp) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    await this.redis.del(redisKey);
+
+    if (action === 'clear_workspace_data') {
+      await this.accountQueue.add('clearDataReport', {
+        companyId,
+        email: company?.contact_email || admin.email,
+        targetRole: 'workspace',
+        targetId: companyId,
+      });
+      return {
+        message:
+          'Workspace data clearance scheduled. A full report will be emailed to you.',
+      };
+    }
+
+    if (action === 'deactivate_workspace') {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { email_verified: false },
+      });
+
+      const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+      await this.accountQueue.add(
+        'deleteAccount',
+        { userId },
+        { delay: tenDaysMs },
+      );
+
+      return {
+        message: 'Workspace scheduled for permanent deletion in 10 days',
+      };
+    }
   }
 }

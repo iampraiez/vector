@@ -170,6 +170,14 @@ paths:
         "204":
           description: ""
       tags: *a1
+  /auth/complete-onboarding:
+    post:
+      operationId: AuthController_completeOnboarding
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
   /dashboard/metrics:
     get:
       operationId: OverviewController_getMetrics
@@ -1300,6 +1308,8 @@ components:
           type: string
         driver_id:
           type: string
+        status:
+          type: object
       required:
         - customer_name
         - address

@@ -11,6 +11,12 @@ class UserModel {
   final String? companyId;
   final bool emailVerified;
   final bool isOnboarded;
+  final String? vehicleType;
+  final String? vehicleMake;
+  final String? vehicleModel;
+  final String? vehiclePlate;
+  final String? vehicleColor;
+  final String? licenseNumber;
 
   UserModel({
     required this.id,
@@ -20,9 +26,16 @@ class UserModel {
     this.companyId,
     required this.emailVerified,
     required this.isOnboarded,
+    this.vehicleType,
+    this.vehicleMake,
+    this.vehicleModel,
+    this.vehiclePlate,
+    this.vehicleColor,
+    this.licenseNumber,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final profile = json['driver_profile'] ?? {};
     return UserModel(
       id: json['id'] ?? json['sub'] ?? '',
       email: json['email'] ?? '',
@@ -30,7 +43,13 @@ class UserModel {
       role: json['role'] ?? 'driver',
       companyId: json['company_id'],
       emailVerified: json['email_verified'] ?? false,
-      isOnboarded: json['is_onboarded'] ?? (json['driver_profile']?['vehicle_plate'] != null),
+      isOnboarded: json['is_onboarded'] ?? false,
+      vehicleType: profile['vehicle_type'],
+      vehicleMake: profile['vehicle_make'],
+      vehicleModel: profile['vehicle_model'],
+      vehiclePlate: profile['vehicle_plate'],
+      vehicleColor: profile['vehicle_color'],
+      licenseNumber: profile['license_number'],
     );
   }
 
@@ -42,6 +61,12 @@ class UserModel {
     'company_id': companyId,
     'email_verified': emailVerified,
     'is_onboarded': isOnboarded,
+    'vehicle_type': vehicleType,
+    'vehicle_make': vehicleMake,
+    'vehicle_model': vehicleModel,
+    'vehicle_plate': vehiclePlate,
+    'vehicle_color': vehicleColor,
+    'license_number': licenseNumber,
   };
 }
 
@@ -114,6 +139,38 @@ class AuthProvider extends ChangeNotifier {
     await _authService.resendVerification(email);
   }
 
+  Future<void> completeOnboarding() async {
+    if (_user == null || _accessToken == null) return;
+    try {
+      // Call backend to persist the onboarding state permanently
+      await _authService.completeOnboarding(_accessToken!);
+
+      // Update local state and persist to secure storage
+      _user = UserModel(
+        id: _user!.id,
+        email: _user!.email,
+        name: _user!.name,
+        role: _user!.role,
+        companyId: _user!.companyId,
+        emailVerified: _user!.emailVerified,
+        isOnboarded: true,
+        vehicleType: _user!.vehicleType,
+        vehicleMake: _user!.vehicleMake,
+        vehicleModel: _user!.vehicleModel,
+        vehiclePlate: _user!.vehiclePlate,
+        vehicleColor: _user!.vehicleColor,
+        licenseNumber: _user!.licenseNumber,
+      );
+      await _storage.write(key: 'user', value: jsonEncode(_user!.toJson()));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error completing onboarding: $e');
+      // If backend fails, we might reconsider whether we update local state
+      // but typically we should let the user through or show an error.
+      // For now, let's keep it robust and only update on success.
+    }
+  }
+
   Future<void> updateDriverProfile(Map<String, dynamic> profileData) async {
     if (_accessToken == null) return;
     await _authService.updateDriverProfile(_accessToken!, profileData);
@@ -128,6 +185,12 @@ class AuthProvider extends ChangeNotifier {
         companyId: _user!.companyId,
         emailVerified: _user!.emailVerified,
         isOnboarded: true,
+        vehicleType: profileData['vehicle_type'],
+        vehicleMake: profileData['vehicle_make'],
+        vehicleModel: profileData['vehicle_model'],
+        vehiclePlate: profileData['vehicle_plate'],
+        vehicleColor: profileData['vehicle_color'],
+        licenseNumber: profileData['license_number'],
       );
       await _storage.write(key: 'user', value: jsonEncode(_user!.toJson()));
       notifyListeners();

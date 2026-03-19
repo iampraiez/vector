@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:client/core/theme/colors.dart';
 import 'package:client/main.dart';
+import 'package:client/core/services/driver_api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,6 +25,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'voiceGuidance': true,
   };
 
+  Future<void> _handleOtpAction(String action) async {
+    showDialog(
+      context: context, 
+      barrierDismissible: false, 
+      builder: (_) => const Center(child: CircularProgressIndicator())
+    );
+    try {
+      await DriverApiService.instance.requestSettingsOtp(action);
+      if (mounted) {
+        Navigator.pop(context); // close loading
+        _showEmailVerificationDialog(action);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // close loading
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
   void _showClearDataConfirmation() {
     showDialog(
       context: context,
@@ -40,9 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Data cleared and report sent.')),
-              );
+              _handleOtpAction('clear_data');
             },
             child: const Text('Clear Data', style: TextStyle(color: AppColors.error)),
           ),
@@ -68,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx1);
-              _showEmailVerificationDialog();
+              _handleOtpAction('delete_account');
             },
             child: const Text('Proceed', style: TextStyle(color: AppColors.error)),
           ),
@@ -77,57 +96,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showEmailVerificationDialog() {
+  void _showEmailVerificationDialog(String action) {
     final codeController = TextEditingController();
+    bool isVerifying = false;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx2) => AlertDialog(
-        title: const Text('Verify Identity'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('A 6-digit code has been sent to your email. Enter it below to confirm deletion.'),
-            const SizedBox(height: 20),
-            TextField(
-              controller: codeController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
-              decoration: InputDecoration(
-                counterText: '',
-                filled: true,
-                fillColor: const Color(0xFFF9FAFB),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
-                ),
-                hintText: '000000',
+      builder: (ctx2) {
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return AlertDialog(
+              title: const Text('Verify Identity'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('A 6-digit code has been sent to your email. Enter it below to confirm ${action == 'delete_account' ? 'deletion' : 'data clearance'}.'),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: codeController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    enabled: !isVerifying,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.15)),
+                      ),
+                      hintText: '000000',
+                    ),
+                  ),
+                  if (isVerifying) const Padding(
+                    padding: EdgeInsets.only(top: 16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx2),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (codeController.text.length == 6) {
-                Navigator.pop(ctx2);
-                _showFinalDeletionNotice();
-              }
-            },
-            child: const Text('Verify'),
-          ),
-        ],
-      ),
+              actions: [
+                if (!isVerifying)
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx2),
+                    child: const Text('Cancel'),
+                  ),
+                TextButton(
+                  onPressed: isVerifying ? null : () async {
+                    if (codeController.text.length == 6) {
+                      setStateModal(() => isVerifying = true);
+                      try {
+                        await DriverApiService.instance.verifySettingsOtp(action, codeController.text);
+                        if (ctx2.mounted && Navigator.of(ctx2).canPop()) {
+                          Navigator.pop(ctx2);
+                        }
+                        
+                        if (action == 'delete_account') {
+                          if (mounted) {
+                            _showFinalDeletionNotice();
+                          }
+                        } else {
+                          if (context.mounted) {
+                            AuthScope.of(context).logout();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Data cleared successfully.'))
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        setStateModal(() => isVerifying = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(e.toString())));
+                        }
+                      }
+                    }
+                  },
+                  child: const Text('Verify'),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
   }
 
@@ -138,13 +194,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx3) => AlertDialog(
         title: const Text('Account Scheduled for Deletion'),
         content: const Text(
-          'Your account is now scheduled for deletion in 7 days. You will be logged out now.\n\nNote: If you sign back in within the next 7 days, you will need to re-verify your email to cancel the deletion process.',
+          'Your account is now scheduled for deletion in 10 days. You will be logged out now.\n\nNote: If you sign back in within the next 10 days, you will need to re-verify your email to cancel the deletion process.',
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(ctx3);
-              context.go('/driver');
+              AuthScope.of(context).logout();
             },
             child: const Text('Logout'),
           ),

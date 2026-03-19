@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { LastActiveInterceptor } from './common/interceptors/last-active.interceptor';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -54,6 +55,10 @@ import { NotificationsModule } from './notifications/notifications.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LastActiveInterceptor,
     },
     {
       provide: APP_PIPE,

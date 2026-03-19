@@ -163,7 +163,10 @@ export function DashboardOverview() {
         </div>
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div
+          id="tour-metrics-grid"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+        >
           {metricsData.map((m) => {
             const Icon = m.icon;
             return (
@@ -199,7 +202,10 @@ export function DashboardOverview() {
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Active Drivers */}
-          <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+          <div
+            id="tour-active-drivers"
+            className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden"
+          >
             <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
               <div>
                 <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 tracking-tight">
@@ -274,7 +280,10 @@ export function DashboardOverview() {
           </div>
 
           {/* Recent Orders */}
-          <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+          <div
+            id="tour-recent-orders"
+            className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden"
+          >
             <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
               <div>
                 <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 tracking-tight">

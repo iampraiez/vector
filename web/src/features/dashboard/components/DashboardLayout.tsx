@@ -27,6 +27,7 @@ import {
   SidebarInset,
   useSidebar,
 } from "../../../components/ui/sidebar";
+import { OnboardingTour } from "../../../components/ui/OnboardingTour";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -176,6 +177,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
+      <OnboardingTour />
       <DashboardSidebar />
 
       {/* ── Main content area ── */}

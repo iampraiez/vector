@@ -117,6 +117,18 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> completeOnboarding(String accessToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/complete-onboarding',
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   String _handleError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {

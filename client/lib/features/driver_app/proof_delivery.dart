@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme/colors.dart';
 import '../../core/providers/route_progress_provider.dart';
+import '../../core/services/driver_api_service.dart';
 import '../../main.dart' show RouteProgressScope;
 
 class ProofDeliveryScreen extends StatefulWidget {
@@ -16,8 +17,12 @@ class ProofDeliveryScreen extends StatefulWidget {
 }
 
 class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
+  final _api = DriverApiService.instance;
+
   bool _photo = false;
   bool _qrScanned = false;
+  String? _capturedPhotoPath;
+  String? _scannedQrCode;
   final TextEditingController _notesController = TextEditingController();
   bool _submitting = false;
 
@@ -26,22 +31,49 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
     setState(() => _submitting = true);
 
     final progress = RouteProgressScope.of(context);
+    final stop = progress.currentStop;
 
-    // Small delay to mimic upload (swap with real API call in production)
-    await Future.delayed(const Duration(milliseconds: 1200));
-    if (!mounted) return;
+    if (stop == null) {
+      setState(() => _submitting = false);
+      return;
+    }
 
-    // Mark current stop as complete, advance index
+    try {
+      // Call real API to record the delivery
+      await _api.completeDelivery(
+        stop.id,
+        photoUrl: _capturedPhotoPath,
+        qrCode: _scannedQrCode,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      setState(() => _submitting = false);
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    // Mark current stop complete in local provider and advance index
     final routeComplete = progress.completeCurrentStop(
-      photoPath: 'mock_photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      qrCode: 'MOCK-QR-SCANNED',
+      photoPath: _capturedPhotoPath,
+      qrCode: _scannedQrCode ?? '',
       deliveryNotes: _notesController.text,
     );
 
-    if (!mounted) return;
-
     if (routeComplete) {
-      // ── ALL STOPS DONE: celebrate + go to assignments ─────────────────
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -57,7 +89,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
       );
       context.go('/assignments');
     } else {
-      // ── MORE STOPS: pop back to navigation for next stop ──────────────
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -71,8 +103,10 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-      context.pop(); // Pop PoD → back to NavigationScreen (which auto-updates from provider)
+      context.pop();
     }
+
+    if (mounted) setState(() => _submitting = false);
   }
 
   @override

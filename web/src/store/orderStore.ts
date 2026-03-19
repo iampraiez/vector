@@ -6,6 +6,7 @@ export interface Order {
   id: string;
   external_id: string | null;
   customer_name: string;
+  customer_email?: string;
   customer_phone?: string;
   address: string;
   city?: string;

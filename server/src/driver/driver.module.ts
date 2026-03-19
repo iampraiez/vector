@@ -11,8 +11,11 @@ import { ProfileController } from './profile.controller';
 import { SettingsController } from './settings.controller';
 import { DriverNotificationsController } from './notifications.controller';
 import { OnboardingController } from './onboarding.controller';
+import { MailModule } from '../mail/mail.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
+  imports: [MailModule, BullModule.registerQueue({ name: 'account' })],
   controllers: [
     HomeController,
     StatusController,

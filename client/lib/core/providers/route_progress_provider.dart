@@ -12,6 +12,7 @@ class StopModel {
   final String? notes;
   bool isCompleted;
   String? photoPath;
+  String? photoUrl;
   String? qrCode;
 
   StopModel({
@@ -25,8 +26,23 @@ class StopModel {
     this.notes,
     this.isCompleted = false,
     this.photoPath,
+    this.photoUrl,
     this.qrCode,
   });
+
+  /// Build a [StopModel] from a server stop response object.
+  factory StopModel.fromJson(Map<String, dynamic> json) {
+    return StopModel(
+      id: json['id'] as String? ?? '',
+      customerName: json['customer_name'] as String? ?? 'Customer',
+      address: json['address'] as String? ?? '',
+      phone: json['customer_phone'] as String? ?? '',
+      eta: json['eta'] as String? ?? '--',
+      distance: json['distance'] as String? ?? '--',
+      packages: (json['packages'] as num?)?.toInt() ?? 1,
+      notes: json['notes'] as String?,
+    );
+  }
 }
 
 /// Shared state that tracks the active route progress throughout the
@@ -36,60 +52,10 @@ class StopModel {
 ///   - NavigationScreen  (reads currentStop, stopList)
 ///   - ProofDeliveryScreen (calls completeCurrentStop())
 ///
-/// API swap: replace [_defaultStops] with a real fetch from MockRouteService.
+/// Populated by:
+///   - AssignmentsScreen via [loadStops] after fetching the route from the API.
 class RouteProgressProvider extends ChangeNotifier {
-  // ── Mock route data (replace with API payload) ──────────────────────────
-  final List<StopModel> _stops = [
-    StopModel(
-      id: 'STOP-001',
-      customerName: 'Jane Smith',
-      address: '456 Market Street, Downtown',
-      phone: '+1 (555) 234-5678',
-      eta: '8 min',
-      distance: '2.3 km',
-      packages: 2,
-      notes: 'Ring doorbell twice',
-    ),
-    StopModel(
-      id: 'STOP-002',
-      customerName: 'Bob Johnson',
-      address: '789 Oak Avenue, Midtown',
-      phone: '+1 (555) 345-6789',
-      eta: '18 min',
-      distance: '5.7 km',
-      packages: 1,
-    ),
-    StopModel(
-      id: 'STOP-003',
-      customerName: 'Sarah Williams',
-      address: '321 Pine Road, Uptown',
-      phone: '+1 (555) 456-7890',
-      eta: '32 min',
-      distance: '12.4 km',
-      packages: 3,
-      notes: 'Leave at back porch if no answer',
-    ),
-    StopModel(
-      id: 'STOP-004',
-      customerName: 'Mike Davis',
-      address: '654 Elm Street, Eastside',
-      phone: '+1 (555) 567-8901',
-      eta: '45 min',
-      distance: '18.9 km',
-      packages: 1,
-    ),
-    StopModel(
-      id: 'STOP-005',
-      customerName: 'Emily Chen',
-      address: '12 Bloom Lane, Westpark',
-      phone: '+1 (555) 678-9012',
-      eta: '58 min',
-      distance: '23.1 km',
-      packages: 2,
-      notes: 'Fragile — handle with care',
-    ),
-  ];
-
+  List<StopModel> _stops = [];
   int _currentIndex = 0;
   bool _isRouteComplete = false;
 
@@ -98,6 +64,7 @@ class RouteProgressProvider extends ChangeNotifier {
   int get currentIndex => _currentIndex;
   bool get isRouteComplete => _isRouteComplete;
   bool get hasMoreStops => _currentIndex < _stops.length;
+  bool get isEmpty => _stops.isEmpty;
 
   /// The stop the driver is currently heading to / delivering.
   StopModel? get currentStop =>
@@ -114,11 +81,23 @@ class RouteProgressProvider extends ChangeNotifier {
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
+  /// Load stops from API response; resets progress.
+  /// [stopsJson] — list of stop objects from the server.
+  void loadStops(List<dynamic> stopsJson) {
+    _stops = stopsJson
+        .map((s) => StopModel.fromJson(s as Map<String, dynamic>))
+        .toList();
+    _currentIndex = 0;
+    _isRouteComplete = false;
+    notifyListeners();
+  }
+
   /// Called by ProofDeliveryScreen when photo + QR + notes are confirmed.
   /// Marks current stop as complete, advances index, notifies listeners.
   /// Returns true if this was the LAST stop (route now complete).
   bool completeCurrentStop({
     String? photoPath,
+    String? photoUrl,
     String? qrCode,
     String? deliveryNotes,
   }) {
@@ -127,7 +106,8 @@ class RouteProgressProvider extends ChangeNotifier {
     final stop = _stops[_currentIndex];
     stop.isCompleted = true;
     stop.photoPath = photoPath;
-    stop.qrCode = qrCode ?? 'MOCK-QR-${stop.id}';
+    stop.photoUrl = photoUrl;
+    stop.qrCode = qrCode ?? '';
 
     _currentIndex++;
 
@@ -139,11 +119,12 @@ class RouteProgressProvider extends ChangeNotifier {
     return _isRouteComplete;
   }
 
-  /// Called when a driver explicitly cancels / resets the route (API-ready).
+  /// Called when a driver explicitly cancels / resets the route.
   void resetRoute() {
     for (final stop in _stops) {
       stop.isCompleted = false;
       stop.photoPath = null;
+      stop.photoUrl = null;
       stop.qrCode = null;
     }
     _currentIndex = 0;

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Body, UseGuards } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -19,5 +19,21 @@ export class SettingsController {
   @Patch()
   updateSettings(@CurrentUser('id') userId: string, @Body() dto: any) {
     return this.driverService.updateSettings(userId, dto);
+  }
+
+  @Post('otp/request')
+  requestOtp(
+    @CurrentUser('id') userId: string,
+    @Body() dto: { action: string },
+  ) {
+    return this.driverService.requestSettingsOtp(userId, dto);
+  }
+
+  @Post('otp/verify')
+  verifyOtp(
+    @CurrentUser('id') userId: string,
+    @Body() dto: { action: string; otp: string },
+  ) {
+    return this.driverService.verifySettingsOtp(userId, dto);
   }
 }

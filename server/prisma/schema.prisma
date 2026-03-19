@@ -95,7 +95,8 @@ model User {
   role         Role      @default(driver)
   avatar_url   String?
   email_verified Boolean @default(false)
-  is_active    Boolean   @default(true)
+  is_onboarded  Boolean @default(false)
+  is_active     Boolean @default(true)
   last_seen_at DateTime?
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt

@@ -1,11 +1,156 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/bottom_nav.dart';
+import '../../core/services/driver_api_service.dart';
+import '../../main.dart' show AuthScope;
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeSummary {
+  final String status;
+  final int deliveriesToday;
+  final int totalDeliveries;
+  final int pendingStops;
+  final double rating;
+
+  const _HomeSummary({
+    required this.status,
+    required this.deliveriesToday,
+    required this.totalDeliveries,
+    required this.pendingStops,
+    required this.rating,
+  });
+
+  factory _HomeSummary.fromJson(Map<String, dynamic> j) => _HomeSummary(
+        status: j['status'] as String? ?? 'idle',
+        deliveriesToday: (j['deliveries_today'] as num?)?.toInt() ?? 0,
+        totalDeliveries: (j['total_deliveries'] as num?)?.toInt() ?? 0,
+        pendingStops: (j['pending_stops'] as num?)?.toInt() ?? 0,
+        rating: (j['rating'] as num?)?.toDouble() ?? 0.0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'status': status,
+        'deliveries_today': deliveriesToday,
+        'total_deliveries': totalDeliveries,
+        'pending_stops': pendingStops,
+        'rating': rating,
+      };
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _api = DriverApiService.instance;
+  static const _cacheKey = 'cache_home_summary';
+  static const _cacheTtlMinutes = 5;
+
+  _HomeSummary? _summary;
+  bool _isLoading = true;
+  bool _isOffline = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _isOffline = false;
+    });
+
+    // Try cached data first (if not forcing refresh)
+    if (!forceRefresh) {
+      final cached = await _getCached();
+      if (cached != null && mounted) {
+        setState(() {
+          _summary = cached;
+          _isLoading = false;
+        });
+        // Still refresh in background
+        _refreshInBackground();
+        return;
+      }
+    }
+
+    // Fetch from API
+    try {
+      final data = await _api.getHomeSummary();
+      final summary = _HomeSummary.fromJson(data);
+      await _cache(summary);
+      if (mounted) {
+        setState(() {
+          _summary = summary;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Try serving from cache even if expired on error
+      final cached = await _getCached(ignoreExpiry: true);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isOffline = true;
+          if (cached != null) {
+            _summary = cached;
+          } else {
+            _errorMessage = e.toString();
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshInBackground() async {
+    try {
+      final data = await _api.getHomeSummary();
+      final summary = _HomeSummary.fromJson(data);
+      await _cache(summary);
+      if (mounted) setState(() => _summary = summary);
+    } catch (_) {}
+  }
+
+  Future<void> _cache(_HomeSummary s) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _cacheKey,
+      jsonEncode({
+        'data': s.toJson(),
+        'cached_at': DateTime.now().toIso8601String(),
+      }),
+    );
+  }
+
+  Future<_HomeSummary?> _getCached({bool ignoreExpiry = false}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw == null) return null;
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      if (!ignoreExpiry) {
+        final cachedAt = DateTime.parse(json['cached_at'] as String);
+        if (DateTime.now().difference(cachedAt).inMinutes > _cacheTtlMinutes) {
+          return null;
+        }
+      }
+      return _HomeSummary.fromJson(json['data'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,526 +163,131 @@ class HomeScreen extends StatelessWidget {
         : 'Good evening';
 
     final days = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
     ];
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    final dateStr =
-        '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+    final dateStr = '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+    final userName = AuthScope.of(context).user?.name.split(' ').first ?? 'Driver';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),
       bottomNavigationBar: const AppBottomNav(),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      border: const Border(
-                        bottom: BorderSide(color: AppColors.border),
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () => _loadData(forceRefresh: true),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Offline banner
+                    if (_isOffline)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8,
+                        ),
+                        color: const Color(0xFFFEF3C7),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.wifi_off, size: 16, color: Color(0xFFD97706)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Showing cached data – you appear to be offline',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF92400E),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          offset: const Offset(0, 4),
-                          blurRadius: 12,
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              dateStr.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textMuted,
-                                letterSpacing: 0.66,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$greeting, Alex',
-                              style: const TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.6,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        InkWell(
-                          onTap: () => context.push('/notifications'),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.notifications_none,
-                                  size: 20,
-                                  color: AppColors.textSecondary,
-                                ),
-                                Positioned(
-                                  top: 6,
-                                  right: 6,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.error,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: AppColors.white,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      '3',
-                                      style: TextStyle(
-                                        color: AppColors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w800,
-                                        height: 1,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  // Content Body
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.p4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Active Route
-                        const Text(
-                          'ACTIVE ROUTE',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textMuted,
-                            letterSpacing: 0.77,
+                    // Header
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        border: const Border(
+                          bottom: BorderSide(color: AppColors.border),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            offset: const Offset(0, 4),
+                            blurRadius: 12,
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.p2),
-                        GestureDetector(
-                          onTap: () => context.push('/navigation'),
-                          child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.p5),
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              border: Border.all(
-                                color: AppColors.primary.withValues(
-                                  alpha: 0.25,
+                        ],
+                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                dateStr.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textMuted,
+                                  letterSpacing: 0.66,
                                 ),
                               ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x14059669),
-                                  offset: Offset(0, 4),
-                                  blurRadius: 16,
+                              const SizedBox(height: 4),
+                              Text(
+                                '$greeting, $userName',
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.6,
+                                  color: AppColors.textPrimary,
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.successLight,
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.local_shipping_outlined,
-                                            size: 18,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppSpacing.p2),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              'Downtown Deliveries',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: -0.15,
-                                              ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 6,
-                                                  height: 6,
-                                                  margin: const EdgeInsets.only(
-                                                    right: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.primary,
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: AppColors.primary
-                                                          .withValues(
-                                                            alpha: 0.2,
-                                                          ),
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const Text(
-                                                  'In progress',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: AppColors.primary,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.successLight,
-                                        border: Border.all(
-                                          color: AppColors.primary.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Text(
-                                        '2 / 4',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: AppSpacing.p3),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAF9),
-                                    border: Border.all(color: AppColors.border),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.location_on,
-                                        size: 16,
-                                        color: AppColors.primary,
-                                      ),
-                                      const SizedBox(width: AppSpacing.p2),
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'NEXT STOP',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: AppColors.textMuted,
-                                                fontWeight: FontWeight.w600,
-                                                letterSpacing: 0.44,
-                                              ),
-                                            ),
-                                            Text(
-                                              '456 Market Street',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.textPrimary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Row(
-                                        children: const [
-                                          Icon(
-                                            Icons.schedule,
-                                            size: 13,
-                                            color: AppColors.textMuted,
-                                          ),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            '8 min',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.textMuted,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.p3),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Stack(
-                                        children: [
-                                          Container(
-                                            height: 5,
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF0FDF4),
-                                              borderRadius:
-                                                  BorderRadius.circular(99),
-                                            ),
-                                          ),
-                                          FractionallySizedBox(
-                                            widthFactor: 0.5,
-                                            child: Container(
-                                              height: 5,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary,
-                                                borderRadius:
-                                                    BorderRadius.circular(99),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.p2),
-                                    const Text(
-                                      '2 of 4 done',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textMuted,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.p5),
-
-                        // Stats
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _StatCard(
-                                label: 'Today',
-                                value: '8',
-                                subtitle: 'deliveries',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _StatCard(
-                                label: 'This week',
-                                value: '42',
-                                subtitle: 'deliveries',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.p5),
-
-                        // Quick Actions
-                        const Text(
-                          'QUICK ACTIONS',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textMuted,
-                            letterSpacing: 0.77,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.p2),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.add,
-                                label: 'New',
-                                onTap: () => context.push('/new-route'),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.upload_file,
-                                label: 'Import',
-                                onTap: () => context.push('/new-route'),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.qr_code_scanner,
-                                label: 'Scan',
-                                onTap: () => context.push('/proof-delivery'),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.settings_outlined,
-                                label: 'Settings',
-                                onTap: () => context.push('/settings'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.p5),
-
-                        // Recent Activity
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'RECENT ACTIVITY',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textMuted,
-                                letterSpacing: 0.77,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => context.push('/history'),
-                              child: Row(
-                                children: const [
-                                  Text(
-                                    'View all',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  SizedBox(width: 2),
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    size: 12,
-                                    color: AppColors.primary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.p2),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            border: Border.all(color: AppColors.border),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: const [
-                              _ActivityItem(
-                                icon: Icons.check_circle,
-                                iconColor: AppColors.primary,
-                                title: 'Delivery completed',
-                                subtitle: '123 Main Street',
-                                time: '2:34 PM',
-                                bg: AppColors.successLight,
-                              ),
-                              Divider(height: 1),
-                              _ActivityItem(
-                                icon: Icons.check_circle,
-                                iconColor: AppColors.primary,
-                                title: 'Delivery completed',
-                                subtitle: '789 Oak Avenue',
-                                time: '1:15 PM',
-                                bg: AppColors.successLight,
-                              ),
-                              Divider(height: 1),
-                              _ActivityItem(
-                                icon: Icons.location_on,
-                                iconColor: AppColors.primary,
-                                title: 'Route started',
-                                subtitle: 'Downtown · 4 stops',
-                                time: '9:00 AM',
-                                bg: Color(0xFFF0FDF4),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          InkWell(
+                            onTap: () => context.push('/notifications'),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: const Icon(
+                                Icons.notifications_none,
+                                size: 20,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+
+                    // Body
+                    Padding(
+                      padding: const EdgeInsets.all(AppSpacing.p4),
+                      child: _isLoading
+                          ? _buildSkeleton()
+                          : _errorMessage != null
+                          ? _buildError()
+                          : _buildContent(context),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -545,10 +295,394 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildSkeleton() {
+    return Column(
+      children: [
+        _SkeletonBox(height: 140, radius: 16),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(child: _SkeletonBox(height: 80, radius: 12)),
+            const SizedBox(width: 12),
+            Expanded(child: _SkeletonBox(height: 80, radius: 12)),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _SkeletonBox(height: 60, radius: 12),
+      ],
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage ?? 'Failed to load data',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _loadData(forceRefresh: true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    final s = _summary;
+    final pendingStops = s?.pendingStops ?? 0;
+    final hasActiveRoute = pendingStops > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Active Route / No Route
+        const Text(
+          'ACTIVE ROUTE',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textMuted,
+            letterSpacing: 0.77,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.p2),
+        GestureDetector(
+          onTap: () => hasActiveRoute
+              ? context.push('/assignments')
+              : context.push('/assignments'),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.p5),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.25),
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14059669),
+                  offset: Offset(0, 4),
+                  blurRadius: 16,
+                ),
+              ],
+            ),
+            child: hasActiveRoute
+                ? Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppColors.successLight,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.local_shipping_outlined,
+                                  size: 18,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.p2),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Active Route',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.15,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.only(right: 6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const Text(
+                                        'In progress',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.successLight,
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.2),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$pendingStops stop${pendingStops == 1 ? '' : 's'} left',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.p3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAF9),
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: AppSpacing.p2),
+                            const Expanded(
+                              child: Text(
+                                'Tap to view your current route',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 13,
+                              color: AppColors.textMuted,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.route_outlined,
+                          color: AppColors.textMuted,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'No active route',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Check assignments for today\'s routes',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 13,
+                        color: AppColors.textMuted,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.p5),
+
+        // Stats
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                label: 'Today',
+                value: '${s?.deliveriesToday ?? 0}',
+                subtitle: 'deliveries',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                label: 'All time',
+                value: '${s?.totalDeliveries ?? 0}',
+                subtitle: 'deliveries',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.p5),
+
+        // Quick Actions
+        const Text(
+          'QUICK ACTIONS',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textMuted,
+            letterSpacing: 0.77,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.p2),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionCard(
+                icon: Icons.assignment_outlined,
+                label: 'Routes',
+                onTap: () => context.push('/assignments'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ActionCard(
+                icon: Icons.qr_code_scanner,
+                label: 'Scan',
+                onTap: () => context.push('/proof-delivery'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ActionCard(
+                icon: Icons.history,
+                label: 'History',
+                onTap: () => context.push('/history'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ActionCard(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                onTap: () => context.push('/settings'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.p5),
+
+        // Driver stats footer
+        if (s != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _FooterStat(
+                  icon: Icons.star,
+                  label: 'Rating',
+                  value: s.rating > 0 ? s.rating.toStringAsFixed(1) : '--',
+                  iconColor: const Color(0xFFFBBF24),
+                ),
+                Container(width: 1, height: 40, color: AppColors.border),
+                _FooterStat(
+                  icon: Icons.inventory_2_outlined,
+                  label: 'Pending',
+                  value: '${s.pendingStops}',
+                  iconColor: AppColors.primary,
+                ),
+                Container(width: 1, height: 40, color: AppColors.border),
+                _FooterStat(
+                  icon: Icons.circle,
+                  label: 'Status',
+                  value: s.status[0].toUpperCase() + s.status.substring(1),
+                  iconColor: s.status == 'active' ? AppColors.success : AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+// ── Sub-widgets ────────────────────────────────────────────────────────────────
+
+class _SkeletonBox extends StatelessWidget {
+  final double height;
+  final double radius;
+  const _SkeletonBox({required this.height, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE5E7EB),
+        borderRadius: BorderRadius.circular(radius),
+      ),
+    );
+  }
 }
 
 class _StatCard extends StatelessWidget {
-  final String label, value, subtitle;
+  final String label;
+  final String value;
+  final String subtitle;
   const _StatCard({
     required this.label,
     required this.value,
@@ -558,11 +692,11 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.p4),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,24 +707,25 @@ class _StatCard extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: AppColors.textMuted,
-              letterSpacing: 0.66,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: AppSpacing.p2),
+          const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
-              letterSpacing: -0.56,
-              height: 1,
+              letterSpacing: -1,
             ),
           ),
-          const SizedBox(height: 4),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -610,26 +745,19 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 18, color: AppColors.textSecondary),
-            ),
+            Icon(icon, color: AppColors.primary, size: 22),
             const SizedBox(height: 6),
             Text(
               label,
@@ -646,73 +774,37 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-class _ActivityItem extends StatelessWidget {
+class _FooterStat extends StatelessWidget {
   final IconData icon;
-  final Color iconColor, bg;
-  final String title, subtitle, time;
-  const _ActivityItem({
+  final String label;
+  final String value;
+  final Color iconColor;
+  const _FooterStat({
     required this.icon,
+    required this.label,
+    required this.value,
     required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.bg,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.p4,
-        vertical: 14,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 16, color: iconColor),
+    return Column(
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
-          const SizedBox(width: AppSpacing.p3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textHint,
-            ),
-          ),
-        ],
-      ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+        ),
+      ],
     );
   }
 }

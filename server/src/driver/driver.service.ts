@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Prisma, DriverStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,12 +14,17 @@ import {
   FailDeliveryDto,
   OnboardingDto,
 } from './dto/driver.dto';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bullmq';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class DriverService {
   constructor(
     private prisma: PrismaService,
     private redis: RedisService,
+    private mailService: MailService,
+    @InjectQueue('account') private accountQueue: Queue,
   ) {}
 
   private async getDriverOrThrow(userId: string) {
@@ -416,5 +422,89 @@ export class DriverService {
     });
 
     return { message: 'Onboarding completed successfully' };
+  }
+
+  async requestSettingsOtp(userId: string, dto: { action: string }) {
+    const driver = await this.getDriverOrThrow(userId);
+    const action = dto.action;
+    if (!['delete_account', 'clear_data'].includes(action)) {
+      throw new BadRequestException('Invalid action');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redisKey = `otp:driver:${userId}:${action}`;
+    await this.redis.set(redisKey, otp, 300);
+
+    const email = driver.user.email;
+    const content = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Security Verification Code</h2>
+        <p>You requested to ${action.replace('_', ' ')}. Please use this code to confirm your request.</p>
+        <h1 style="background: #f0fdf4; padding: 20px; text-align: center; color: #065f46; letter-spacing: 5px;">${otp}</h1>
+        <p>This code expires in 5 minutes.</p>
+      </div>
+    `;
+
+    await this.mailService.sendMail(
+      email,
+      'Vector Settings Verification Code',
+      content,
+      `Your code is ${otp}`,
+    );
+
+    return { message: 'OTP sent' };
+  }
+
+  async verifySettingsOtp(
+    userId: string,
+    dto: { action: string; otp: string },
+  ) {
+    const driver = await this.getDriverOrThrow(userId);
+    const { action, otp } = dto;
+    const redisKey = `otp:driver:${userId}:${action}`;
+
+    const storedOtp = await this.redis.get(redisKey);
+    if (!storedOtp || storedOtp !== otp) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    await this.redis.del(redisKey);
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: driver.company_id },
+    });
+
+    if (action === 'clear_data') {
+      await this.accountQueue.add('clearDataReport', {
+        companyId: driver.company_id,
+        email: company?.contact_email || 'admin@example.com',
+        targetRole: 'driver',
+        targetId: driver.id,
+      });
+      return {
+        message:
+          'Data clearance scheduled and report will be sent to your fleet manager',
+      };
+    }
+
+    if (action === 'delete_account') {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { email_verified: false },
+      });
+      await this.prisma.driver.update({
+        where: { id: driver.id },
+        data: { status: 'suspended' },
+      });
+
+      const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+      await this.accountQueue.add(
+        'deleteAccount',
+        { userId },
+        { delay: tenDaysMs },
+      );
+
+      return { message: 'Account scheduled for deletion in 10 days' };
+    }
   }
 }

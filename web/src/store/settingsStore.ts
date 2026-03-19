@@ -57,6 +57,9 @@ interface SettingsState {
   createApiKey: (name: string) => Promise<unknown>;
   revokeApiKey: (id: string) => Promise<void>;
 
+  requestOtp: (action: string) => Promise<void>;
+  verifyOtp: (action: string, otp: string) => Promise<void>;
+
   // Billing
   fetchBillingInfo: () => Promise<void>;
   fetchInvoices: () => Promise<void>;
@@ -180,6 +183,36 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const error = err as AxiosError<{ message?: string }>;
       set({
         error: error.response?.data?.message || "Failed to revoke API key",
+        isMutating: false,
+      });
+      throw err;
+    }
+  },
+
+  requestOtp: async (action: string) => {
+    set({ isMutating: true, error: null });
+    try {
+      await api.post("/dashboard/settings/otp/request", { action });
+      set({ isMutating: false });
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error: error.response?.data?.message || "Failed to request OTP",
+        isMutating: false,
+      });
+      throw err;
+    }
+  },
+
+  verifyOtp: async (action: string, otp: string) => {
+    set({ isMutating: true, error: null });
+    try {
+      await api.post("/dashboard/settings/otp/verify", { action, otp });
+      set({ isMutating: false });
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error: error.response?.data?.message || "Failed to verify OTP",
         isMutating: false,
       });
       throw err;

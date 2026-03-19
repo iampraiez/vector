@@ -116,4 +116,11 @@ export class AuthController {
     const deviceId = req.user.device_id || 'default';
     await this.authService.signOut(req.user.id, token, deviceId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('complete-onboarding')
+  @HttpCode(HttpStatus.OK)
+  completeOnboarding(@Request() req: RequestWithUser) {
+    return this.authService.completeOnboarding(req.user.id);
+  }
 }

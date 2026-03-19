@@ -102,6 +102,10 @@ export class UpdateOrderDto extends CreateOrderDto {
   @IsString()
   @IsOptional()
   driver_id?: string;
+
+  @IsEnum(['unassigned', 'assigned', 'in_progress', 'completed', 'failed'])
+  @IsOptional()
+  status?: 'unassigned' | 'assigned' | 'in_progress' | 'completed' | 'failed';
 }
 
 export class CreateDriverDto {

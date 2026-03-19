@@ -18,6 +18,7 @@ export function DashboardTracking() {
   const { routes, fetchRoutes } = useRouteStore();
 
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [viewMode, setViewMode] = useState<"board" | "list">("board");
 
   useEffect(() => {
     fetchDrivers({ limit: 100 });
@@ -70,6 +71,30 @@ export function DashboardTracking() {
         <p className="text-[13px] text-gray-500">
           Monitor your drivers in real-time
         </p>
+      </div>
+
+      {/* View Toggle */}
+      <div className="flex justify-end mb-6">
+        <div className="flex bg-gray-50 border border-black/8 rounded-xl p-0.75 gap-0.5">
+          {(
+            [
+              { mode: "board", label: "Board" },
+              { mode: "list", label: "List" },
+            ] as const
+          ).map(({ mode, label }) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 cursor-pointer ${
+                viewMode === mode
+                  ? "bg-white text-gray-900 border border-black/8 shadow-sm"
+                  : "bg-transparent text-gray-400 border border-transparent hover:text-gray-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading && drivers.length === 0 ? (
@@ -136,7 +161,10 @@ export function DashboardTracking() {
                 </div>
 
                 {/* Map Placeholder with Modern Aesthetics */}
-                <div className="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center group">
+                <div
+                  id="tour-live-map"
+                  className="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center group"
+                >
                   {/* Grid Lines Pattern */}
                   <div
                     className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -280,7 +308,7 @@ export function DashboardTracking() {
           </div>
 
           {/* Drivers Directory Grid */}
-          <div className="space-y-6">
+          <div id="tour-fleet-directory" className="space-y-6">
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">
               Active Fleet Directory
             </h2>
@@ -296,7 +324,7 @@ export function DashboardTracking() {
                   Drivers will appear here once they join your fleet
                 </p>
               </div>
-            ) : (
+            ) : viewMode === "board" ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 {drivers.map((d) => (
                   <button
@@ -355,6 +383,82 @@ export function DashboardTracking() {
                     </div>
                   </button>
                 ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-100">
+                        {[
+                          "DRIVER",
+                          "STATUS",
+                          "LOCATION",
+                          "DELIVERIES",
+                          "LAST SEEN",
+                          "",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 tracking-wider"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {drivers.map((d) => (
+                        <tr
+                          key={d.id}
+                          onClick={() => setSelectedDriver(d)}
+                          className={`cursor-pointer transition-colors ${selectedDriver?.id === d.id ? "bg-emerald-50/50" : "hover:bg-gray-50/50"}`}
+                        >
+                          <td className="px-6 py-4">
+                            <p className="text-[13px] font-bold text-gray-900">
+                              {d.name}
+                            </p>
+                            <p className="text-[11px] text-gray-400">
+                              {d.email}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusLabelColor(d.status)} bg-gray-50 border border-black/5`}
+                            >
+                              {d.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-[13px] text-gray-500 font-medium truncate max-w-40">
+                              {d.current_location_name || "Unknown"}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-[13px] font-bold text-gray-900">
+                              {d.total_deliveries || 0}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-[12px] text-gray-400 font-medium">
+                              {d.last_active_at
+                                ? new Date(d.last_active_at).toLocaleTimeString(
+                                    [],
+                                    { hour: "2-digit", minute: "2-digit" },
+                                  )
+                                : "Active"}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <ChevronRightIcon
+                              className={`w-4 h-4 text-gray-300 ml-auto ${selectedDriver?.id === d.id ? "text-emerald-500" : ""}`}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

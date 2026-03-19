@@ -18,11 +18,23 @@ export interface Driver {
   location_lng: number | null;
   current_route_id: string | null;
   last_active_at: string | null;
+  joined_at: string | null;
+}
+
+export interface RecentRoute {
+  id: string;
+  name: string;
+  date: string;
+  start_location_name: string | null;
+  total_stops: number;
+  completed_at: string | null;
+  status: string;
 }
 
 interface DriverState {
   drivers: Driver[];
-  selectedDriver: Driver | null; // For detailed view
+  selectedDriver: Driver | null;
+  recentRoutes: RecentRoute[];
   totalDrivers: number;
   isLoading: boolean;
   isMutating: boolean;
@@ -43,6 +55,7 @@ interface DriverState {
 export const useDriverStore = create<DriverState>((set, get) => ({
   drivers: [],
   selectedDriver: null,
+  recentRoutes: [],
   totalDrivers: 0,
   isLoading: false,
   isMutating: false,
@@ -70,7 +83,11 @@ export const useDriverStore = create<DriverState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await api.get(`/dashboard/drivers/${id}`);
-      set({ selectedDriver: res.data, isLoading: false });
+      set({
+        selectedDriver: res.data.driver,
+        recentRoutes: res.data.recent_routes,
+        isLoading: false,
+      });
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       set({

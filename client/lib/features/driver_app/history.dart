@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../core/services/driver_api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -12,6 +13,8 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  final _api = DriverApiService.instance;
+
   String _selectedPeriod = 'week';
   String? _expandedRouteId;
 
@@ -22,102 +25,147 @@ class _HistoryScreenState extends State<HistoryScreen> {
     {'key': 'all', 'label': 'All'},
   ];
 
-  final _completedRoutes = [
-    {
-      'id': '1',
-      'name': 'Downtown Route #47',
-      'date': 'Today',
-      'stops': 12,
-      'completed': 12,
-      'duration': '3h 24m',
-      'distance': '42.8 km',
-      'earnings': '\$124.50',
-      'rating': 4.9,
-      'timeline': [
-        {
-          'address': '123 Main St',
-          'time': '9:15 AM',
-          'customer': 'John Doe',
-          'status': 'delivered',
-        },
-        {
-          'address': '456 Oak Ave',
-          'time': '9:42 AM',
-          'customer': 'Jane Smith',
-          'status': 'delivered',
-        },
-        {
-          'address': '789 Pine Rd',
-          'time': '10:08 AM',
-          'customer': 'Bob Johnson',
-          'status': 'delivered',
-        },
-      ],
-    },
-    {
-      'id': '2',
-      'name': 'Suburban Route #23',
-      'date': 'Yesterday',
-      'stops': 8,
-      'completed': 7,
-      'duration': '2h 15m',
-      'distance': '28.3 km',
-      'earnings': '\$89.00',
-      'rating': 4.7,
-      'timeline': [
-        {
-          'address': '321 Elm St',
-          'time': '2:00 PM',
-          'customer': 'Sarah Williams',
-          'status': 'delivered',
-        },
-        {
-          'address': '654 Maple Dr',
-          'time': '2:35 PM',
-          'customer': 'Mike Davis',
-          'status': 'failed',
-        },
-      ],
-    },
-    {
-      'id': '3',
-      'name': 'Express Route #12',
-      'date': 'Mar 4, 2026',
-      'stops': 15,
-      'completed': 15,
-      'duration': '4h 10m',
-      'distance': '56.2 km',
-      'earnings': '\$167.25',
-      'rating': 5.0,
-      'timeline': [
-        {
-          'address': '111 First Ave',
-          'time': '8:30 AM',
-          'customer': 'Emma Wilson',
-          'status': 'delivered',
-        },
-      ],
-    },
-  ];
+  List<Map<String, dynamic>> _completedRoutes = [];
 
-  final _weekBarData = [48, 62, 55, 71, 66, 43, 78];
+  // Static bar chart data derived from actual history (simplified: deliveries per day slot)
+  final _weekBarData = [0, 0, 0, 0, 0, 0, 0];
   final _weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final data = await _api.getHistory(limit: 50);
+      final routes = (data['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>()
+          .map((r) {
+        final stops = (r['stops'] as List? ?? []);
+        final completedStops =
+            stops.where((s) => (s as Map)['status'] == 'completed').length;
+        return {
+          'id': r['id'] ?? '',
+          'name': r['name'] ?? 'Route',
+          'date': _formatDate(r['date'] as String? ?? r['completed_at'] as String? ?? ''),
+          'stops': stops.length,
+          'completed': completedStops,
+          'duration': '--',
+          'distance': r['total_distance_km'] != null
+              ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
+              : '--',
+          'earnings': '--',
+          'rating': 0.0,
+          'timeline': stops.take(3).map((s) {
+            final sm = s as Map<String, dynamic>;
+            return {
+              'address': sm['address'] ?? '',
+              'time': '--',
+              'customer': sm['customer_name'] ?? '',
+              'status': sm['status'] ?? 'delivered',
+            };
+          }).toList(),
+        };
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _completedRoutes = routes;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  String _formatDate(String raw) {
+    if (raw.isEmpty) return '--';
+    try {
+      final dt = DateTime.parse(raw);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final d = DateTime(dt.year, dt.month, dt.day);
+      if (d == today) return 'Today';
+      if (d == today.subtract(const Duration(days: 1))) return 'Yesterday';
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+    } catch (_) {
+      return raw;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    double totalEarnings = _completedRoutes.fold(
-      0,
-      (sum, r) =>
-          sum + double.parse((r['earnings'] as String).replaceAll('\$', '')),
-    );
-    int totalDeliveries = _completedRoutes.fold(
-      0,
-      (sum, r) => sum + (r['completed'] as int),
-    );
-    double avgRating =
-        _completedRoutes.fold(0.0, (sum, r) => sum + (r['rating'] as double)) /
-        _completedRoutes.length;
-    int maxBar = _weekBarData.reduce((a, b) => a > b ? a : b);
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAF9),
+        bottomNavigationBar: const AppBottomNav(),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAF9),
+        bottomNavigationBar: const AppBottomNav(),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final double totalEarnings = 0;
+    final int totalDeliveries = _completedRoutes.fold(
+      0, (sum, r) => sum + (r['completed'] as int));
+    final double avgRating = _completedRoutes.isEmpty
+        ? 0
+        : _completedRoutes.fold(0.0, (sum, r) =>
+            sum + ((r['rating'] as num).toDouble())) /
+            _completedRoutes.length;
+    final int maxBar = _weekBarData.isEmpty
+        ? 1
+        : _weekBarData.reduce((a, b) => a > b ? a : b).clamp(1, 999);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),

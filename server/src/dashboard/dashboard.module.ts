@@ -8,8 +8,14 @@ import { ReportsController } from './reports.controller';
 import { BillingController } from './billing.controller';
 import { SettingsController } from './settings.controller';
 import { DashboardNotificationsController } from './notifications.controller';
+import { MailModule } from '../mail/mail.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
+  imports: [
+    MailModule,
+    BullModule.registerQueue({ name: 'email' }, { name: 'account' }),
+  ],
   controllers: [
     OverviewController,
     OrdersController,

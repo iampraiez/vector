@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
+import { useDriverStore } from "../../../store/driverStore";
 
 import {
   ArrowLeftIcon,
@@ -24,104 +25,97 @@ interface DeliveryHistory {
 
 export function DashboardDriverDetail() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { selectedDriver, recentRoutes, fetchDriverDetail, isLoading } =
+    useDriverStore();
   const [timeFilter, setTimeFilter] = useState<
     "today" | "week" | "month" | "all"
   >("today");
 
-  // Mock driver data
+  useEffect(() => {
+    if (id) {
+      fetchDriverDetail(id);
+    }
+  }, [id, fetchDriverDetail]);
+
+  if (isLoading && !selectedDriver) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!selectedDriver) {
+    return (
+      <div className="p-8 text-center bg-white border border-black/8 rounded-2xl mx-auto max-w-lg mt-20">
+        <UserIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          Driver not found
+        </h2>
+        <p className="text-gray-500 mb-6">
+          The driver you are looking for does not exist or has been removed.
+        </p>
+        <button
+          onClick={() => navigate("/dashboard/drivers")}
+          className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors cursor-pointer"
+        >
+          Back to Drivers
+        </button>
+      </div>
+    );
+  }
+
   const driver = {
-    id: 1,
-    name: "Alex Rivera",
-    email: "alex.rivera@email.com",
-    phone: "+1 (555) 123-4567",
-    vehicle: "Van • ABC-1234",
-    rating: 4.9,
-    status: "active",
-    lastSession: "2 min ago",
-    companyCode: "FLEET-2024",
-    joinedDate: "Jan 15, 2024",
-    totalDeliveries: 234,
-    onTimeRate: 96,
+    id: selectedDriver.id,
+    name: selectedDriver.name,
+    email: selectedDriver.email,
+    phone: selectedDriver.phone || "N/A",
+    vehicle: `${selectedDriver.vehicle_type || "No vehicle"} • ${selectedDriver.vehicle_plate || "No plate"}`,
+    rating: selectedDriver.avg_rating || 5.0,
+    status: selectedDriver.status,
+    lastSession: selectedDriver.last_active_at ? "Active" : "New",
+    companyCode: "VECT-D", // Stubbed
+    joinedDate: selectedDriver.joined_at
+      ? new Date(selectedDriver.joined_at).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "Recently",
+    totalDeliveries: selectedDriver.total_deliveries || 0,
+    onTimeRate: 100, // Stubbed
   };
 
-  const historyData: Record<string, DeliveryHistory[]> = {
-    today: [
-      {
-        id: "DEL-001",
-        customerName: "Sarah Chen",
-        address: "742 Evergreen Terrace, Springfield",
-        completedAt: "10:45 AM",
-        packages: 3,
-        signature: true,
-        timeWindow: "9:00 AM - 11:00 AM",
-      },
-      {
-        id: "DEL-005",
-        customerName: "Mike Johnson",
-        address: "1428 Elm Street, Springfield",
-        completedAt: "9:30 AM",
-        packages: 1,
-        signature: true,
-        timeWindow: "9:00 AM - 10:00 AM",
-      },
-      {
-        id: "DEL-012",
-        customerName: "Emma Davis",
-        address: "890 Oak Avenue, Springfield",
-        completedAt: "8:15 AM",
-        packages: 2,
-        signature: true,
-        timeWindow: "8:00 AM - 9:00 AM",
-      },
-    ],
-    week: [
-      {
-        id: "DEL-001",
-        customerName: "Sarah Chen",
-        address: "742 Evergreen Terrace, Springfield",
-        completedAt: "Today, 10:45 AM",
-        packages: 3,
-        signature: true,
-        timeWindow: "9:00 AM - 11:00 AM",
-      },
-      {
-        id: "DEL-097",
-        customerName: "John Smith",
-        address: "456 Park Lane, Springfield",
-        completedAt: "Yesterday, 3:30 PM",
-        packages: 2,
-        signature: true,
-        timeWindow: "3:00 PM - 5:00 PM",
-      },
-      {
-        id: "DEL-089",
-        customerName: "Lisa Anderson",
-        address: "123 Main Street, Springfield",
-        completedAt: "Feb 16, 2:15 PM",
-        packages: 1,
-        signature: false,
-        timeWindow: "2:00 PM - 4:00 PM",
-      },
-    ],
-  };
+  const historyData: DeliveryHistory[] = recentRoutes.map((route) => ({
+    id: route.id,
+    customerName: route.name || "Route",
+    address: route.start_location_name || "Multiple stops",
+    completedAt: route.completed_at
+      ? new Date(route.completed_at).toLocaleTimeString()
+      : "Pending",
+    packages: route.total_stops || 0,
+    signature: false,
+    timeWindow: route.date || "N/A",
+  }));
 
-  const currentHistory = historyData[timeFilter] || historyData.today;
+  const currentHistory = historyData; // Simplify for now as we don't have filtered history from API yet
 
   const stats = {
     today: {
-      completed: 3,
-      onTime: 3,
+      completed: 0,
+      onTime: 0,
       rating: 5.0,
     },
     week: {
-      completed: 18,
-      onTime: 17,
-      rating: 4.9,
+      completed: 0,
+      onTime: 0,
+      rating: 5.0,
     },
     month: {
-      completed: 72,
-      onTime: 69,
-      rating: 4.9,
+      completed: 0,
+      onTime: 0,
+      rating: 5.0,
     },
   };
 
@@ -153,10 +147,26 @@ export function DashboardDriverDetail() {
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
                   {driver.name}
                 </h1>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${
+                    driver.status === "active"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : driver.status === "idle"
+                        ? "bg-amber-50 text-amber-600"
+                        : "bg-gray-50 text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      driver.status === "active"
+                        ? "bg-emerald-500 animate-pulse"
+                        : driver.status === "idle"
+                          ? "bg-amber-500"
+                          : "bg-gray-300"
+                    }`}
+                  />
                   <span className="text-[11px] font-bold uppercase tracking-wider">
-                    Active
+                    {driver.status}
                   </span>
                 </div>
               </div>
@@ -277,52 +287,66 @@ export function DashboardDriverDetail() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {currentHistory.map((delivery) => (
-                <tr
-                  key={delivery.id}
-                  className="transition-colors hover:bg-gray-50/50 group"
-                >
-                  <td className="px-6 py-4">
-                    <span className="text-[13px] font-bold text-gray-900">
-                      {delivery.id}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 min-w-37.5">
-                    <p className="text-[13px] font-bold text-gray-800">
-                      {delivery.customerName}
+              {currentHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <ClockIcon className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                    <p className="text-[14px] font-bold text-gray-400">
+                      No delivery history found
                     </p>
-                    <p className="text-[11px] text-gray-400 font-medium">
-                      {delivery.packages} pkgs
+                    <p className="text-[12px] text-gray-300">
+                      Deliveries will appear here once completed by the driver.
                     </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-[13px] text-gray-500 font-medium truncate max-w-50">
-                      {delivery.address}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-[13px] text-gray-500 font-medium">
-                      {delivery.timeWindow}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-[13px] text-gray-500 font-medium">
-                      {delivery.completedAt}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {delivery.signature ? (
-                      <div className="w-6 h-6 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                        <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-gray-300 font-bold">
-                        —
-                      </span>
-                    )}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                currentHistory.map((delivery) => (
+                  <tr
+                    key={delivery.id}
+                    className="transition-colors hover:bg-gray-50/50 group"
+                  >
+                    <td className="px-6 py-4">
+                      <span className="text-[13px] font-bold text-gray-900">
+                        {delivery.id}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 min-w-37.5">
+                      <p className="text-[13px] font-bold text-gray-800">
+                        {delivery.customerName}
+                      </p>
+                      <p className="text-[11px] text-gray-400 font-medium">
+                        {delivery.packages} pkgs
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-[13px] text-gray-500 font-medium truncate max-w-50">
+                        {delivery.address}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-[13px] text-gray-500 font-medium">
+                        {delivery.timeWindow}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-[13px] text-gray-500 font-medium">
+                        {delivery.completedAt}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {delivery.signature ? (
+                        <div className="w-6 h-6 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                          <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-gray-300 font-bold">
+                          —
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

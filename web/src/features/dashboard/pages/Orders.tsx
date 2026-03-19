@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useOrderStore } from "../../../store/orderStore";
-import { useDriverStore } from "../../../store/driverStore";
+import { useDriverStore, Driver } from "../../../store/driverStore";
 
 import {
   PlusIcon,
@@ -160,6 +160,7 @@ export function DashboardOrders() {
               Upload CSV
             </button>
             <button
+              id="tour-new-order-btn"
               onClick={() => setShowNewOrderModal(true)}
               className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-bold text-white shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 active:scale-95 cursor-pointer"
             >
@@ -256,24 +257,25 @@ export function DashboardOrders() {
                       ? "border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-500"
                       : "border-black/8"
                   }`}
-                  onClick={() => {
-                    if (selectedOrders.includes(order.id)) {
-                      setSelectedOrders(
-                        selectedOrders.filter((id) => id !== order.id),
-                      );
-                    } else {
-                      setSelectedOrders([...selectedOrders, order.id]);
-                    }
-                  }}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer ${
                           selectedOrders.includes(order.id)
                             ? "bg-emerald-600 border-emerald-600"
                             : "border-gray-300 bg-white"
                         }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectedOrders.includes(order.id)) {
+                            setSelectedOrders(
+                              selectedOrders.filter((id) => id !== order.id),
+                            );
+                          } else {
+                            setSelectedOrders([...selectedOrders, order.id]);
+                          }
+                        }}
                       >
                         {selectedOrders.includes(order.id) && (
                           <CheckIcon className="w-3.5 h-3.5 text-white" />
@@ -365,6 +367,7 @@ export function DashboardOrders() {
                     ].map((h) => (
                       <th
                         key={h}
+                        id={h === "ASSIGNED TO" ? "tour-assign-col" : undefined}
                         className={`px-6 py-4 text-[11px] font-bold text-gray-400 tracking-wider text-left`}
                       >
                         {h}
@@ -397,22 +400,11 @@ export function DashboardOrders() {
                     filteredOrders.map((order, index) => (
                       <tr
                         key={order.id}
-                        className={`transition-colors hover:bg-gray-50/50 group cursor-pointer ${
+                        className={`transition-colors hover:bg-gray-50/50 group ${
                           selectedOrders.includes(order.id)
                             ? "bg-emerald-50/30"
                             : ""
                         }`}
-                        onClick={() => {
-                          // Prevent triggering selection when clicking buttons/selects if needed
-                          // but for now let's make the whole row selectable except for the individual buttons
-                          if (selectedOrders.includes(order.id)) {
-                            setSelectedOrders(
-                              selectedOrders.filter((id) => id !== order.id),
-                            );
-                          } else {
-                            setSelectedOrders([...selectedOrders, order.id]);
-                          }
-                        }}
                       >
                         <td
                           className="px-6 py-4"
@@ -484,6 +476,7 @@ export function DashboardOrders() {
                             </div>
                           ) : (
                             <select
+                              id="tour-assign-select"
                               onChange={async (e) => {
                                 if (e.target.value) {
                                   // Find driver ID by name from driver store
@@ -538,10 +531,9 @@ export function DashboardOrders() {
       {editingOrder && (
         <EditOrderModal
           order={editingOrder}
-          drivers={driverNames}
+          drivers={drivers}
           onClose={() => setEditingOrder(null)}
           onSave={async (updated) => {
-            // we'd probably call updateOrder in the store here
             await updateOrder(editingOrder.id, updated);
             setEditingOrder(null);
           }}
@@ -623,14 +615,18 @@ function FilterButton({
   );
 }
 
-function formatDateForInput(dateStr: string | null) {
-  if (!dateStr) return "";
+function formatDateForInput(dateStr: string | null | undefined) {
+  if (!dateStr || dateStr === "Today") return "";
   // Check if it's already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "";
-    return d.toISOString().split("T")[0];
+    // adjust to local date component to avoid timezone shifting
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   } catch {
     return "";
   }
@@ -643,9 +639,9 @@ function EditOrderModal({
   onSave,
 }: {
   order: Order;
-  drivers: string[];
+  drivers: Driver[];
   onClose: () => void;
-  onSave: (order: Order) => void;
+  onSave: (order: Partial<Order>) => void;
 }) {
   const [form, setForm] = useState({
     ...order,
@@ -655,8 +651,25 @@ function EditOrderModal({
 
   const handleSave = () => {
     setLoading(true);
+    // Whitelist only fields allowed by UpdateOrderDto
+    const updatePayload: Partial<Order> = {
+      customer_name: form.customer_name,
+      customer_email: form.customer_email,
+      customer_phone: form.customer_phone,
+      address: form.address,
+      city: form.city,
+      packages: form.packages,
+      priority: form.priority,
+      time_window_start: form.time_window_start,
+      time_window_end: form.time_window_end,
+      delivery_date: form.delivery_date || null,
+      notes: form.notes,
+      driver_id: form.driver_id,
+      status: form.status as OrderStatus,
+    };
+
     setTimeout(() => {
-      onSave(form);
+      onSave(updatePayload);
       setLoading(false);
     }, 800);
   };
@@ -769,22 +782,23 @@ function EditOrderModal({
                     </button>
                     {drivers.map((d) => (
                       <button
-                        key={d}
+                        key={d.id}
                         onClick={() =>
                           setForm({
                             ...form,
-                            assigned_to: d,
+                            driver_id: d.id,
+                            driver_name: d.name,
                             status: "assigned",
                           })
                         }
                         className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
-                          form.assigned_to === d
+                          form.driver_id === d.id
                             ? "bg-emerald-50 text-emerald-600 font-bold"
                             : "text-gray-700 hover:bg-white"
                         }`}
                       >
-                        {d}
-                        {form.assigned_to === d && (
+                        {d.name}
+                        {form.driver_id === d.id && (
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                         )}
                       </button>

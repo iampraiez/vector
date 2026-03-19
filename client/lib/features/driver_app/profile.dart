@@ -15,13 +15,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _emailCtrl;
   late TextEditingController _phoneCtrl;
+  late TextEditingController _vTypeCtrl;
+  late TextEditingController _vMakeCtrl;
+  late TextEditingController _vModelCtrl;
+  late TextEditingController _vPlateCtrl;
+  late TextEditingController _vColorCtrl;
+  late TextEditingController _licenseCtrl;
+  bool _isSavingVehicle = false;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController();
-    _emailCtrl = TextEditingController();
+    final user = AuthScope.of(context).user;
+    _nameCtrl = TextEditingController(text: user?.name);
+    _emailCtrl = TextEditingController(text: user?.email);
     _phoneCtrl = TextEditingController();
+    _vTypeCtrl = TextEditingController(text: user?.vehicleType);
+    _vMakeCtrl = TextEditingController(text: user?.vehicleMake);
+    _vModelCtrl = TextEditingController(text: user?.vehicleModel);
+    _vPlateCtrl = TextEditingController(text: user?.vehiclePlate);
+    _vColorCtrl = TextEditingController(text: user?.vehicleColor);
+    _licenseCtrl = TextEditingController(text: user?.licenseNumber);
   }
 
   @override
@@ -29,7 +43,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
+    _vTypeCtrl.dispose();
+    _vMakeCtrl.dispose();
+    _vModelCtrl.dispose();
+    _vPlateCtrl.dispose();
+    _vColorCtrl.dispose();
+    _licenseCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveVehicleInfo() async {
+    setState(() => _isSavingVehicle = true);
+    try {
+      await AuthScope.of(context).updateDriverProfile({
+        'vehicle_type': _vTypeCtrl.text.trim(),
+        'vehicle_make': _vMakeCtrl.text.trim(),
+        'vehicle_model': _vModelCtrl.text.trim(),
+        'vehicle_plate': _vPlateCtrl.text.trim(),
+        'vehicle_color': _vColorCtrl.text.trim(),
+        'license_number': _licenseCtrl.text.trim(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vehicle profile updated successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingVehicle = false);
+    }
   }
 
   void _openEditSheet() {
@@ -87,6 +132,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _openVehicleEditSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            left: 24, right: 24, top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Vehicle Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                    style: IconButton.styleFrom(backgroundColor: const Color(0xFFF5F5F5)),
+                  )
+                ]
+              ),
+              const SizedBox(height: 24),
+              _EditField(controller: _vTypeCtrl, hint: 'Vehicle Type (e.g. Van)', icon: Icons.type_specimen_outlined),
+              const SizedBox(height: 16),
+              _EditField(controller: _vMakeCtrl, hint: 'Vehicle Make (e.g. Toyota)', icon: Icons.branding_watermark_outlined),
+              const SizedBox(height: 16),
+              _EditField(controller: _vModelCtrl, hint: 'Vehicle Model (e.g. Hiace)', icon: Icons.directions_car_outlined),
+              const SizedBox(height: 16),
+              _EditField(controller: _vPlateCtrl, hint: 'License Plate (e.g. ABC-123)', icon: Icons.pin_outlined),
+              const SizedBox(height: 16),
+              _EditField(controller: _vColorCtrl, hint: 'Vehicle Color', icon: Icons.color_lens_outlined),
+              const SizedBox(height: 16),
+              _EditField(controller: _licenseCtrl, hint: 'Driver License Number', icon: Icons.badge_outlined),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isSavingVehicle ? null : () async {
+                  setModalState(() => _isSavingVehicle = true);
+                  await _saveVehicleInfo();
+                  setModalState(() => _isSavingVehicle = false);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: _isSavingVehicle 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Save Vehicle Details', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = AuthScope.of(context).user;
@@ -95,6 +207,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String initials = name.isNotEmpty 
         ? name.split(' ').map((n) => n.isNotEmpty ? n[0] : '').take(2).join('')
         : 'D';
+
+    final bool hasVehicleInfo = user?.vehiclePlate != null && user!.vehiclePlate!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),
@@ -251,6 +365,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 16),
 
                       _SectionCard(
+                        label: 'Vehicle Information',
+                        children: [
+                          if (!hasVehicleInfo)
+                            Container(
+                              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFBEB),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFFEF3C7)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.info_outline, size: 16, color: Color(0xFFD97706)),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Text(
+                                      'Complete your vehicle profile to help managers track assets efficiently.',
+                                      style: TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                if (hasVehicleInfo) ...[
+                                  _VehicleSummaryRow(icon: Icons.directions_car_outlined, label: 'Vehicle', value: '${user.vehicleMake} ${user.vehicleModel}'),
+                                  const SizedBox(height: 12),
+                                  _VehicleSummaryRow(icon: Icons.pin_outlined, label: 'Plate Number', value: user.vehiclePlate!),
+                                ] else
+                                  const Text(
+                                    'No vehicle information provided yet.',
+                                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                                  ),
+                                const SizedBox(height: 20),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton(
+                                    onPressed: _openVehicleEditSheet,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      side: const BorderSide(color: AppColors.border),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: Text(
+                                      hasVehicleInfo ? 'Edit Vehicle Details' : 'Add Vehicle Details',
+                                      style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      _SectionCard(
                         label: 'Support',
                         children: [
                           _MenuItem(icon: Icons.help_outline, label: 'Help Centre', sub: 'FAQs and guides'),
@@ -285,6 +460,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _VehicleSummaryRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _VehicleSummaryRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 32, height: 32,
+          decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, size: 16, color: AppColors.textSecondary),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+            Text(value, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ],
     );
   }
 }

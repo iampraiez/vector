@@ -20,6 +20,7 @@ import { CheckCircleIcon as CheckSolid } from "@heroicons/react/24/solid";
 import { signUpFleetSchema, SignUpFleetValues } from "../../../lib/validations";
 import { api } from "../../../lib/api";
 import { ErrorAlert } from "../../../components/ui/ErrorAlert";
+import { LegalModal } from "../../../components/ui/LegalModal";
 
 const plans = [
   {
@@ -57,6 +58,9 @@ export function DashboardSignUp() {
   const [globalError, setGlobalError] = useState("");
 
   const [companySize, setCompanySize] = useState("");
+  const [legalModalType, setLegalModalType] = useState<
+    "terms" | "privacy" | null
+  >(null);
 
   const {
     register,
@@ -87,6 +91,13 @@ export function DashboardSignUp() {
   const handleNextToPlan = async () => {
     const isStep2Valid = await trigger(["company_name"]);
     if (isStep2Valid && companySize) {
+      if (companySize === "1–2") {
+        setValue("plan_id", "free");
+      } else if (companySize === "3–5") {
+        setValue("plan_id", "starter");
+      } else {
+        setValue("plan_id", "growth");
+      }
       setStep("plan");
     }
   };
@@ -376,7 +387,7 @@ export function DashboardSignUp() {
                       Active fleet size
                     </label>
                     <div className="grid grid-cols-2 gap-2.5">
-                      {["1–3", "4–10", "11–25", "26–50", "50+"].map((size) => (
+                      {["1–2", "3–5", "6–20", "21+"].map((size) => (
                         <button
                           key={size}
                           type="button"
@@ -504,13 +515,21 @@ export function DashboardSignUp() {
 
                 <p className="text-[11px] text-gray-300 font-medium text-center mt-5 leading-relaxed">
                   By launching, you agree to VECTOR's{" "}
-                  <a href="/terms" className="underline text-gray-400">
+                  <button
+                    type="button"
+                    onClick={() => setLegalModalType("terms")}
+                    className="underline text-gray-400 cursor-pointer hover:text-gray-500"
+                  >
                     Terms of Service
-                  </a>{" "}
+                  </button>{" "}
                   and{" "}
-                  <a href="/privacy" className="underline text-gray-400">
+                  <button
+                    type="button"
+                    onClick={() => setLegalModalType("privacy")}
+                    className="underline text-gray-400 cursor-pointer hover:text-gray-500"
+                  >
                     Privacy Policy
-                  </a>
+                  </button>
                   .
                 </p>
               </form>
@@ -518,6 +537,12 @@ export function DashboardSignUp() {
           </div>
         </div>
       </main>
+
+      <LegalModal
+        type={legalModalType}
+        open={legalModalType !== null}
+        onOpenChange={(open) => !open && setLegalModalType(null)}
+      />
     </div>
   );
 }

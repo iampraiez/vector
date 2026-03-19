@@ -20,6 +20,7 @@ export function DashboardDrivers() {
   const { drivers, isLoading, fetchDrivers, deleteDriver } = useDriverStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"board" | "list">("list");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDrivers({ limit: 100 });
@@ -27,7 +28,12 @@ export function DashboardDrivers() {
 
   const handleRemoveDriver = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to remove ${name} from your fleet?`)) {
-      await deleteDriver(id);
+      setDeletingId(id);
+      try {
+        await deleteDriver(id);
+      } finally {
+        setDeletingId(null);
+      }
     }
   };
 
@@ -64,7 +70,10 @@ export function DashboardDrivers() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-7">
         <div>
-          <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+          <h1
+            id="tour-drivers-heading"
+            className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight"
+          >
             Drivers
           </h1>
           <p className="text-[13px] text-gray-500">Manage your delivery team</p>
@@ -103,7 +112,10 @@ export function DashboardDrivers() {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white rounded-2xl p-4 md:p-5 border border-black/8 mb-6 shadow-sm">
+      <div
+        id="tour-drivers-search"
+        className="bg-white rounded-2xl p-4 md:p-5 border border-black/8 mb-6 shadow-sm"
+      >
         <div className="relative group">
           <MagnifyingGlassIcon className="w-4.5 h-4.5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-emerald-600" />
           <input
@@ -246,13 +258,18 @@ export function DashboardDrivers() {
                     </span>
                   </div>
                   <button
+                    disabled={deletingId === driver.id}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemoveDriver(driver.id, driver.name);
                     }}
-                    className="w-8 h-8 flex items-center justify-center bg-white border border-black/5 rounded-lg text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:bg-red-50 hover:text-red-500 cursor-pointer shadow-sm"
+                    className="w-8 h-8 flex items-center justify-center bg-white border border-black/5 rounded-lg text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:bg-red-50 hover:text-red-500 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <TrashIcon className="w-4 h-4" />
+                    {deletingId === driver.id ? (
+                      <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <TrashIcon className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -373,13 +390,18 @@ export function DashboardDrivers() {
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <button
+                          disabled={deletingId === driver.id}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRemoveDriver(driver.id, driver.name);
                           }}
-                          className="p-1.5 bg-transparent border border-black/8 rounded-lg text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:bg-red-50 hover:text-red-500 cursor-pointer"
+                          className="p-1.5 bg-transparent border border-black/8 rounded-lg text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:bg-red-50 hover:text-red-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          {deletingId === driver.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <TrashIcon className="w-4 h-4" />
+                          )}
                         </button>
                       </td>
                     </tr>

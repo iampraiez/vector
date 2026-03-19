@@ -19,6 +19,7 @@ import {
   StarIcon as StarSolid,
   TruckIcon,
 } from "@heroicons/react/24/solid";
+import { LegalModal } from "../../../components/ui/LegalModal";
 
 const DELIVERY_IMAGE = "/landing_page.jpeg";
 const MAP_IMAGE = "/gps.jpeg";
@@ -105,11 +106,11 @@ const testimonials = [
 
 const plans = [
   {
-    name: "Starter",
+    name: "Free",
     price: "0",
     period: "/mo",
     desc: "Perfect for testing the platform",
-    drivers: "Up to 5 drivers",
+    drivers: "Up to 2 drivers",
     features: [
       "Route optimization",
       "Live GPS tracking",
@@ -121,13 +122,13 @@ const plans = [
     highlighted: false,
   },
   {
-    name: "Professional",
+    name: "Starter",
     price: "29",
     period: "/mo",
     desc: "For small local fleets",
-    drivers: "Up to 15 drivers",
+    drivers: "Up to 5 drivers",
     features: [
-      "Everything in Starter",
+      "Everything in Free",
       "Advanced analytics",
       "Priority routing",
       "SMS notifications",
@@ -141,7 +142,7 @@ const plans = [
     price: "89",
     period: "/mo",
     desc: "For growing delivery operations",
-    drivers: "Up to 50 drivers",
+    drivers: "Up to 20 drivers",
     features: [
       "Everything in Professional",
       "Custom reporting",
@@ -158,12 +159,26 @@ export function WebLanding() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [legalModalType, setLegalModalType] = useState<
+    "terms" | "privacy" | null
+  >(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <div className="bg-white min-h-screen overflow-x-hidden">
@@ -291,7 +306,7 @@ export function WebLanding() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
           </span>
           <span className="text-[11px] font-bold text-emerald-700 tracking-wider uppercase">
-            VECTOR OPEN BETA — FREE FOR UP TO 5 DRIVERS
+            VECTOR OPEN BETA — FREE FOR UP TO 2 DRIVERS
           </span>
         </div>
 
@@ -843,22 +858,28 @@ export function WebLanding() {
               &copy; {new Date().getFullYear()} Vector. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <a
-                href="/privacy"
-                className="text-xs text-gray-400 hover:text-gray-600 no-underline transition-colors"
+              <button
+                onClick={() => setLegalModalType("privacy")}
+                className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
               >
                 Privacy Policy
-              </a>
-              <a
-                href="/terms"
-                className="text-xs text-gray-400 hover:text-gray-600 no-underline transition-colors"
+              </button>
+              <button
+                onClick={() => setLegalModalType("terms")}
+                className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
               >
                 Terms of Service
-              </a>
+              </button>
             </div>
           </div>
         </div>
       </footer>
+
+      <LegalModal
+        type={legalModalType}
+        open={legalModalType !== null}
+        onOpenChange={(open) => !open && setLegalModalType(null)}
+      />
     </div>
   );
 }

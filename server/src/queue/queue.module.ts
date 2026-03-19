@@ -4,10 +4,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
 import { EmailProcessor } from './email.processor';
 import { NotificationProcessor } from './notification.processor';
+import { AccountProcessor } from './account.processor';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Global()
 @Module({
   imports: [
+    PrismaModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -25,9 +28,12 @@ import { NotificationProcessor } from './notification.processor';
     BullModule.registerQueue({
       name: 'notification',
     }),
+    BullModule.registerQueue({
+      name: 'account',
+    }),
     MailModule,
   ],
-  providers: [EmailProcessor, NotificationProcessor],
+  providers: [EmailProcessor, NotificationProcessor, AccountProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

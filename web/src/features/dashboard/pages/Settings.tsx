@@ -284,11 +284,71 @@ function SimpleConfirmModal({
           <button
             onClick={() => {
               onConfirm();
-              onClose();
+              // Do not automatically close; let the handler close it if needed, or handle async logic onConfirm
             }}
             className={`flex-1 py-3 ${variant === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"} text-white font-bold text-[13px] rounded-xl shadow-lg transition-all`}
           >
             {btnText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OtpVerifyModal({
+  isOpen,
+  onClose,
+  action,
+  onVerify,
+  isVerifying,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  action: "clear_workspace_data" | "deactivate_workspace" | null;
+  onVerify: (otp: string) => void;
+  isVerifying: boolean;
+}) {
+  const [otp, setOtp] = useState("");
+
+  if (!isOpen || !action) return null;
+
+  return (
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          Verify Identity
+        </h3>
+        <p className="text-[13px] text-gray-500 mb-4">
+          A 6-digit code has been sent to your email. Enter it below to confirm{" "}
+          {action === "deactivate_workspace"
+            ? "deactivation"
+            : "data clearance"}
+          .
+        </p>
+        <input
+          type="text"
+          maxLength={6}
+          value={otp}
+          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+          disabled={isVerifying}
+          placeholder="000000"
+          className="w-full text-center text-3xl tracking-[0.5em] font-bold py-3 mb-6 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            disabled={isVerifying}
+            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onVerify(otp)}
+            disabled={otp.length !== 6 || isVerifying}
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[13px] rounded-xl shadow-lg transition-all disabled:opacity-50"
+          >
+            {isVerifying ? "Verifying..." : "Verify"}
           </button>
         </div>
       </div>
@@ -302,17 +362,25 @@ export function DashboardSettings() {
     notifications,
     isLoading,
     isMutating,
+    requestOtp,
+    verifyOtp,
     fetchSettings,
     updateCompany,
     updateNotifications,
     regenerateAccessCode,
   } = useSettingsStore();
 
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isDataCleaningOpen, setIsDataCleaningOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
+
+  const [isOtpOpen, setIsOtpOpen] = useState(false);
+  const [otpAction, setOtpAction] = useState<
+    "clear_workspace_data" | "deactivate_workspace" | null
+  >(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -344,6 +412,43 @@ export function DashboardSettings() {
     });
 
     await updateCompany(filteredData);
+  };
+
+  const handleRequestOtp = async (
+    action: "clear_workspace_data" | "deactivate_workspace",
+  ) => {
+    try {
+      if (action === "clear_workspace_data") setIsDataCleaningOpen(false);
+      if (action === "deactivate_workspace") setIsDeleteAccountOpen(false);
+      await requestOtp(action);
+      setOtpAction(action);
+      setIsOtpOpen(true);
+    } catch {
+      alert("Failed to request OTP. Check credentials or try again later.");
+    }
+  };
+
+  const handleVerifyOtp = async (otp: string) => {
+    if (!otpAction) return;
+    setIsVerifying(true);
+    try {
+      await verifyOtp(otpAction, otp);
+      setIsVerifying(false);
+      setIsOtpOpen(false);
+
+      if (otpAction === "clear_workspace_data") {
+        alert(
+          "Workspace data cleared successfully. A report will be emailed to you.",
+        );
+        logout();
+      } else {
+        alert("Workspace scheduled for deletion in 10 days.");
+        logout();
+      }
+    } catch {
+      setIsVerifying(false);
+      alert("Invalid or expired OTP.");
+    }
   };
 
   if (isLoading && !company) {
@@ -524,16 +629,24 @@ export function DashboardSettings() {
         title="Clear workspace data?"
         desc="This will permanently delete all logs and history. This cannot be undone."
         btnText="Clear Everything"
-        onConfirm={() => {}}
+        onConfirm={() => handleRequestOtp("clear_workspace_data")}
       />
 
       <SimpleConfirmModal
         isOpen={isDeleteAccountOpen}
         onClose={() => setIsDeleteAccountOpen(false)}
         title="Delete your account?"
-        desc="Your workspace will be deactivated. You have 7 days to revert this action."
-        btnText="Delete Account"
-        onConfirm={() => {}}
+        desc="Your workspace will be deactivated. You have 10 days to revert this action."
+        btnText="Deactivate Account"
+        onConfirm={() => handleRequestOtp("deactivate_workspace")}
+      />
+
+      <OtpVerifyModal
+        isOpen={isOtpOpen}
+        onClose={() => setIsOtpOpen(false)}
+        action={otpAction}
+        onVerify={handleVerifyOtp}
+        isVerifying={isVerifying}
       />
     </div>
   );

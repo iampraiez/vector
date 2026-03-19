@@ -20,7 +20,7 @@ import {
 export type OrderStatus =
   | "unassigned"
   | "assigned"
-  | "in-progress"
+  | "in_progress"
   | "completed"
   | "failed";
 
