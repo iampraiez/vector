@@ -40,6 +40,14 @@ export function LegalModal({ type, open, onOpenChange }: LegalModalProps) {
             </div>
           )}
         </div>
+        <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50/50">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors cursor-pointer text-sm shadow-sm"
+          >
+            Close
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );
