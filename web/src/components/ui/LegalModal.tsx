@@ -1,3 +1,4 @@
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import {
   Dialog,
   DialogContent,
@@ -17,18 +18,27 @@ interface LegalModalProps {
 export function LegalModal({ type, open, onOpenChange }: LegalModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="p-6 pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-10 border-b border-gray-100 mb-0">
-          <DialogTitle className="text-2xl font-black text-gray-900">
-            {type === "terms" ? "Terms of Service" : "Privacy Policy"}
-          </DialogTitle>
-          <DialogDescription className="text-sm font-medium text-gray-500">
-            {type === "terms"
-              ? "Please read these terms carefully before using our services."
-              : "We are committed to protecting your personal data and your right to privacy."}
-          </DialogDescription>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0 border-none shadow-2xl">
+        <DialogHeader className="p-6 pb-5 sticky top-0 bg-white/95 backdrop-blur-md z-10 border-b border-gray-100 mb-0 flex-row justify-between items-start space-y-0">
+          <div className="flex-1">
+            <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
+              {type === "terms" ? "Terms of Service" : "Privacy Policy"}
+            </DialogTitle>
+            <DialogDescription className="text-sm font-medium text-gray-500 mt-1">
+              {type === "terms"
+                ? "Please read these terms carefully before using our services."
+                : "We are committed to protecting your personal data and your right to privacy."}
+            </DialogDescription>
+          </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="p-2 rounded-xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 cursor-pointer -mt-1 -mr-1 group"
+            aria-label="Close modal"
+          >
+            <XMarkIcon className="w-5 h-5 transition-transform group-hover:rotate-90" />
+          </button>
         </DialogHeader>
-        <div className="px-6 pb-6">
+        <div className="px-6 pb-10">
           {type === "terms" && (
             <div className="-mt-8">
               <TermsContent className="py-8 space-y-8" />
@@ -39,14 +49,6 @@ export function LegalModal({ type, open, onOpenChange }: LegalModalProps) {
               <PrivacyContent className="py-8 space-y-8" />
             </div>
           )}
-        </div>
-        <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50/50">
-          <button
-            onClick={() => onOpenChange(false)}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors cursor-pointer text-sm shadow-sm"
-          >
-            Close
-          </button>
         </div>
       </DialogContent>
     </Dialog>
