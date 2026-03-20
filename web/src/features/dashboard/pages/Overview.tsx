@@ -10,7 +10,6 @@ import {
   MapPinIcon,
   SignalIcon,
   ChevronRightIcon,
-  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal } from "../components/NewOrderModal";
 
@@ -234,42 +233,61 @@ export function DashboardOverview() {
                 activeDrivers.map((driver, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
+                    className="flex items-center gap-4 p-3.5 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
                     onClick={() => navigate("/dashboard/tracking")}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0 relative border border-black/5 transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100">
-                      <span className="text-[12px] font-bold text-gray-500 group-hover:text-emerald-600">
-                        {driver.name
-                          ? driver.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                          : "?"}
-                      </span>
+                    {/* Avatar/ID Container */}
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 relative border border-black/5 transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100 group-hover:shadow-sm">
+                      <div className="flex flex-col items-center justify-center">
+                        <UsersIcon className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 mb-0.5" />
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter group-hover:text-emerald-500">
+                          {driver.id.slice(-4)}
+                        </span>
+                      </div>
+                      {/* Presence Indicator */}
                       <div
-                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
+                        className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
                           driver.status === "active"
                             ? "bg-emerald-500"
                             : "bg-amber-500"
                         }`}
                       />
                     </div>
+
+                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-semibold text-gray-700 mb-0.5 truncate tracking-tight">
-                        {driver.name}
-                      </p>
-                      <div className="flex items-center gap-2 text-[12px] text-gray-400 font-medium">
-                        <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-[14px] font-bold text-gray-800 truncate tracking-tight leading-none">
+                          {driver.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
+                        <MapPinIcon className="w-3.5 h-3.5 shrink-0 text-gray-300" />
                         <span className="truncate">
-                          {driver.current_location_name || "Unknown"}
+                          {driver.current_location_name ||
+                            "Waiting for signal..."}
                         </span>
                       </div>
                     </div>
+
+                    {/* Status Badge */}
                     <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-black/5 group-hover:border-emerald-600/20 group-hover:bg-emerald-50/50 transition-all shadow-sm">
-                        <ClockIcon className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" />
-                        <span className="text-[11px] text-gray-600 font-bold">
-                          Online
+                      <div
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all shadow-sm ${
+                          driver.status === "active"
+                            ? "bg-emerald-50/50 border-emerald-100 text-emerald-700 font-bold"
+                            : "bg-amber-50/50 border-amber-100 text-amber-700 font-bold"
+                        }`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            driver.status === "active"
+                              ? "bg-emerald-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        <span className="text-[10px] uppercase tracking-wider">
+                          {driver.status === "active" ? "On Delivery" : "Idle"}
                         </span>
                       </div>
                     </div>
@@ -313,15 +331,18 @@ export function DashboardOverview() {
                   return (
                     <div
                       key={i}
-                      className="flex items-center gap-4 p-3 rounded-xl border border-transparent"
+                      className="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
                     >
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 transition-all group-hover:bg-amber-50 group-hover:border-amber-100">
+                        <ArchiveBoxIcon className="w-5 h-5 text-gray-400 group-hover:text-amber-600" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <p className="text-[14px] font-semibold text-gray-700 tracking-tight">
-                            Order {recentOrders.length - i}
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-[14px] font-semibold text-gray-800 truncate tracking-tight">
+                            {order.customer_name}
                           </p>
                           <span
-                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider border"
+                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider border shrink-0"
                             style={{
                               backgroundColor: s.bg,
                               color: s.color,
@@ -331,10 +352,16 @@ export function DashboardOverview() {
                             {order.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
-                          <span className="text-gray-600 truncate">
-                            {order.customer_name}
-                          </span>
+                        <div className="flex items-center gap-3">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
+                            {order.external_id || `#${recentOrders.length - i}`}
+                          </p>
+                          <div className="flex items-center gap-1 text-[12px] text-gray-400 font-medium min-w-0">
+                            <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">
+                              {order.address || "No address provided"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

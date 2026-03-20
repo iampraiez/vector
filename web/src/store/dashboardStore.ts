@@ -27,7 +27,10 @@ interface RecentOrder {
   id: string;
   external_id: string | null;
   customer_name: string;
+  address: string;
+  delivery_date: string;
   status: string;
+  created_at: string;
 }
 
 interface DashboardState {

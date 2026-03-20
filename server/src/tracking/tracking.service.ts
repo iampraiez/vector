@@ -59,7 +59,8 @@ export class TrackingService {
       timeline: {
         created_at: stop.created_at,
         assigned_at: stop.route?.assigned_at || null,
-        started_at: stop.route?.started_at || null,
+        started_at:
+          (stop.started_at as Date | null) || stop.route?.started_at || null,
         arrived_at: stop.arrived_at,
         completed_at: stop.completed_at,
       },

@@ -199,6 +199,7 @@ model Stop {
   status                  StopStatus   @default(unassigned)
   delivery_date           String?      // YYYY-MM-DD
   arrived_at              DateTime?
+  started_at              DateTime?
   completed_at            DateTime?
   failure_reason          String?
   failure_notes           String?

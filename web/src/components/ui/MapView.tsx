@@ -32,6 +32,7 @@ interface MapViewProps {
   drivers: Driver[];
   selectedDriverId?: string | null;
   userLocation?: { lat: number; lng: number } | null;
+  onLocationDetected?: (lat: number, lng: number) => void;
   className?: string;
 }
 
@@ -62,8 +63,36 @@ const MapView: React.FC<MapViewProps> = ({
   drivers,
   selectedDriverId,
   userLocation,
+  onLocationDetected,
   className,
 }) => {
+  const [isLocating, setIsLocating] = React.useState(false);
+
+  const handleLocateMe = () => {
+    setIsLocating(true);
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      setIsLocating(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        onLocationDetected?.(latitude, longitude);
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error("Error detecting location:", error);
+        alert(
+          "Unable to retrieve your location. Please check your permissions.",
+        );
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+    );
+  };
+
   const selectedDriver = useMemo(
     () => drivers.find((d) => d.id === selectedDriverId),
     [drivers, selectedDriverId],
@@ -84,7 +113,7 @@ const MapView: React.FC<MapViewProps> = ({
     return DEFAULT_CENTER;
   }, [userLocation, selectedDriver, drivers]);
 
-  const zoom = selectedDriver ? 15 : 12;
+  const zoom = selectedDriver || userLocation ? 15 : 12;
 
   // Custom marker icon using L.divIcon and Lucide icons
   const createTruckIcon = (isSelected: boolean) => {
@@ -258,6 +287,18 @@ const MapView: React.FC<MapViewProps> = ({
           );
         })}
       </MapContainer>
+
+      {/* Locate Me Button */}
+      <button
+        onClick={handleLocateMe}
+        disabled={isLocating}
+        className="absolute bottom-6 right-6 z-400 bg-white p-3 rounded-full shadow-lg border border-border hover:bg-slate-50 transition-colors disabled:opacity-50"
+        title="Locate Me"
+      >
+        <Navigation
+          className={`w-5 h-5 ${isLocating ? "animate-pulse text-blue-600" : "text-slate-600"}`}
+        />
+      </button>
     </div>
   );
 };

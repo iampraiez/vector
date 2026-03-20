@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { api } from "../../../lib/api";
 import { Order } from "../../../store/orderStore";
 import {
@@ -121,6 +122,9 @@ export function NewOrderModal({
   };
 
   const handleLocationChange = async (lat: number, lng: number) => {
+    // If coordinates are invalid or zero, skip
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+
     // Only update if significantly changed or first time
     if (
       lastGeocodeRef.current &&
@@ -145,7 +149,17 @@ export function NewOrderModal({
         }));
       }
     } catch (err) {
-      console.error("Reverse geocoding failed:", err);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 400) {
+          console.warn(
+            "Reverse geocoding: Server returned 400. Service might be unconfigured or key is missing in .env",
+          );
+        } else {
+          console.error("Reverse geocoding failed:", err);
+        }
+      } else {
+        console.error("Reverse geocoding failed (non-axios):", err);
+      }
     } finally {
       setIsReverseGeocoding(false);
     }

@@ -159,71 +159,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF8FAF9),
-        bottomNavigationBar: const AppBottomNav(),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              const SkeletonBox(height: 80, radius: 16), // Header placeholder
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(child: SkeletonBox(height: 80, radius: 14)),
-                  const SizedBox(width: 10),
-                  Expanded(child: SkeletonBox(height: 80, radius: 14)),
-                  const SizedBox(width: 10),
-                  Expanded(child: SkeletonBox(height: 80, radius: 14)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SkeletonBox(height: 120, radius: 14), // Chart placeholder
-              const SizedBox(height: 16),
-              SkeletonBox(height: 48, radius: 10), // Filter placeholder
-              const SizedBox(height: 16),
-              ...List.generate(4, (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: SkeletonBox(height: 140, radius: 14),
-              )),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF8FAF9),
-        bottomNavigationBar: const AppBottomNav(),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     final double totalEarnings = 0;
     final int totalDeliveries = _completedRoutes.fold(
       0, (sum, r) => sum + (r['completed'] as int));
@@ -322,8 +257,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
 
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
+                child: _isLoading
+                    ? _buildSkeleton()
+                    : _errorMessage != null
+                        ? _buildErrorView()
+                        : ListView(
+                            padding: const EdgeInsets.all(16),
                   children: [
                     // Summary Cards
                     Row(
@@ -1127,6 +1066,59 @@ class _HistoryScreenState extends State<HistoryScreen> {
         );
       }
     }
+  }
+
+  Widget _buildSkeleton() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        Row(
+          children: [
+            Expanded(child: SkeletonBox(height: 80, radius: 14)),
+            const SizedBox(width: 10),
+            Expanded(child: SkeletonBox(height: 80, radius: 14)),
+            const SizedBox(width: 10),
+            Expanded(child: SkeletonBox(height: 80, radius: 14)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const SkeletonBox(height: 120, radius: 14), // Chart placeholder
+        const SizedBox(height: 16),
+        const SkeletonBox(height: 48, radius: 10), // Filter placeholder
+        const SizedBox(height: 16),
+        ...List.generate(4, (i) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: const SkeletonBox(height: 140, radius: 14),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

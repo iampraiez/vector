@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore, Driver } from "../../../store/driverStore";
 import { api } from "../../../lib/api";
@@ -744,6 +745,9 @@ function EditOrderModal({
   const lastGeocodeRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const handleLocationChange = async (lat: number, lng: number) => {
+    // If coordinates are invalid or zero (unlikely but safe), skip
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+
     // Only update if significantly changed or first time
     if (
       lastGeocodeRef.current &&
@@ -767,7 +771,17 @@ function EditOrderModal({
         }));
       }
     } catch (err) {
-      console.error("Reverse geocoding failed:", err);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 400) {
+          console.warn(
+            "Reverse geocoding: Server returned 400. Service might be unconfigured or key is missing in .env",
+          );
+        } else {
+          console.error("Reverse geocoding failed:", err);
+        }
+      } else {
+        console.error("Reverse geocoding failed (non-axios):", err);
+      }
     } finally {
       setIsReverseGeocoding(false);
     }
