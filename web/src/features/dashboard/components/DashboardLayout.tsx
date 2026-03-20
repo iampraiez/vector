@@ -142,7 +142,7 @@ function DashboardSidebar() {
           <div className="flex items-center gap-2.5">
             {/* Avatar — single initial */}
             <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 text-white text-[13px] font-black tracking-tight select-none shadow-sm">
-              {getInitial(user?.email || "User")}
+              {getInitial(user?.full_name || "User")}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-bold text-gray-900 leading-none truncate mb-1">

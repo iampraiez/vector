@@ -106,6 +106,14 @@ export class UpdateOrderDto extends CreateOrderDto {
   @IsEnum(['unassigned', 'assigned', 'in_progress', 'completed', 'failed'])
   @IsOptional()
   status?: 'unassigned' | 'assigned' | 'in_progress' | 'completed' | 'failed';
+
+  @IsNumber()
+  @IsOptional()
+  lat?: number;
+
+  @IsNumber()
+  @IsOptional()
+  lng?: number;
 }
 
 export class CreateDriverDto {
@@ -174,4 +182,10 @@ export class ChangePlanDto {
   @IsString()
   @IsOptional()
   billing_cycle?: 'monthly' | 'annual';
+}
+
+export class CreateApiKeyDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
 }

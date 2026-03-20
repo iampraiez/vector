@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:geolocator/geolocator.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/bottom_nav.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/location_service.dart';
 import '../../main.dart' show AuthScope;
 
 class HomeScreen extends StatefulWidget {
@@ -48,8 +51,9 @@ class _HomeSummary {
       };
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _api = DriverApiService.instance;
+  final _locationService = LocationService.instance;
   static const _cacheKey = 'cache_home_summary';
   static const _cacheTtlMinutes = 5;
 
@@ -58,11 +62,60 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isOffline = false;
   String? _errorMessage;
 
+  // Location state
+  bool _isLocationEnabled = true;
+  LocationPermission _locationPermission = LocationPermission.always;
+  StreamSubscription<ServiceStatus>? _locationServiceSubscription;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+    _checkLocationStatus();
+    _initLocationListener();
   }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _locationServiceSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkLocationStatus();
+    }
+  }
+
+  Future<void> _checkLocationStatus() async {
+    final isEnabled = await _locationService.isServiceEnabled();
+    final permission = await _locationService.checkPermission();
+    if (mounted) {
+      setState(() {
+        _isLocationEnabled = isEnabled;
+        _locationPermission = permission;
+      });
+    }
+  }
+
+  void _initLocationListener() {
+    _locationServiceSubscription =
+        Geolocator.getServiceStatusStream().listen((status) {
+          if (mounted) {
+            setState(() {
+              _isLocationEnabled = status == ServiceStatus.enabled;
+            });
+          }
+        });
+  }
+
+  bool get _showLocationBanner =>
+      !_isLocationEnabled ||
+      (_locationPermission == LocationPermission.denied ||
+          _locationPermission == LocationPermission.deniedForever);
 
   Future<void> _loadData({bool forceRefresh = false}) async {
     if (!mounted) return;
@@ -191,12 +244,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (_isOffline)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8,
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                         color: const Color(0xFFFEF3C7),
                         child: Row(
                           children: const [
-                            Icon(Icons.wifi_off, size: 16, color: Color(0xFFD97706)),
+                            Icon(
+                              Icons.wifi_off,
+                              size: 16,
+                              color: Color(0xFFD97706),
+                            ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -211,6 +269,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
+
+                    // Location banner
+                    if (_showLocationBanner) _buildLocationBanner(),
 
                     // Header
                     Container(
@@ -296,20 +357,93 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildLocationBanner() {
+    String message = '';
+    String actionLabel = 'Enable';
+    VoidCallback onTap = () {};
+
+    if (!_isLocationEnabled) {
+      message = 'Location services are disabled';
+      actionLabel = 'Turn On';
+      onTap = () => _locationService.openLocationSettings();
+    } else if (_locationPermission == LocationPermission.denied) {
+      message = 'Location permission is required';
+      actionLabel = 'Grant';
+      onTap = () async {
+        final p = await _locationService.requestPermission();
+        setState(() => _locationPermission = p);
+      };
+    } else if (_locationPermission == LocationPermission.deniedForever) {
+      message = 'Location access is blocked';
+      actionLabel = 'Settings';
+      onTap = () => _locationService.openSettings();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFEE2E2),
+        border: Border(bottom: BorderSide(color: Color(0xFFFECACA))),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.location_off, size: 20, color: Color(0xFFDC2626)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF991B1B),
+                  ),
+                ),
+                const Text(
+                  'Enable to let fleet managers track your progress',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFB91C1C)),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              actionLabel,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSkeleton() {
     return Column(
       children: [
-        _SkeletonBox(height: 140, radius: 16),
+        SkeletonBox(height: 140, radius: 16),
         const SizedBox(height: 20),
         Row(
           children: [
-            Expanded(child: _SkeletonBox(height: 80, radius: 12)),
+            Expanded(child: SkeletonBox(height: 80, radius: 12)),
             const SizedBox(width: 12),
-            Expanded(child: _SkeletonBox(height: 80, radius: 12)),
+            Expanded(child: SkeletonBox(height: 80, radius: 12)),
           ],
         ),
         const SizedBox(height: 20),
-        _SkeletonBox(height: 60, radius: 12),
+        SkeletonBox(height: 60, radius: 12),
       ],
     );
   }
@@ -665,23 +799,6 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ── Sub-widgets ────────────────────────────────────────────────────────────────
-
-class _SkeletonBox extends StatelessWidget {
-  final double height;
-  final double radius;
-  const _SkeletonBox({required this.height, required this.radius});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE5E7EB),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-}
 
 class _StatCard extends StatelessWidget {
   final String label;

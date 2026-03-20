@@ -10,10 +10,12 @@ import { SettingsController } from './settings.controller';
 import { DashboardNotificationsController } from './notifications.controller';
 import { MailModule } from '../mail/mail.module';
 import { BullModule } from '@nestjs/bull';
+import { MapModule } from '../map/map.module';
 
 @Module({
   imports: [
     MailModule,
+    MapModule,
     BullModule.registerQueue({ name: 'email' }, { name: 'account' }),
   ],
   controllers: [

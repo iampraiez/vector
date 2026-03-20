@@ -16,6 +16,7 @@ import {
   BookmarkIcon,
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
+import { LocationPickerMap } from "../../../components/ui/LocationPickerMap";
 
 export type OrderStatus =
   | "unassigned"
@@ -37,13 +38,15 @@ export interface Order {
   status: OrderStatus;
   assigned_to?: string;
   notes?: string;
+  lat?: number;
+  lng?: number;
   createdAt: string;
 }
 
 interface NewOrderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (order: Order) => void;
+  onCreate: (order: Partial<Order>) => void;
   drivers?: string[];
 }
 
@@ -64,6 +67,8 @@ export function NewOrderModal({
     priority: "normal" as "normal" | "high",
     assigned_to: "",
     notes: "",
+    lat: undefined as number | undefined,
+    lng: undefined as number | undefined,
   });
 
   const [loading, setLoading] = useState(false);
@@ -85,7 +90,8 @@ export function NewOrderModal({
         status: form.assigned_to ? "assigned" : "unassigned",
         assigned_to: form.assigned_to || undefined,
         notes: form.notes || undefined,
-        createdAt: "Just now",
+        lat: form.lat,
+        lng: form.lng,
       });
       setLoading(false);
       setForm({
@@ -99,6 +105,8 @@ export function NewOrderModal({
         priority: "normal",
         assigned_to: "",
         notes: "",
+        lat: undefined,
+        lng: undefined,
       });
       onOpenChange(false);
     }, 1200);
@@ -124,14 +132,14 @@ export function NewOrderModal({
               <ModalInput
                 label="Customer Name *"
                 value={form.customer_name}
-                onChange={(v) => setForm({ ...form, customer_name: v })}
+                onChange={(v: string) => setForm({ ...form, customer_name: v })}
                 placeholder="Acme Corp"
                 icon={<UserIcon className="w-4 h-4 text-emerald-600" />}
               />
               <ModalInput
                 label="Address *"
                 value={form.address}
-                onChange={(v) => setForm({ ...form, address: v })}
+                onChange={(v: string) => setForm({ ...form, address: v })}
                 placeholder="742 Evergreen Terrace"
                 icon={<MapPinIcon className="w-4 h-4 text-emerald-600" />}
               />
@@ -139,7 +147,7 @@ export function NewOrderModal({
                 <ModalInput
                   label="City"
                   value={form.city}
-                  onChange={(v) => setForm({ ...form, city: v })}
+                  onChange={(v: string) => setForm({ ...form, city: v })}
                   placeholder="Springfield"
                   icon={
                     <BuildingOfficeIcon className="w-4 h-4 text-emerald-600" />
@@ -149,7 +157,7 @@ export function NewOrderModal({
                   label="Packages"
                   value={form.packages}
                   type="number"
-                  onChange={(v) => setForm({ ...form, packages: v })}
+                  onChange={(v: string) => setForm({ ...form, packages: v })}
                   icon={<CubeIcon className="w-4 h-4 text-emerald-600" />}
                 />
               </div>
@@ -242,6 +250,30 @@ export function NewOrderModal({
                   </svg>
                 </div>
               </div>
+            </div>
+
+            {/* Location Map Override */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                  Delivery Pin (Optional)
+                </label>
+                {!form.lat && !form.lng && (
+                  <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-2 py-0.5 rounded uppercase tracking-widest leading-none">
+                    Auto-Geocoding
+                  </span>
+                )}
+              </div>
+              <LocationPickerMap
+                lat={form.lat || null}
+                lng={form.lng || null}
+                onChange={(lat, lng) => setForm({ ...form, lat, lng })}
+              />
+              <p className="text-[10px] text-gray-400 italic mt-2 ml-1">
+                {!form.lat && !form.lng
+                  ? "Leave blank to auto-geocode from address, or drop a pin for exact placement."
+                  : "Drag the pin to manually set the exact delivery location."}
+              </p>
             </div>
 
             {/* Scrollable Driver Selection */}

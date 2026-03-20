@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { IsArray, ValidateNested, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -6,6 +6,14 @@ export class GeocodeDto {
   @IsString()
   @IsNotEmpty()
   address: string;
+
+  @IsString()
+  @IsOptional()
+  filter?: string;
+
+  @IsString()
+  @IsOptional()
+  bias?: string;
 }
 
 export class WaypointDto {

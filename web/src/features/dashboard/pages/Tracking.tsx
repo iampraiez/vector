@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDriverStore } from "../../../store/driverStore";
 import { useRouteStore } from "../../../store/routeStore";
+import MapView from "../../../components/ui/MapView";
 
 import {
   MapPinIcon,
@@ -23,6 +24,13 @@ export function DashboardTracking() {
   useEffect(() => {
     fetchDrivers({ limit: 100 });
     fetchRoutes({ limit: 100 });
+
+    // Poll for driver updates every 10 seconds
+    const interval = setInterval(() => {
+      fetchDrivers({ limit: 100 });
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [fetchDrivers, fetchRoutes]);
 
   const activeDrivers = drivers.filter((d) => d.status === "active");
@@ -138,7 +146,7 @@ export function DashboardTracking() {
             <div
               className={`${selectedDriver ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-500`}
             >
-              <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm flex flex-col h-100 md:h-150">
+              <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm flex flex-col h-150 lg:h-180">
                 {/* Map Toolbar */}
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2">
@@ -160,69 +168,19 @@ export function DashboardTracking() {
                   )}
                 </div>
 
-                {/* Map Placeholder with Modern Aesthetics */}
-                <div
-                  id="tour-live-map"
-                  className="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center group"
-                >
-                  {/* Grid Lines Pattern */}
-                  <div
-                    className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(#000 1px, transparent 1px)",
-                      backgroundSize: "24px 24px",
-                    }}
+                {/* Map Component Container */}
+                <div id="tour-live-map" className="flex-1 relative">
+                  <MapView
+                    drivers={drivers}
+                    selectedDriverId={selectedDriver?.id}
                   />
-
-                  <div className="text-center relative z-10 transition-transform duration-700 group-hover:scale-105">
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto mb-4 border border-black/5">
-                      <MapPinIcon className="w-8 h-8 text-emerald-600 animate-bounce" />
-                    </div>
-                    <p className="text-[14px] font-bold text-gray-400">
-                      Interactive Map Interface
-                    </p>
-                    <p className="text-[11px] text-gray-300 font-bold uppercase tracking-widest mt-1">
-                      Live Telemetry Active
-                    </p>
-                  </div>
-
-                  {/* Simulated Driver Pins */}
-                  {!selectedDriver &&
-                    activeDrivers.map((d, i) => (
-                      <button
-                        key={d.id}
-                        onClick={() => setSelectedDriver(d)}
-                        className={`absolute w-10 h-10 rounded-full border-4 border-white shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-125 hover:z-20 cursor-pointer ${getStatusClasses(d.status)}`}
-                        style={{
-                          left: `${25 + i * 20}%`,
-                          top: `${30 + i * 15}%`,
-                        }}
-                      >
-                        <LocalShippingIcon size={20} className="text-white" />
-                      </button>
-                    ))}
-
-                  {/* Selected Driver Pin */}
-                  {selectedDriver && (
-                    <div
-                      className={`absolute w-12 h-12 rounded-full border-4 border-white shadow-2xl flex items-center justify-center animate-pulse ${getStatusClasses(selectedDriver.status)}`}
-                      style={{
-                        left: "50%",
-                        top: "50%",
-                        transform: "translate(-50%, -50%)",
-                      }}
-                    >
-                      <LocalShippingIcon size={24} className="text-white" />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
             {/* Side Info Panel (Selected Driver) */}
             {selectedDriver && (
-              <div className="lg:col-span-4 animate-in slide-in-from-right duration-500">
+              <div className="lg:col-span-4 animate-in slide-in-from-right duration-500 lg:sticky lg:top-8 self-start">
                 <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm h-full">
                   <div className="flex items-center gap-4 mb-8">
                     <div

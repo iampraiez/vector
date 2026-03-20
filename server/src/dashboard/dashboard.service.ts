@@ -16,6 +16,8 @@ import {
   ReportQueryDto,
   ChangePlanDto,
   CreateDriverDto,
+  UpdateDriverDto,
+  CreateApiKeyDto,
 } from './dto/dashboard.dto';
 import {
   UpdateCompanySettingsDto,
@@ -27,6 +29,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { generateReportCsv } from './utils/report.util';
 import { MailService } from '../mail/mail.service';
+import { MapService } from '../map/map.service';
 
 @Injectable()
 export class DashboardService {
@@ -34,6 +37,7 @@ export class DashboardService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly mailService: MailService,
+    private readonly mapService: MapService,
     @InjectQueue('email') private readonly emailQueue: Queue,
     @InjectQueue('account') private readonly accountQueue: Queue,
   ) {}
@@ -113,12 +117,73 @@ export class DashboardService {
   }
 
   async createOrder(companyId: string, dto: CreateOrderDto) {
+    let lat: number | null = null;
+    let lng: number | null = null;
+
+    if (dto.address) {
+      // 1. Local Cache: Check if we already geocoded this address
+      const cachedStop = await this.prisma.stop.findFirst({
+        where: {
+          company_id: companyId,
+          address: dto.address,
+          city: dto.city,
+          lat: { not: null },
+          lng: { not: null },
+        },
+        select: { lat: true, lng: true },
+      });
+
+      if (cachedStop && cachedStop.lat && cachedStop.lng) {
+        lat = cachedStop.lat;
+        lng = cachedStop.lng;
+      } else {
+        // 2. Fallback: Geoapify
+        try {
+          // Fetch company to append location context to string, improving accuracy
+          const company = await this.prisma.company.findUnique({
+            where: { id: companyId },
+            select: { city: true, state: true, country: true },
+          });
+
+          let searchString = dto.address;
+          if (dto.city) {
+            searchString += `, ${dto.city}`;
+          } else if (company?.city) {
+            searchString += `, ${company.city}`;
+          }
+          if (company?.state) searchString += `, ${company.state}`;
+          if (company?.country) searchString += `, ${company.country}`;
+
+          // Map country name to code if possible for better Geoapify filtering
+          let filter: string | undefined;
+          let bias: string | undefined;
+
+          if (company?.country?.toLowerCase() === 'nigeria') {
+            filter = 'countrycode:ng';
+            bias = 'countrycode:ng';
+          }
+
+          const geo = await this.mapService.geocode({
+            address: searchString,
+            filter,
+            bias,
+          });
+          lat = geo.lat;
+          lng = geo.lng;
+        } catch {
+          // Geocode fail: leave as null so the UI can prompt for manual update
+        }
+      }
+    }
+
     return this.prisma.stop.create({
       data: {
         ...dto,
         company_id: companyId,
         status: 'unassigned',
         external_id: `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        lat,
+        lng,
       },
     });
   }
@@ -191,9 +256,62 @@ export class DashboardService {
   }
 
   async updateOrder(companyId: string, stopId: string, dto: UpdateOrderDto) {
+    const data: Prisma.StopUpdateInput = { ...dto };
+
+    // If address is being updated but no manual lat/lng provided, try to geocode
+    if (data.address && data.lat === undefined && data.lng === undefined) {
+      // 1. Local Cache check
+      const cachedStop = await this.prisma.stop.findFirst({
+        where: {
+          company_id: companyId,
+          address: data.address as string,
+          city: data.city as string | null,
+          lat: { not: null },
+          lng: { not: null },
+        },
+        select: { lat: true, lng: true },
+      });
+
+      if (cachedStop && cachedStop.lat && cachedStop.lng) {
+        data.lat = cachedStop.lat;
+        data.lng = cachedStop.lng;
+      } else {
+        // 2. Geocode fallback
+        try {
+          const company = await this.prisma.company.findUnique({
+            where: { id: companyId },
+            select: { city: true, state: true, country: true },
+          });
+
+          let searchString = dto.address;
+          if (dto.city) searchString += `, ${dto.city}`;
+          else if (company?.city) searchString += `, ${company.city}`;
+          if (company?.state) searchString += `, ${company.state}`;
+          if (company?.country) searchString += `, ${company.country}`;
+
+          let filter: string | undefined;
+          let bias: string | undefined;
+          if (company?.country?.toLowerCase() === 'nigeria') {
+            filter = 'countrycode:ng';
+            bias = 'countrycode:ng';
+          }
+
+          const geo = await this.mapService.geocode({
+            address: searchString,
+            filter,
+            bias,
+          });
+          data.lat = geo.lat;
+          data.lng = geo.lng;
+        } catch {
+          // Ignore geocode failure on update, stick with existing or null
+        }
+      }
+    }
+
     return this.prisma.stop.update({
       where: { id: stopId, company_id: companyId },
-      data: dto as Prisma.StopUpdateInput,
+      data,
     });
   }
 
@@ -257,6 +375,8 @@ export class DashboardService {
       current_location_name: d.current_location_name,
       total_deliveries: d.total_deliveries,
       avg_rating: d.avg_rating,
+      location_lat: d.current_lat,
+      location_lng: d.current_lng,
       last_active_at: d.last_active_at,
     }));
 
@@ -299,8 +419,8 @@ export class DashboardService {
         status: driver.status,
         vehicle_type: driver.vehicle_type,
         vehicle_plate: driver.vehicle_plate,
-        current_lat: driver.current_lat,
-        current_lng: driver.current_lng,
+        location_lat: driver.current_lat,
+        location_lng: driver.current_lng,
         current_location_name: driver.current_location_name,
         total_deliveries: driver.total_deliveries,
         avg_rating: driver.avg_rating,
@@ -347,7 +467,11 @@ export class DashboardService {
     };
   }
 
-  async updateDriver(companyId: string, driverId: string, dto: any) {
+  async updateDriver(
+    companyId: string,
+    driverId: string,
+    dto: UpdateDriverDto,
+  ) {
     const driver = await this.prisma.driver.findUnique({
       where: { id: driverId, company_id: companyId },
       include: { user: true },
@@ -355,13 +479,7 @@ export class DashboardService {
 
     if (!driver) throw new NotFoundException('Driver not found');
 
-    const updateDto = dto as {
-      full_name?: string;
-      phone?: string;
-      status?: string;
-      vehicle_type?: string;
-      vehicle_plate?: string;
-    };
+    const updateDto = dto;
 
     // Split updates between User table and Driver profile
     const userUpdateData: Prisma.UserUpdateInput = {};
@@ -813,17 +931,14 @@ export class DashboardService {
     });
   }
 
-  async createApiKey(companyId: string, dto: any, userId: string) {
+  async createApiKey(companyId: string, dto: CreateApiKeyDto, userId: string) {
     const rawKey = `vec_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
 
     // In production, you would hash this before storing
     const keyPrefix = rawKey.substring(0, 8);
     const keyHash = rawKey; // Stub: store raw for now
 
-    const inputName =
-      dto && typeof dto === 'object' && 'name' in (dto as object)
-        ? (dto as { name: string }).name
-        : 'New API Key';
+    const inputName = dto?.name || 'New API Key';
 
     const apiKey = await this.prisma.apiKey.create({
       data: {

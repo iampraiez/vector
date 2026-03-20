@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/colors.dart';
 import '../../core/constants/map_constants.dart';
+import '../../core/services/location_service.dart';
 import '../../core/services/map_service.dart';
 import '../../main.dart' show RouteProgressScope;
 
@@ -41,15 +42,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   Future<void> _initLocationTracking() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    final locService = LocationService.instance;
+    bool serviceEnabled = await locService.isServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) setState(() => _locationPermissionGranted = false);
       return;
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
+    LocationPermission permission = await locService.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      permission = await locService.requestPermission();
     }
     if (permission == LocationPermission.deniedForever ||
         permission == LocationPermission.denied) {
@@ -60,10 +62,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
     if (mounted) setState(() => _locationPermissionGranted = true);
 
     // Get initial position
-    final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-    );
-    if (mounted) {
+    final pos = await locService.getCurrentPosition();
+    if (pos != null && mounted) {
       setState(() => _currentPosition = LatLng(pos.latitude, pos.longitude));
       if (_mapReady) {
         _mapController.move(_currentPosition!, 16);
@@ -72,12 +72,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
     // Stream location changes
     _positionStream =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 10, // update every 10 metres
-          ),
-        ).listen((Position p) {
+        locService.getPositionStream(distanceFilter: 10).listen((Position p) {
           if (!mounted) return;
           setState(() => _currentPosition = LatLng(p.latitude, p.longitude));
           if (_mapReady) {

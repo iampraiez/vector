@@ -7,6 +7,7 @@ export interface User {
   role: string;
   company_id: string;
   is_onboarded?: boolean;
+  full_name: string;
 }
 
 interface AuthState {

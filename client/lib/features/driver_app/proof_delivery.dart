@@ -138,8 +138,18 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
             // Header
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.white,
+                border: const Border(
+                  bottom: BorderSide(color: AppColors.border),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +181,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0F9F6),
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                       ),
@@ -249,10 +259,10 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: CustomPaint(
-                          painter: _DashedBorderPainter(color: AppColors.border.withValues(alpha: 0.15)),
+                          painter: _DashedBorderPainter(color: AppColors.border),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               vertical: 40,
@@ -302,10 +312,10 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+                        border: Border.all(color: AppColors.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withValues(alpha: 0.03),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -385,10 +395,10 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+                      border: Border.all(color: AppColors.border),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -474,9 +484,9 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                               width: double.infinity,
                               height: 160,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF9FAFB),
+                                color: const Color(0xFFF8FAF9),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+                                border: Border.all(color: AppColors.border),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -586,7 +596,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: TextField(
                       controller: _notesController,
@@ -637,8 +647,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: isComplete ? AppColors.primary : const Color(0xFFE0E0E0),
               foregroundColor: Colors.white,
-              elevation: isComplete ? 4 : 0,
-              shadowColor: AppColors.primary.withValues(alpha: 0.4),
+              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -666,8 +675,8 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                       Text(
                         'Complete Delivery',
                         style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           color: isComplete ? Colors.white : const Color(0xFF9E9E9E),
                         ),
                       ),

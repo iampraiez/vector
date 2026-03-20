@@ -706,6 +706,43 @@ paths:
         "204":
           description: ""
       tags: *a7
+  /map/geocode:
+    post:
+      operationId: MapController_geocode
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeocodeDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: &a8
+        - Map
+  /map/directions:
+    post:
+      operationId: MapController_getDirections
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DirectionsDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: *a8
   /driver/home:
     get:
       operationId: HomeController_getHome
@@ -728,7 +765,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a8
+      tags: &a9
         - Status
   /driver/status/location:
     patch:
@@ -743,7 +780,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a8
+      tags: *a9
   /driver/assignments:
     get:
       operationId: AssignmentsController_getAssignments
@@ -770,7 +807,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a9
+      tags: &a10
         - Routes
   /driver/routes/{route_id}/start:
     post:
@@ -784,7 +821,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a9
+      tags: *a10
   /driver/navigation/stops/{stop_id}:
     get:
       operationId: NavigationController_getStop
@@ -797,7 +834,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a10
+      tags: &a11
         - Navigation
   /driver/navigation/stops/{stop_id}/arrive:
     patch:
@@ -811,7 +848,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a10
+      tags: *a11
   /driver/navigation/stops/{stop_id}/skip:
     patch:
       operationId: NavigationController_skipStop
@@ -824,7 +861,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a10
+      tags: *a11
   /driver/delivery/{stop_id}/complete:
     post:
       operationId: DeliveryController_completeDelivery
@@ -843,7 +880,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a11
+      tags: &a12
         - Delivery
   /driver/delivery/{stop_id}/fail:
     post:
@@ -863,7 +900,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a11
+      tags: *a12
   /driver/history:
     get:
       operationId: HistoryController_getHistory
@@ -881,7 +918,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a12
+      tags: &a13
         - History
   /driver/history/export:
     post:
@@ -896,7 +933,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a12
+      tags: *a13
   /driver/profile:
     get:
       operationId: ProfileController_getProfile
@@ -904,7 +941,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a13
+      tags: &a14
         - Profile
     patch:
       operationId: ProfileController_updateProfile
@@ -912,7 +949,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a13
+      tags: *a14
   /driver/profile/avatar:
     post:
       operationId: ProfileController_uploadAvatar
@@ -920,7 +957,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a13
+      tags: *a14
   /driver/settings:
     get:
       operationId: SettingsController_getSettings
@@ -928,7 +965,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a14
+      tags: &a15
         - Settings
     patch:
       operationId: SettingsController_updateSettings
@@ -936,7 +973,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a14
+      tags: *a15
   /driver/settings/otp/request:
     post:
       operationId: SettingsController_requestOtp
@@ -944,7 +981,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a14
+      tags: *a15
   /driver/settings/otp/verify:
     post:
       operationId: SettingsController_verifyOtp
@@ -952,7 +989,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a14
+      tags: *a15
   /driver/notifications:
     get:
       operationId: DriverNotificationsController_getNotifications
@@ -970,7 +1007,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a15
+      tags: &a16
         - DriverNotifications
   /driver/notifications/{notification_id}/read:
     patch:
@@ -984,7 +1021,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a15
+      tags: *a16
   /driver/notifications/read-all:
     post:
       operationId: DriverNotificationsController_markAllRead
@@ -992,7 +1029,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a15
+      tags: *a16
   /driver/onboarding:
     post:
       operationId: OnboardingController_completeOnboarding
@@ -1021,7 +1058,7 @@ paths:
                 type: array
                 items:
                   type: object
-      tags: &a16
+      tags: &a17
         - Routes
     post:
       operationId: RoutesController_createRoute
@@ -1035,7 +1072,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a17
   /routes/{route_id}:
     get:
       operationId: RoutesController_getRoute
@@ -1048,7 +1085,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a16
+      tags: *a17
     patch:
       operationId: RoutesController_updateRoute
       parameters:
@@ -1066,7 +1103,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a16
+      tags: *a17
     delete:
       operationId: RoutesController_deleteRoute
       parameters:
@@ -1078,7 +1115,7 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a16
+      tags: *a17
   /routes/{route_id}/optimize:
     post:
       operationId: RoutesController_optimizeRoute
@@ -1091,7 +1128,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a17
   /routes/{route_id}/assign:
     post:
       operationId: RoutesController_assignRoute
@@ -1110,7 +1147,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a17
   /track:
     get:
       operationId: TrackingController_getTrackingData
@@ -1123,7 +1160,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a17
+      tags: &a18
         - Tracking
   /track/rate:
     post:
@@ -1137,43 +1174,6 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a17
-  /map/geocode:
-    post:
-      operationId: MapController_geocode
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GeocodeDto"
-      responses:
-        "201":
-          description: ""
-          content:
-            application/json:
-              schema:
-                type: object
-      tags: &a18
-        - Map
-  /map/directions:
-    post:
-      operationId: MapController_getDirections
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DirectionsDto"
-      responses:
-        "201":
-          description: ""
-          content:
-            application/json:
-              schema:
-                type: object
       tags: *a18
 info:
   title: Vector API
@@ -1413,6 +1413,10 @@ components:
           type: string
         status:
           type: object
+        lat:
+          type: number
+        lng:
+          type: number
       required:
         - customer_name
         - address
@@ -1511,6 +1515,36 @@ components:
           type: string
       required:
         - name
+    GeocodeDto:
+      type: object
+      properties:
+        address:
+          type: string
+        filter:
+          type: string
+        bias:
+          type: string
+      required:
+        - address
+    WaypointDto:
+      type: object
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+      required:
+        - lat
+        - lng
+    DirectionsDto:
+      type: object
+      properties:
+        waypoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/WaypointDto"
+      required:
+        - waypoints
     UpdateStatusDto:
       type: object
       properties:
@@ -1616,29 +1650,3 @@ components:
           type: string
       required:
         - driver_id
-    GeocodeDto:
-      type: object
-      properties:
-        address:
-          type: string
-      required:
-        - address
-    WaypointDto:
-      type: object
-      properties:
-        lat:
-          type: number
-        lng:
-          type: number
-      required:
-        - lat
-        - lng
-    DirectionsDto:
-      type: object
-      properties:
-        waypoints:
-          type: array
-          items:
-            $ref: "#/components/schemas/WaypointDto"
-      required:
-        - waypoints

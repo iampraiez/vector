@@ -32,6 +32,7 @@
     "@radix-ui/react-toggle": "^1.1.2",
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "@react-leaflet/core": "2.1.0",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
@@ -57,7 +58,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "latest",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20.10.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -69,7 +71,9 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "leaflet": "^1.9.4",
     "prettier": "^3.8.1",
+    "react-leaflet": "^4.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0",
     "vite": "6.3.5"

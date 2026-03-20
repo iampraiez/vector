@@ -6,6 +6,7 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
 
@@ -283,12 +284,17 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                 ),
               ),
 
-              // Content
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
+                    ? ListView(
+                        padding: const EdgeInsets.all(16),
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(
+                          3,
+                          (i) => const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: SkeletonBox(height: 160, radius: 16),
+                          ),
                         ),
                       )
                     : _errorMessage != null

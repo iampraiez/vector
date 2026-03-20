@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/colors.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
 
@@ -162,8 +163,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFFF8FAF9),
         bottomNavigationBar: const AppBottomNav(),
-        body: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              const SkeletonBox(height: 80, radius: 16), // Header placeholder
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: SkeletonBox(height: 80, radius: 14)),
+                  const SizedBox(width: 10),
+                  Expanded(child: SkeletonBox(height: 80, radius: 14)),
+                  const SizedBox(width: 10),
+                  Expanded(child: SkeletonBox(height: 80, radius: 14)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SkeletonBox(height: 120, radius: 14), // Chart placeholder
+              const SizedBox(height: 16),
+              SkeletonBox(height: 48, radius: 10), // Filter placeholder
+              const SizedBox(height: 16),
+              ...List.generate(4, (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: SkeletonBox(height: 140, radius: 14),
+              )),
+            ],
+          ),
         ),
       );
     }

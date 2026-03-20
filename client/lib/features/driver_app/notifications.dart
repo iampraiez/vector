@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/colors.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
 
@@ -290,8 +291,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               // List
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary),
+                    ? ListView(
+                        padding: const EdgeInsets.all(16),
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(
+                          6,
+                          (i) => const Padding(
+                            padding: EdgeInsets.only(bottom: 8),
+                            child: SkeletonBox(height: 90, radius: 16),
+                          ),
+                        ),
                       )
                     : _errorMessage != null
                     ? Center(

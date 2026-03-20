@@ -43,6 +43,8 @@ export class MapService {
     url.searchParams.set('text', dto.address);
     url.searchParams.set('format', 'json');
     url.searchParams.set('limit', '1');
+    if (dto.filter) url.searchParams.set('filter', dto.filter);
+    if (dto.bias) url.searchParams.set('bias', dto.bias);
     url.searchParams.set('apiKey', this.apiKey);
 
     let data: {
