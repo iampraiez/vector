@@ -86,7 +86,7 @@ const testimonials = [
     role: "Operations Manager",
     company: "SwiftBox Courier",
     rating: 5,
-    text: "VECTOR cut our average delivery time by 35%. The dashboard is incredibly intuitive — our dispatchers were up to speed in a day.",
+    text: "Vector cut our average delivery time by 35%. The dashboard is incredibly intuitive — our dispatchers were up to speed in a day.",
   },
   {
     name: "Priya Nair",
@@ -200,8 +200,8 @@ export function WebLanding() {
             <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 transition-all duration-300 group-hover:bg-emerald-700 shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
               <LocalShippingIcon size={20} className="text-white" />
             </div>
-            <span className="text-[16px] font-extrabold tracking-[0.04em] text-[#121212]">
-              VECTOR
+            <span className="text-[18px] font-bold tracking-tight text-[#121212]">
+              Vector
             </span>
           </div>
 
@@ -306,7 +306,7 @@ export function WebLanding() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
           </span>
           <span className="text-[11px] font-bold text-emerald-700 tracking-wider uppercase">
-            VECTOR OPEN BETA — FREE FOR UP TO 2 DRIVERS
+            Vector Open Beta — Free for up to 2 drivers
           </span>
         </div>
 
@@ -321,7 +321,7 @@ export function WebLanding() {
             </h1>
 
             <p className="text-lg leading-relaxed text-gray-500 mb-10 max-w-120">
-              VECTOR is the all-in-one fleet management platform that optimises
+              Vector is the all-in-one fleet management platform that optimises
               routes, tracks drivers live, and keeps customers informed — built
               for local delivery businesses.
             </p>
@@ -429,7 +429,7 @@ export function WebLanding() {
             Everything your fleet needs
           </h2>
           <p className="text-[17px] text-gray-500 max-w-135 mx-auto leading-relaxed">
-            From route planning to proof of delivery, VECTOR handles the full
+            From route planning to proof of delivery, Vector handles the full
             delivery lifecycle so you can focus on growth.
           </p>
         </div>
@@ -745,7 +745,7 @@ export function WebLanding() {
           </h2>
           <p className="text-[17px] text-emerald-800 leading-relaxed mb-9 max-w-125 mx-auto relative z-10">
             Join hundreds of delivery businesses already saving time and money
-            with VECTOR. Set up your fleet in under 10 minutes.
+            with Vector. Set up your fleet in under 10 minutes.
           </p>
           <div className="flex gap-3 justify-center flex-wrap relative z-10">
             <button
@@ -775,8 +775,8 @@ export function WebLanding() {
                 <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600">
                   <LocalShippingIcon size={20} className="text-white" />
                 </div>
-                <span className="text-[16px] font-extrabold text-[#121212] tracking-[0.04em]">
-                  VECTOR
+                <span className="text-[18px] font-bold text-[#121212] tracking-tight">
+                  Vector
                 </span>
               </div>
               <p className="text-sm text-gray-500 leading-relaxed max-w-60">

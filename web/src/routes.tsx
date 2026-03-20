@@ -86,7 +86,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: Overview },
           { path: "drivers", Component: Drivers },
-          { path: "driver-detail", Component: DriverDetail },
+          { path: "driver-detail/:id", Component: DriverDetail },
           { path: "orders", Component: Orders },
           { path: "tracking", Component: Tracking },
           { path: "billing", Component: Billing },

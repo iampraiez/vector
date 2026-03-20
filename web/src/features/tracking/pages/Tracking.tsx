@@ -150,7 +150,7 @@ export function CustomerTracking() {
 
           <div className="pt-8 border-t border-black/5">
             <p className="text-[11px] font-bold text-gray-300 uppercase tracking-[0.15em] mb-4">
-              POWERED BY VECTOR
+              Powered by Vector
             </p>
             <p className="text-[13px] text-gray-400 mb-6 px-6">
               The all-in-one delivery platform for modern logistics fleets.
@@ -242,8 +242,8 @@ export function CustomerTracking() {
           <div className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
             <LocalShippingIcon size={16} className="text-white" />
           </div>
-          <span className="text-base font-extrabold tracking-[0.04em] text-[#121212]">
-            VECTOR
+          <span className="text-[18px] font-bold tracking-tight text-[#121212]">
+            Vector
           </span>
         </div>
         <div className="text-right">

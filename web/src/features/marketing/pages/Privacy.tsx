@@ -14,7 +14,7 @@ export function PrivacyContent({
           1. Introduction
         </h2>
         <p className="text-[15px] text-gray-600 leading-relaxed font-medium">
-          Welcome to VECTOR. This Privacy Policy explanation describes how our
+          Welcome to Vector. This Privacy Policy explanation describes how our
           company ("we", "us", or "our") collects, uses, and shares your
           personal information when you use our logistics and fleet management
           platform. By accessing or using Vector, you agree to the collection
@@ -181,8 +181,8 @@ export function Privacy() {
           <div className="w-8 h-8 rounded-md bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform -translate-y-px">
             <LocalShippingIcon size={18} className="text-white" />
           </div>
-          <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
-            VECTOR
+          <span className="text-[18px] font-bold tracking-tight text-gray-900">
+            Vector
           </span>
         </div>
         <button

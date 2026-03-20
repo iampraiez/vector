@@ -50,7 +50,7 @@ function Section({
     <div className="bg-white border border-black/8 rounded-3xl overflow-hidden shadow-sm transition-all hover:shadow-md">
       <div className="px-6 py-5 md:px-8 md:py-6 border-b border-gray-100 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 tracking-tight">
+          <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight">
             {title}
           </h2>
           {subtitle && (
@@ -76,7 +76,9 @@ function SettingRow({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-gray-50 last:border-0 last:pb-0 first:pt-0">
       <div>
-        <p className="text-[14px] font-bold text-gray-900 mb-0.5">{label}</p>
+        <p className="text-[14px] font-semibold text-gray-700 mb-0.5">
+          {label}
+        </p>
         {subtitle && (
           <p className="text-[12px] text-gray-400 leading-normal">{subtitle}</p>
         )}
@@ -103,7 +105,7 @@ function StaticField({
           {label}
         </span>
       </div>
-      <p className="text-[13px] font-medium text-gray-900 tracking-tight leading-none">
+      <p className="text-[13px] font-medium text-gray-700 tracking-tight leading-none">
         {value}
       </p>
     </div>
@@ -125,7 +127,7 @@ function InputField({
 }) {
   return (
     <div className="space-y-1.5 flex-1">
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+      <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest ml-1">
         {label}
       </label>
       <input
@@ -472,7 +474,7 @@ export function DashboardSettings() {
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 pb-32">
       {/* Header */}
       <div className="mb-2">
-        <h1 className="text-2xl md:text-[26px] font-bold text-gray-900 mb-0.5 tracking-tight">
+        <h1 className="text-2xl md:text-[26px] font-bold text-gray-800 mb-0.5 tracking-tight">
           Settings
         </h1>
         <p className="text-[12.5px] text-gray-400 font-medium">
@@ -489,7 +491,7 @@ export function DashboardSettings() {
               Fleet Access Code
             </span>
             <div className="flex items-center gap-3">
-              <span className="text-[20px] font-mono font-bold text-gray-900 tracking-[0.2em] bg-white px-3 py-1.5 rounded-lg border border-black/5">
+              <span className="text-[20px] font-mono font-bold text-gray-800 tracking-tight bg-white px-3 py-1.5 rounded-lg border border-black/5">
                 {companyCode}
               </span>
               <button
@@ -528,7 +530,7 @@ export function DashboardSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StaticField
             label="Operating Name"
-            value={company?.name || "VECTOR Fleet Services"}
+            value={company?.name || "Vector Fleet Services"}
             icon={BuildingOfficeIcon}
           />
           <StaticField
@@ -604,7 +606,7 @@ export function DashboardSettings() {
 
       {/* Simplified Danger Zone Section */}
       <div className="bg-white border border-black/5 rounded-3xl p-6">
-        <h3 className="text-[14px] font-bold text-gray-900 mb-1 tracking-tight">
+        <h3 className="text-[14px] font-semibold text-gray-700 mb-1 tracking-tight">
           Danger Zone
         </h3>
         <p className="text-[12px] text-gray-400 font-medium mb-6">

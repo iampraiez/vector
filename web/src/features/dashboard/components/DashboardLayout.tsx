@@ -102,8 +102,8 @@ function DashboardSidebar() {
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
             <LocalShippingIcon size={18} className="text-white" />
           </div>
-          <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
-            VECTOR
+          <span className="text-[18px] font-bold tracking-tight text-gray-900">
+            Vector
           </span>
         </div>
       </SidebarHeader>
@@ -191,8 +191,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 -translate-y-px shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
               <LocalShippingIcon size={18} className="text-white" />
             </div>
-            <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
-              VECTOR
+            <span className="text-[18px] font-bold tracking-tight text-gray-900">
+              Vector
             </span>
           </div>
           <SidebarTrigger className="text-gray-500 hover:text-gray-900 transition-colors" />

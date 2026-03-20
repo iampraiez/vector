@@ -94,7 +94,60 @@ export class CreateOrderDto {
   notes?: string;
 }
 
-export class UpdateOrderDto extends CreateOrderDto {
+export class UpdateOrderDto {
+  @IsString()
+  @IsOptional()
+  customer_name?: string;
+
+  @IsEmail()
+  @IsOptional()
+  customer_email?: string;
+
+  @IsString()
+  @IsOptional()
+  customer_phone?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @IsString()
+  @IsOptional()
+  postal_code?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  packages?: number;
+
+  @IsEnum(StopPriority)
+  @IsOptional()
+  priority?: StopPriority;
+
+  @IsString()
+  @IsOptional()
+  time_window_start?: string;
+
+  @IsString()
+  @IsOptional()
+  time_window_end?: string;
+
+  @IsString()
+  @IsOptional()
+  delivery_date?: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
   @IsString()
   @IsOptional()
   route_id?: string;
@@ -114,6 +167,19 @@ export class UpdateOrderDto extends CreateOrderDto {
   @IsNumber()
   @IsOptional()
   lng?: number;
+
+  // Add whitelisted computed fields to avoid 400s from spread objects
+  @IsOptional()
+  driver_name?: string;
+
+  @IsOptional()
+  route_name?: string;
+
+  @IsOptional()
+  assigned_to?: string;
+
+  @IsOptional()
+  service_time_min?: number;
 }
 
 export class CreateDriverDto {

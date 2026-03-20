@@ -1,4 +1,4 @@
-# VECTOR — Complete API Request Specification
+# Vector — Complete API Request Specification
 
 > **Convention:** All requests to protected endpoints carry an `Authorization: Bearer <jwt>` header.
 > The JWT is issued by Supabase Auth on sign-in.  
@@ -633,7 +633,7 @@ Blocked if the driver has an active route.
 
 ---
 
-### 3.4 DRIVER DETAIL PAGE — `/dashboard/driver-detail?id=:driver_id`
+### 3.4 DRIVER DETAIL PAGE — `/dashboard/driver-detail/:id`
 
 ---
 
@@ -1033,7 +1033,7 @@ Load company profile, notification preferences, and API key info.
 {
   "company": {
     "id": "cmp_xyz789",
-    "name": "VECTOR Fleet Services",
+    "name": "Vector Fleet Services",
     "company_code": "VECT-2024",
     "billing_email": "billing@vectorfleet.com",
     "phone": "+15550000000",
@@ -1912,7 +1912,7 @@ Called once from the Onboarding screen.
 ```json
 {
   "driver_id": "drv_001",
-  "message": "Profile complete. Welcome to VECTOR.",
+  "message": "Profile complete. Welcome to Vector.",
   "redirect": "/home"
 }
 ```

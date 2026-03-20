@@ -94,11 +94,11 @@ export function ResetPassword() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity translate-y-[-1px]">
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px">
             <LocalShippingIcon size={18} className="text-white" />
           </div>
-          <span className="text-[18px] font-extrabold tracking-tight text-gray-900">
-            VECTOR
+          <span className="text-[18px] font-bold tracking-tight text-gray-900">
+            Vector
           </span>
         </div>
       </nav>

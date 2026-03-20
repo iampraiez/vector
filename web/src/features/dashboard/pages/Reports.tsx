@@ -94,10 +94,10 @@ function ExportModal({
           <>
             <div className="px-8 pt-8 pb-6 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+                <h3 className="text-xl font-bold text-gray-800 tracking-tight">
                   Export Settings
                 </h3>
-                <p className="text-[13px] text-gray-400 mt-1 font-medium">
+                <p className="text-[13px] text-gray-500 mt-1 font-medium">
                   Select your preferred date range
                 </p>
               </div>
@@ -120,7 +120,7 @@ function ExportModal({
                     <button
                       key={range.label}
                       onClick={() => handleQuickSelect(range.days)}
-                      className="flex-1 py-2.5 rounded-xl border border-black/5 bg-gray-50 text-[13px] font-bold text-gray-600 hover:bg-white hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
+                      className="flex-1 py-2.5 rounded-xl border border-black/5 bg-gray-50 text-[13px] font-semibold text-gray-600 hover:bg-white hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
                     >
                       {range.label}
                     </button>
@@ -218,10 +218,12 @@ function KPICard({
       <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors">
         <Icon className="w-5 h-5 text-emerald-600 group-hover:text-white transition-colors" />
       </div>
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
         {label}
       </p>
-      <p className="text-2xl font-bold text-gray-900 tracking-tight">{value}</p>
+      <p className="text-2xl font-semibold text-gray-800 tracking-tight">
+        {value}
+      </p>
     </div>
   );
 }
@@ -241,7 +243,7 @@ export function DashboardReports() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-1 tracking-tight">
               Reports &amp; Analytics
             </h1>
             <p className="text-[14px] text-gray-500">
@@ -255,9 +257,9 @@ export function DashboardReports() {
                 <button
                   key={p}
                   onClick={() => setActivePeriod(p)}
-                  className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap cursor-pointer ${
                     activePeriod === p
-                      ? "bg-white text-gray-900 shadow-sm"
+                      ? "bg-white text-gray-800 shadow-sm"
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
@@ -267,11 +269,10 @@ export function DashboardReports() {
             </div>
             <button
               onClick={() => setShowExportModal(true)}
-              className="group relative flex items-center gap-2.5 px-6 py-3 bg-emerald-600 rounded-2xl text-[14px] font-bold text-white shadow-2xl shadow-emerald-600/30 hover:bg-emerald-500 hover:shadow-emerald-600/40 hover:-translate-y-0.5 transition-all active:scale-95 cursor-pointer overflow-hidden"
+              className="flex items-center gap-2.5 px-5 py-2.5 bg-white border border-black/8 rounded-lg text-[13px] font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
             >
-              <div className="absolute inset-0 bg-linear-to-tr from-emerald-400/0 via-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <ArrowDownTrayIcon className="w-4.5 h-4.5 relative z-10" />
-              <span className="relative z-10">Export Report</span>
+              <ArrowDownTrayIcon className="w-4 h-4 text-emerald-600" />
+              Export Report
             </button>
           </div>
         </div>

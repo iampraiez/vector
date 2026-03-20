@@ -374,7 +374,7 @@ export function DashboardOrders() {
                       <th
                         key={h}
                         id={h === "ASSIGNED TO" ? "tour-assign-col" : undefined}
-                        className={`px-6 py-4 text-[11px] font-bold text-gray-400 tracking-wider text-left`}
+                        className={`px-6 py-4 text-[11px] font-semibold text-gray-500 tracking-wider text-left`}
                       >
                         {h}
                       </th>
@@ -443,7 +443,7 @@ export function DashboardOrders() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-[13px] font-bold text-gray-900">
+                          <p className="text-[13px] font-semibold text-gray-700">
                             Order {index + 1}
                           </p>
                           {order.priority && order.priority === "high" && (
@@ -454,7 +454,7 @@ export function DashboardOrders() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <p className="text-[13px] font-bold text-gray-800">
+                            <p className="text-[13px] font-semibold text-gray-700">
                               {order.customer_name}
                             </p>
                             {!order.lat && !order.lng && (
@@ -465,12 +465,12 @@ export function DashboardOrders() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-[13px] text-gray-500 max-w-45 truncate">
+                          <p className="text-[13px] text-gray-600 max-w-45 truncate">
                             {order.address}
                           </p>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-[13px] text-gray-500 font-medium">
+                          <span className="text-[13px] text-gray-600 font-medium">
                             {order.delivery_date || "Today"} •{" "}
                             {order.time_window_start
                               ? `${order.time_window_start} - ${order.time_window_end}`
@@ -879,7 +879,8 @@ function UploadCSVModal({
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string[][]>([]);
+  const [importOrders, setImportOrders] = useState<Partial<Order>[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -892,41 +893,69 @@ function UploadCSVModal({
         .trim()
         .split("\n")
         .map((l) => l.split(",").map((c) => c.trim().replace(/^"|"$/g, "")));
-      setPreview(rows.slice(0, 6));
+
+      // Skip header row and convert to objects
+      const parsedOrders: Partial<Order>[] = rows.slice(1).map((row) => ({
+        customer_name: row[0] || "Unknown",
+        address: row[1] || "Unknown Address",
+        city: row[2] || "",
+        packages: parseInt(row[3]) || 1,
+        priority: "normal",
+        delivery_date: row[4] || new Date().toISOString().split("T")[0],
+        time_window_start: row[5] || "09:00",
+        time_window_end: row[6] || "17:00",
+        notes: row[7] || "",
+      }));
+      setImportOrders(parsedOrders);
     };
     reader.readAsText(f);
   };
 
-  const handleImport = () => {
-    setLoading(true);
-    // Skip header row
-    const newOrders: Partial<Order>[] = preview.slice(1).map((row) => ({
-      customer_name: row[0] || "Unknown",
-      address: row[1] || "Unknown Address",
-      city: row[2] || "",
-      packages: parseInt(row[3]) || 1,
-      priority: "normal",
-      delivery_date: row[4] || new Date().toISOString().split("T")[0],
-      time_window_start: row[5] || "09:00",
-      time_window_end: row[6] || "17:00",
-      notes: row[7] || "",
-    }));
-    onImport(newOrders);
-    setFile(null);
-    setPreview([]);
+  const handleUpdateRow = (index: number, field: keyof Order, value: any) => {
+    const updated = [...importOrders];
+    updated[index] = { ...updated[index], [field]: value };
+    setImportOrders(updated);
+  };
+
+  const handleBatchUpdate = (field: keyof Order, value: any) => {
+    const updated = importOrders.map((order, i) =>
+      selectedRows.has(i) ? { ...order, [field]: value } : order,
+    );
+    setImportOrders(updated);
+  };
+
+  const handleDeleteSelected = () => {
+    const updated = importOrders.filter((_, i) => !selectedRows.has(i));
+    setImportOrders(updated);
+    setSelectedRows(new Set());
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRows.size === importOrders.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(importOrders.map((_, i) => i)));
+    }
+  };
+
+  const toggleSelectRow = (index: number) => {
+    const next = new Set(selectedRows);
+    if (next.has(index)) next.delete(index);
+    else next.add(index);
+    setSelectedRows(next);
   };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
+      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-150 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
         <DialogHeader className="p-6 border-b border-gray-100 bg-white shrink-0">
           <div className="flex flex-col items-center text-center px-8">
-            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
-              {file ? "Review Orders" : "Upload CSV"}
+            <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">
+              {file ? "Review & Edit Orders" : "Upload CSV"}
             </DialogTitle>
             <p className="text-[12px] text-gray-500 mt-1">
               {file
-                ? "Verify the data before importing"
+                ? "Directly edit rows or use batch actions below"
                 : "Import bulk orders from a spreadsheet"}
             </p>
           </div>
@@ -948,19 +977,19 @@ function UploadCSVModal({
                     handleFile(e.dataTransfer.files[0]);
                 }}
                 onClick={() => inputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 ${
+                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ${
                   dragOver
                     ? "border-emerald-600 bg-emerald-50 scale-[0.99]"
                     : "border-gray-200 bg-gray-50 hover:bg-gray-100/50"
                 }`}
               >
                 <ArrowUpTrayIcon
-                  className={`w-8 h-8 mx-auto mb-4 transition-colors ${dragOver ? "text-emerald-600" : "text-gray-300"}`}
+                  className={`w-10 h-10 mx-auto mb-4 transition-colors ${dragOver ? "text-emerald-600" : "text-gray-300"}`}
                 />
-                <p className="text-[14px] font-bold text-gray-700 mb-1">
+                <p className="text-[15px] font-bold text-gray-700 mb-1">
                   Select your CSV file
                 </p>
-                <p className="text-[12px] text-gray-400">
+                <p className="text-[13px] text-gray-400">
                   Drag & drop or{" "}
                   <span className="text-emerald-600">click to browse</span>
                 </p>
@@ -976,77 +1005,185 @@ function UploadCSVModal({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
-                  <DocumentTextIcon className="w-6 h-6 text-emerald-600" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold text-gray-900 truncate">
-                      {file.name}
-                    </p>
-                    <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">
-                      {preview.length - 1} orders detected
-                    </p>
+                {/* File Info & Batch Counter */}
+                <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/10">
+                      <DocumentTextIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-gray-900 truncate max-w-40">
+                        {file.name}
+                      </p>
+                      <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">
+                        {importOrders.length} orders detected
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedRows.size > 0 && (
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 animate-in fade-in slide-in-from-right-2 border-t sm:border-t-0 pt-3 sm:pt-0 border-emerald-100/50 sm:border-none">
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/50 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                        {selectedRows.size} selected
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleDeleteSelected}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Selected"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value === "high" || e.target.value === "normal") {
+                              handleBatchUpdate("priority", e.target.value);
+                            }
+                            e.target.value = "";
+                          }}
+                          className="text-[11px] font-bold bg-white border border-emerald-200 rounded-lg px-2 py-1 outline-none text-emerald-700 cursor-pointer hover:border-emerald-400 transition-colors"
+                        >
+                          <option value="">Priority...</option>
+                          <option value="high">High</option>
+                          <option value="normal">Normal</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Editable Table */}
+                <div className="border border-black/8 rounded-2xl overflow-hidden shadow-sm bg-white">
+                  <div className="overflow-x-auto max-h-100 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+                    <table className="w-full text-[12px] text-left border-collapse">
+                      <thead className="sticky top-0 z-20 bg-gray-50 border-b border-black/5">
+                        <tr>
+                          <th className="p-4 w-10">
+                            <input
+                              type="checkbox"
+                              checked={
+                                selectedRows.size === importOrders.length &&
+                                importOrders.length > 0
+                              }
+                              onChange={toggleSelectAll}
+                              className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            />
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
+                            Customer
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
+                            Address
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px] w-20">
+                            Pkgs
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px] w-28">
+                            Start
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px] w-28">
+                            End
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px] w-32">
+                            Date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-black/5">
+                        {importOrders.map((order, i) => (
+                          <tr
+                            key={i}
+                            className={`group transition-colors ${
+                              selectedRows.has(i) ? "bg-emerald-50/30" : "hover:bg-gray-50/50"
+                            }`}
+                          >
+                            <td className="p-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedRows.has(i)}
+                                onChange={() => toggleSelectRow(i)}
+                                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                value={order.customer_name}
+                                onChange={(e) =>
+                                  handleUpdateRow(i, "customer_name", e.target.value)
+                                }
+                                className="w-full bg-transparent border-none focus:ring-0 font-bold text-gray-900 p-0 hover:bg-black/5 rounded px-1 -mx-1"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                value={order.address}
+                                onChange={(e) =>
+                                  handleUpdateRow(i, "address", e.target.value)
+                                }
+                                className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                type="number"
+                                value={order.packages}
+                                onChange={(e) =>
+                                  handleUpdateRow(i, "packages", parseInt(e.target.value) || 0)
+                                }
+                                className="w-full bg-transparent border-none focus:ring-0 text-gray-700 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-center"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                type="time"
+                                value={order.time_window_start || "09:00"}
+                                onChange={(e) =>
+                                  handleUpdateRow(i, "time_window_start", e.target.value)
+                                }
+                                className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-[11px]"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                type="time"
+                                value={order.time_window_end || "17:00"}
+                                onChange={(e) =>
+                                  handleUpdateRow(i, "time_window_end", e.target.value)
+                                }
+                                className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-[11px]"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                type="date"
+                                value={order.delivery_date || ""}
+                                onChange={(e) =>
+                                  handleUpdateRow(i, "delivery_date", e.target.value)
+                                }
+                                className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-[11px]"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-                <div className="border border-black/8 rounded-xl overflow-hidden max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
-                  <table className="w-full text-[11px] text-left">
-                    <thead className="sticky top-0 z-10 bg-gray-50 border-b border-black/5 shadow-sm">
-                      <tr>
-                        {preview[0]?.map((c, i) => (
-                          <th
-                            key={i}
-                            className="px-3 py-2.5 font-bold text-gray-400"
-                          >
-                            {c}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5">
-                      {preview.slice(1).map((r, i) => (
-                        <tr
-                          key={i}
-                          className="bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          {r.map((c, j) => (
-                            <td key={j} className="px-3 py-2 text-gray-600">
-                              {c}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+
                 <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-black/5">
                   <button
                     onClick={() => {
                       setFile(null);
-                      setPreview([]);
+                      setImportOrders([]);
+                      setSelectedRows(new Set());
                     }}
-                    className="text-[11px] font-bold text-red-500 uppercase tracking-wider hover:opacity-75 transition-opacity px-2"
+                    className="text-[11px] font-bold text-red-500 uppercase tracking-wider hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
                   >
-                    Remove File
+                    Remove & Start Over
                   </button>
-                  <a
-                    href="/template_orders.csv"
-                    download
-                    className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider hover:opacity-75 transition-opacity px-2 flex items-center gap-1.5"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    Get Template
-                  </a>
+                  <p className="text-[11px] text-gray-400 italic px-2">
+                    Tip: Click any cell to edit it directly.
+                  </p>
                 </div>
               </div>
             )}
@@ -1063,14 +1200,6 @@ function UploadCSVModal({
                         Required Headers
                       </h4>
                     </div>
-                    <a
-                      href="/template_orders.csv"
-                      download
-                      className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1 bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100/50"
-                    >
-                      <ArrowUpTrayIcon className="w-2.5 h-2.5 rotate-180" />
-                      Get Template
-                    </a>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -1098,8 +1227,7 @@ function UploadCSVModal({
                     ))}
                   </div>
                   <p className="text-[10px] text-gray-400 italic">
-                    All other columns will be handled as optional delivery
-                    notes.
+                    Vector will automatically map these fields from your CSV.
                   </p>
                 </div>
               </div>
@@ -1109,18 +1237,18 @@ function UploadCSVModal({
 
         <DialogFooter className="p-4 border-t border-gray-100 bg-white shadow-sm shrink-0 sm:flex sm:justify-end">
           <button
-            onClick={handleImport}
-            disabled={!file || loading || isMutating}
-            className={`w-full sm:w-auto px-10 py-2.5 rounded-xl text-[13px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-              loading || isMutating
+            onClick={() => onImport(importOrders)}
+            disabled={!file || isMutating || importOrders.length === 0}
+            className={`w-full sm:w-auto px-10 py-3 rounded-xl text-[14px] font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+              isMutating
                 ? "bg-emerald-50 text-emerald-600 shadow-none border border-emerald-100"
-                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
+                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20 active:scale-95"
             } disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none cursor-pointer`}
           >
-            {loading || isMutating ? (
-              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            {isMutating ? (
+              <div className="w-4.5 h-4.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
             ) : (
-              "Import Orders"
+              `Import ${importOrders.length} Orders`
             )}
           </button>
         </DialogFooter>

@@ -10,7 +10,6 @@ import { useNavigate, useLocation } from "react-router";
 import { useAuthStore } from "../../store/authStore";
 import { api } from "../../lib/api";
 
-// Steps configuration — targets reliable DOM IDs placed on each page
 const steps: Step[] = [
   {
     target: "#tour-metrics-grid",
@@ -106,39 +105,42 @@ export function OnboardingTour() {
       return;
     }
 
-    // Force custom scroll behavior because our layout uses a nested overflow container
-    // instead of the window/body for scrolling.
+    // Force custom scroll behavior
     if (type === EVENTS.STEP_BEFORE || type === EVENTS.TOOLTIP) {
-      setTimeout(() => {
-        const targetStr = steps[index]?.target as string;
-        if (targetStr) {
+      const targetStr = steps[index]?.target as string;
+      if (targetStr) {
+        // Use requestAnimationFrame for smoother timing with React's render cycle
+        requestAnimationFrame(() => {
           const el = document.querySelector(targetStr);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
           }
-        }
-      }, 100);
+        });
+      }
     }
 
     if (type === "step:after") {
       const nextIndex = action === "prev" ? index - 1 : index + 1;
 
       // Update route based on upcoming step
+      let targetPath = "";
       if (nextIndex >= 3 && nextIndex <= 4) {
-        if (!location.pathname.includes("/orders"))
-          navigate("/dashboard/orders");
+        targetPath = "/dashboard/orders";
       } else if (nextIndex >= 5 && nextIndex <= 6) {
-        if (!location.pathname.includes("/tracking"))
-          navigate("/dashboard/tracking");
+        targetPath = "/dashboard/tracking";
       } else if (nextIndex === 7) {
-        if (!location.pathname.includes("/drivers"))
-          navigate("/dashboard/drivers");
+        targetPath = "/dashboard/drivers";
       } else if (nextIndex >= 0 && nextIndex <= 2) {
-        if (location.pathname == "/dashboard") navigate("/dashboard");
+        targetPath = "/dashboard";
       }
 
-      // We give the router/store slightly less time, 800ms for a snappier feel
+      if (targetPath && !location.pathname.includes(targetPath)) {
+        navigate(targetPath);
+      }
+
+      // We give the router/store slightly more time, 800ms for a snappier feel
       setTimeout(() => {
+        // Ensure the component is still running before updating state
         setStepIndex(nextIndex);
       }, 800);
     }

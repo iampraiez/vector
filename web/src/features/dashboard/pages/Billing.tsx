@@ -115,7 +115,7 @@ export function DashboardBilling() {
     <div className="p-4 md:p-8 max-w-300 mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+        <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-1 tracking-tight">
           Billing & Subscription
         </h1>
         <p className="text-[14px] text-gray-500">
@@ -132,17 +132,17 @@ export function DashboardBilling() {
           <div className="flex-1 min-w-60">
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
+              <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-widest">
                 Active Plan
               </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-2 tracking-tight">
               {billing?.plan?.name || "Loading..."}
             </h2>
             <div className="flex flex-wrap items-center gap-4 text-gray-500 text-[13px]">
               <p className="flex items-center gap-1.5 font-medium">
                 Next billing:{" "}
-                <span className="font-bold text-gray-900">
+                <span className="font-semibold text-gray-700">
                   {billing?.current_period_end
                     ? new Date(billing.current_period_end).toLocaleDateString()
                     : "-"}
@@ -162,7 +162,7 @@ export function DashboardBilling() {
           <div className="flex flex-col items-start md:items-end gap-4">
             <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tighter">
+                <span className="text-3xl md:text-4xl font-bold text-gray-800 tracking-tighter">
                   ${billing?.plan?.price_usd || 0}
                 </span>
                 <span className="text-gray-400 font-bold tracking-tight text-[13px]">
@@ -218,7 +218,7 @@ export function DashboardBilling() {
                 {plan.name}
               </h3>
               <div className="flex items-baseline justify-center gap-1 mb-4">
-                <span className="text-3xl font-bold text-gray-900">
+                <span className="text-3xl font-semibold text-gray-800">
                   {plan.price}
                 </span>
                 <span className="text-gray-400 font-bold tracking-wider text-[13px]">
@@ -296,7 +296,7 @@ export function DashboardBilling() {
         {/* Payment Method */}
         <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col justify-center">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+            <h2 className="text-lg font-semibold text-gray-800 tracking-tight">
               Payment Method
             </h2>
           </div>
@@ -319,7 +319,7 @@ export function DashboardBilling() {
 
         {/* Usage Metrics */}
         <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-8">
+          <h2 className="text-lg font-semibold text-gray-800 tracking-tight mb-8">
             Capacity & Usage
           </h2>
           <div className="space-y-6">
@@ -337,13 +337,13 @@ export function DashboardBilling() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[15px] font-bold text-gray-900 tracking-tight">
+                      <span className="text-[15px] font-semibold text-gray-800 tracking-tight">
                         {item.used.toLocaleString()}
                       </span>
-                      <span className="text-[12px] text-gray-300 font-bold mx-1">
+                      <span className="text-[12px] text-gray-300 font-semibold mx-1">
                         /
                       </span>
-                      <span className="text-[12px] text-gray-400 font-bold">
+                      <span className="text-[12px] text-gray-400 font-semibold">
                         {item.total.toLocaleString()}
                       </span>
                     </div>

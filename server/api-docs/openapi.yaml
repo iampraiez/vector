@@ -1417,9 +1417,14 @@ components:
           type: number
         lng:
           type: number
-      required:
-        - customer_name
-        - address
+        driver_name:
+          type: string
+        route_name:
+          type: string
+        assigned_to:
+          type: string
+        service_time_min:
+          type: number
     CreateDriverDto:
       type: object
       properties:

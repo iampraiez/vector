@@ -50,10 +50,10 @@ function CompactEmptyState({
         <Icon className="w-5 h-5 text-gray-300" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] font-bold text-gray-400 tracking-tight">
+        <p className="text-[13.5px] font-semibold text-gray-500 tracking-tight">
           {title}
         </p>
-        <p className="text-[11.5px] text-gray-300 truncate">{subtitle}</p>
+        <p className="text-[11.5px] text-gray-400 truncate">{subtitle}</p>
       </div>
     </div>
   );
@@ -146,7 +146,7 @@ export function DashboardOverview() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-1 tracking-tight">
               Overview
             </h1>
             <p className="text-[13px] text-gray-500">{today}</p>
@@ -188,10 +188,10 @@ export function DashboardOverview() {
                     {m.change}
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-400 mb-1 uppercase tracking-widest font-bold">
+                <p className="text-[11px] text-gray-500 mb-1 uppercase tracking-widest font-semibold">
                   {m.label}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 tracking-tight">
+                <p className="text-2xl font-bold text-gray-800 tracking-tight">
                   {m.value}
                 </p>
               </div>
@@ -208,7 +208,7 @@ export function DashboardOverview() {
           >
             <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
               <div>
-                <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 tracking-tight">
+                <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight">
                   Active Drivers
                 </h2>
                 <p className="text-[12px] text-gray-400">
@@ -255,7 +255,7 @@ export function DashboardOverview() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-bold text-gray-900 mb-0.5 truncate tracking-tight">
+                      <p className="text-[14px] font-semibold text-gray-700 mb-0.5 truncate tracking-tight">
                         {driver.name}
                       </p>
                       <div className="flex items-center gap-2 text-[12px] text-gray-400 font-medium">
@@ -286,7 +286,7 @@ export function DashboardOverview() {
           >
             <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
               <div>
-                <h2 className="text-[15px] font-bold text-gray-900 mb-0.5 tracking-tight">
+                <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight">
                   Recent Orders
                 </h2>
                 <p className="text-[12px] text-gray-400">
@@ -317,7 +317,7 @@ export function DashboardOverview() {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <p className="text-[14px] font-bold text-gray-900 tracking-tight">
+                          <p className="text-[14px] font-semibold text-gray-700 tracking-tight">
                             Order {recentOrders.length - i}
                           </p>
                           <span
@@ -332,7 +332,7 @@ export function DashboardOverview() {
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
-                          <span className="text-gray-900 truncate">
+                          <span className="text-gray-600 truncate">
                             {order.customer_name}
                           </span>
                         </div>

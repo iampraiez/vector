@@ -72,7 +72,7 @@ export function DashboardDriverDetail() {
     email: selectedDriver.email,
     phone: selectedDriver.phone || "N/A",
     vehicle: `${selectedDriver.vehicle_type || "No vehicle"} • ${selectedDriver.vehicle_plate || "No plate"}`,
-    rating: selectedDriver.avg_rating || 5.0,
+    rating: selectedDriver.avg_rating || "N/A",
     status: selectedDriver.status,
     lastSession: selectedDriver.last_active_at ? "Active" : "New",
     companyCode: "VECT-D", // Stubbed
@@ -105,17 +105,17 @@ export function DashboardDriverDetail() {
     today: {
       completed: 0,
       onTime: 0,
-      rating: 5.0,
+      rating: "N/A",
     },
     week: {
       completed: 0,
       onTime: 0,
-      rating: 5.0,
+      rating: "N/A",
     },
     month: {
       completed: 0,
       onTime: 0,
-      rating: 5.0,
+      rating: "N/A",
     },
   };
 

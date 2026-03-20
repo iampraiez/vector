@@ -144,8 +144,8 @@ export function DashboardSignUp() {
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px">
             <LocalShippingIcon size={18} className="text-white" />
           </div>
-          <span className="text-[16px] font-extrabold tracking-[0.04em] text-gray-900">
-            VECTOR
+          <span className="text-[18px] font-bold tracking-tight text-gray-900">
+            Vector
           </span>
         </div>
         <button
@@ -514,7 +514,7 @@ export function DashboardSignUp() {
                 </button>
 
                 <p className="text-[11px] text-gray-300 font-medium text-center mt-5 leading-relaxed">
-                  By launching, you agree to VECTOR's{" "}
+                  By launching, you agree to Vector's{" "}
                   <button
                     type="button"
                     onClick={() => setLegalModalType("terms")}

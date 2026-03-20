@@ -84,7 +84,7 @@ export function DashboardNotifications() {
       <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 tracking-tight">
               Notifications
             </h1>
             {unreadCount > 0 && (
@@ -130,7 +130,7 @@ export function DashboardNotifications() {
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold border whitespace-nowrap transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold border whitespace-nowrap transition-all cursor-pointer ${
                 activeCategory === cat.key
                   ? "bg-emerald-600 text-white border-transparent shadow-lg shadow-emerald-600/20"
                   : "bg-white text-gray-500 border-black/5 hover:border-emerald-600/30 hover:text-emerald-600"
@@ -190,7 +190,7 @@ export function DashboardNotifications() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <p
-                      className={`text-[14px] leading-snug ${n.read ? "font-medium text-gray-700" : "font-bold text-gray-900"}`}
+                      className={`text-[14px] leading-snug ${n.read ? "font-medium text-gray-600" : "font-semibold text-gray-700"}`}
                     >
                       {n.title}
                       {!n.read && (

@@ -50,12 +50,15 @@ export function DashboardDrivers() {
     (acc, curr) => acc + (curr.total_deliveries || 0),
     0,
   );
-  const avgRating = filteredDrivers.length
+  const ratedDrivers = filteredDrivers.filter(
+    (d) => d.avg_rating && d.avg_rating > 0,
+  );
+  const avgRating = ratedDrivers.length
     ? (
-        filteredDrivers.reduce((acc, curr) => acc + (curr.avg_rating || 0), 0) /
-        filteredDrivers.length
+        ratedDrivers.reduce((acc, curr) => acc + (curr.avg_rating || 0), 0) /
+        ratedDrivers.length
       ).toFixed(1)
-    : "0.0";
+    : "N/A";
 
   if (isLoading && drivers.length === 0) {
     return (
@@ -151,7 +154,9 @@ export function DashboardDrivers() {
             filteredDrivers.map((driver) => (
               <div
                 key={driver.id}
-                onClick={() => navigate("/dashboard/driver-detail")}
+                onClick={() => {
+                  navigate(`/dashboard/driver-detail/${driver.id}`);
+                }}
                 className="bg-white rounded-2xl p-6 border border-black/5 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 cursor-pointer relative overflow-hidden"
               >
                 {/* Active Glow Effect on Hover */}
@@ -171,12 +176,12 @@ export function DashboardDrivers() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[16px] font-bold text-gray-900 mb-0.5 truncate tracking-tight">
+                    <h3 className="text-[16px] font-semibold text-gray-700 mb-0.5 truncate tracking-tight">
                       {driver.name}
                     </h3>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest ${
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-widest ${
                           driver.status === "active"
                             ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
                             : "bg-gray-50 text-gray-400 border border-gray-100"
@@ -298,7 +303,7 @@ export function DashboardDrivers() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-5 py-3.5 text-left text-[11px] font-bold text-gray-400 tracking-wider"
+                      className="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-500 tracking-wider"
                     >
                       {h}
                     </th>
@@ -330,7 +335,9 @@ export function DashboardDrivers() {
                   filteredDrivers.map((driver) => (
                     <tr
                       key={driver.id}
-                      onClick={() => navigate("/dashboard/driver-detail")}
+                      onClick={() => {
+                        navigate(`/dashboard/driver-detail/${driver.id}`);
+                      }}
                       className="transition-colors cursor-pointer hover:bg-gray-50 group"
                     >
                       <td className="px-5 py-3.5">
@@ -347,7 +354,7 @@ export function DashboardDrivers() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[13px] font-bold text-gray-900 mb-0.5 truncate">
+                            <p className="text-[13px] font-semibold text-gray-700 mb-0.5 truncate">
                               {driver.name}
                             </p>
                             <p className="text-[12px] text-gray-400 truncate tracking-tight">
@@ -357,14 +364,14 @@ export function DashboardDrivers() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <p className="text-[13px] text-gray-500 font-medium">
+                        <p className="text-[13px] text-gray-600 font-medium">
                           {driver.vehicle_type
                             ? `${driver.vehicle_type} • ${driver.vehicle_plate || ""}`
                             : "Unassigned"}
                         </p>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-[13px] font-bold text-gray-900">
+                        <span className="text-[13px] font-semibold text-gray-700">
                           {driver.total_deliveries || 0}
                         </span>
                       </td>

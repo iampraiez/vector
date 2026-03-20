@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Prisma, DriverStatus } from '@prisma/client';
+import { Prisma, DriverStatus, StopStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -108,6 +108,7 @@ export class DashboardService {
   }
 
   async getRecentOrders(companyId: string) {
+    await this.refreshOrderStatuses(companyId);
     const orders = await this.prisma.stop.findMany({
       where: { company_id: companyId },
       orderBy: { created_at: 'desc' },
@@ -117,6 +118,15 @@ export class DashboardService {
   }
 
   async createOrder(companyId: string, dto: CreateOrderDto) {
+    if (dto.delivery_date) {
+      const today = new Date().toISOString().split('T')[0];
+      if (dto.delivery_date < today) {
+        throw new BadRequestException(
+          'Orders cannot be scheduled for the past',
+        );
+      }
+    }
+
     let lat: number | null = null;
     let lng: number | null = null;
 
@@ -203,6 +213,9 @@ export class DashboardService {
         { external_id: { contains: query.search, mode: 'insensitive' } },
       ];
     }
+
+    // Refresh statuses for upcoming/active orders before fetching
+    await this.refreshOrderStatuses(companyId);
 
     const [data, total] = await Promise.all([
       this.prisma.stop.findMany({
@@ -297,7 +310,7 @@ export class DashboardService {
           }
 
           const geo = await this.mapService.geocode({
-            address: searchString,
+            address: searchString as string,
             filter,
             bias,
           });
@@ -1090,6 +1103,59 @@ export class DashboardService {
       return {
         message: 'Workspace scheduled for permanent deletion in 10 days',
       };
+    }
+  }
+  private async refreshOrderStatuses(companyId: string) {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentH = now.getHours();
+    const currentM = now.getMinutes();
+    const currentTotalMinutes = currentH * 60 + currentM;
+
+    const activeOrders = await this.prisma.stop.findMany({
+      where: {
+        company_id: companyId,
+        status: { in: ['unassigned', 'assigned', 'in_progress'] },
+      },
+    });
+
+    for (const order of activeOrders) {
+      if (!order.delivery_date) continue;
+
+      let newStatus: StopStatus | null = null;
+      const isPast = order.delivery_date < today;
+      const isToday = order.delivery_date === today;
+
+      if (isPast) {
+        newStatus = 'failed';
+      } else if (isToday && order.time_window_end) {
+        const [endH, endM] = order.time_window_end.split(':').map(Number);
+        const endTotalMinutes = endH * 60 + endM;
+
+        if (currentTotalMinutes > endTotalMinutes) {
+          newStatus = 'failed';
+        } else if (order.time_window_start) {
+          const [startH, startM] = order.time_window_start
+            .split(':')
+            .map(Number);
+          const startTotalMinutes = startH * 60 + startM;
+
+          if (currentTotalMinutes >= startTotalMinutes) {
+            newStatus = 'in_progress';
+          }
+        }
+      }
+
+      if (newStatus && newStatus !== order.status) {
+        await this.prisma.stop.update({
+          where: { id: order.id },
+          data: {
+            status: newStatus as StopStatus,
+            failure_reason:
+              newStatus === 'failed' ? 'Time window expired' : undefined,
+          },
+        });
+      }
     }
   }
 }
