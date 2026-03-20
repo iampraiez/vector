@@ -12,6 +12,14 @@ import { CompleteDeliveryDto, FailDeliveryDto } from './dto/driver.dto';
 export class DeliveryController {
   constructor(private readonly driverService: DriverService) {}
 
+  @Post(':stop_id/start')
+  startStop(
+    @CurrentUser('id') userId: string,
+    @Param('stop_id') stopId: string,
+  ) {
+    return this.driverService.startStop(userId, stopId);
+  }
+
   @Post(':stop_id/complete')
   completeDelivery(
     @CurrentUser('id') userId: string,

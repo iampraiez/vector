@@ -76,7 +76,7 @@ function ExportModal({
               <div className="absolute inset-0 bg-emerald-400/20 rounded-[28px] animate-ping" />
               <CheckCircleIcon className="w-10 h-10 text-emerald-600 relative z-10" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-3 tracking-tight">
               Report Queued!
             </h3>
             <p className="text-[14px] text-gray-500 leading-relaxed mb-10 px-4">
@@ -85,7 +85,7 @@ function ExportModal({
             </p>
             <button
               onClick={handleClose}
-              className="w-full py-4 bg-emerald-600 text-white font-bold text-[15px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/10 active:scale-[0.98]"
+              className="w-full py-4 bg-emerald-600 text-white font-semibold text-[15px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/10 active:scale-[0.98]"
             >
               Back to Reports
             </button>
@@ -94,10 +94,10 @@ function ExportModal({
           <>
             <div className="px-8 pt-8 pb-6 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-gray-800 tracking-tight">
+                <h3 className="text-xl font-semibold text-gray-800 tracking-tight">
                   Export Settings
                 </h3>
-                <p className="text-[13px] text-gray-500 mt-1 font-medium">
+                <p className="text-[13px] text-gray-500 mt-1 font-normal">
                   Select your preferred date range
                 </p>
               </div>
@@ -112,7 +112,7 @@ function ExportModal({
             <div className="px-8 pb-8 space-y-8">
               {/* Quick Select */}
               <div className="space-y-3">
-                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                <label className="text-[11px] font-medium text-gray-400 uppercase tracking-widest pl-1">
                   Quick Select
                 </label>
                 <div className="flex gap-2">
@@ -120,7 +120,7 @@ function ExportModal({
                     <button
                       key={range.label}
                       onClick={() => handleQuickSelect(range.days)}
-                      className="flex-1 py-2.5 rounded-xl border border-black/5 bg-gray-50 text-[13px] font-semibold text-gray-600 hover:bg-white hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
+                      className="flex-1 py-2.5 rounded-xl border border-black/5 bg-gray-50 text-[13px] font-medium text-gray-600 hover:bg-white hover:border-emerald-500/30 hover:text-emerald-600 transition-all active:scale-95"
                     >
                       {range.label}
                     </button>
@@ -130,12 +130,12 @@ function ExportModal({
 
               {/* Custom Range */}
               <div className="space-y-4">
-                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                <label className="text-[11px] font-medium text-gray-400 uppercase tracking-widest pl-1">
                   Custom Range
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <span className="text-[12px] font-bold text-gray-500 pl-1">
+                    <span className="text-[12px] font-medium text-gray-500 pl-1">
                       Start Date
                     </span>
                     <input
@@ -144,11 +144,11 @@ function ExportModal({
                       onChange={(e) =>
                         setDateRange({ ...dateRange, start: e.target.value })
                       }
-                      className="w-full px-4 py-3 bg-gray-50/50 border border-black/5 rounded-xl text-[13px] font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-black/5 rounded-xl text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <span className="text-[12px] font-bold text-gray-500 pl-1">
+                    <span className="text-[12px] font-medium text-gray-500 pl-1">
                       End Date
                     </span>
                     <input
@@ -157,7 +157,7 @@ function ExportModal({
                       onChange={(e) =>
                         setDateRange({ ...dateRange, end: e.target.value })
                       }
-                      className="w-full px-4 py-3 bg-gray-50/50 border border-black/5 rounded-xl text-[13px] font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-black/5 rounded-xl text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                     />
                   </div>
                 </div>
@@ -166,7 +166,7 @@ function ExportModal({
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full mt-4 py-4 bg-emerald-600 text-white font-bold text-[15px] rounded-[20px] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70"
+                className="w-full mt-4 py-4 bg-emerald-600 text-white font-semibold text-[15px] rounded-[20px] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -192,10 +192,10 @@ function EmptyReports({ period }: { period: string }) {
       <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mb-6">
         <ChartBarIcon className="w-10 h-10 text-gray-300" />
       </div>
-      <p className="text-[17px] font-bold text-gray-400 mb-2 tracking-tight">
+      <p className="text-[17px] font-semibold text-gray-400 mb-2 tracking-tight">
         No data for the last {period}
       </p>
-      <p className="text-[13px] text-gray-300 max-w-xs font-medium leading-relaxed">
+      <p className="text-[13px] text-gray-300 max-w-xs font-normal leading-relaxed">
         Once your fleet completes deliveries, performance metrics and analytics
         will appear here.
       </p>
@@ -218,7 +218,7 @@ function KPICard({
       <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors">
         <Icon className="w-5 h-5 text-emerald-600 group-hover:text-white transition-colors" />
       </div>
-      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
+      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1.5">
         {label}
       </p>
       <p className="text-2xl font-semibold text-gray-800 tracking-tight">
@@ -243,7 +243,7 @@ export function DashboardReports() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-1 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold text-gray-800 mb-1 tracking-tight">
               Reports &amp; Analytics
             </h1>
             <p className="text-[14px] text-gray-500">
@@ -257,7 +257,7 @@ export function DashboardReports() {
                 <button
                   key={p}
                   onClick={() => setActivePeriod(p)}
-                  className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`px-4 py-1.5 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap cursor-pointer ${
                     activePeriod === p
                       ? "bg-white text-gray-800 shadow-sm"
                       : "text-gray-400 hover:text-gray-600"
@@ -269,7 +269,7 @@ export function DashboardReports() {
             </div>
             <button
               onClick={() => setShowExportModal(true)}
-              className="flex items-center gap-2.5 px-5 py-2.5 bg-white border border-black/8 rounded-lg text-[13px] font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
+              className="flex items-center gap-2.5 px-5 py-2.5 bg-white border border-black/8 rounded-lg text-[13px] font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
             >
               <ArrowDownTrayIcon className="w-4 h-4 text-emerald-600" />
               Export Report

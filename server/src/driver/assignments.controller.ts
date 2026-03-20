@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -12,10 +12,7 @@ export class AssignmentsController {
   constructor(private readonly driverService: DriverService) {}
 
   @Get()
-  getAssignments(
-    @CurrentUser('id') userId: string,
-    @Query('date') date: string,
-  ) {
-    return this.driverService.getAssignments(userId, date);
+  getAssignments(@CurrentUser('id') userId: string) {
+    return this.driverService.getAssignments(userId);
   }
 }

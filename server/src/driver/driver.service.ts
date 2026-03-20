@@ -101,21 +101,64 @@ export class DriverService {
     return { lat: dto.lat, lng: dto.lng };
   }
 
-  async getAssignments(userId: string, date?: string) {
+  async getAssignments(userId: string) {
     const driver = await this.getDriverOrThrow(userId);
-    const targetDate = date || new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
 
-    // Find all assigned and active routes for this day
+    // 1. Fetch all routes for this driver (Today + Future)
     const routes = await this.prisma.route.findMany({
-      where: { driver_id: driver.id, date: targetDate },
-      include: {
-        stops: {
-          orderBy: { sequence: 'asc' },
-        },
+      where: {
+        driver_id: driver.id,
+        OR: [{ date: today }, { date: { gt: today } }],
       },
+      include: {
+        stops: { orderBy: { sequence: 'asc' } },
+      },
+      orderBy: { date: 'asc' },
     });
 
-    return { date: targetDate, routes };
+    // 2. Fetch standalone stops (not in a route) for this driver
+    const standaloneStops = await this.prisma.stop.findMany({
+      where: {
+        driver_id: driver.id,
+        route_id: null,
+        OR: [{ delivery_date: today }, { delivery_date: { gt: today } }],
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
+    // 3. Categorize
+    const active: any[] = [];
+    const upcoming: any[] = [];
+    const completed: any[] = [];
+
+    // Process Routes
+    routes.forEach((route) => {
+      if (route.status === 'completed') {
+        completed.push({ ...route, type: 'route' });
+      } else if (route.date === today) {
+        active.push({ ...route, type: 'route' });
+      } else {
+        upcoming.push({ ...route, type: 'route' });
+      }
+    });
+
+    // Process Standalone Stops
+    standaloneStops.forEach((stop) => {
+      if (stop.status === 'completed' || stop.status === 'failed') {
+        completed.push({ ...stop, type: 'stop' });
+      } else if (stop.delivery_date === today) {
+        active.push({ ...stop, type: 'stop' });
+      } else {
+        upcoming.push({ ...stop, type: 'stop' });
+      }
+    });
+
+    return {
+      active,
+      upcoming,
+      completed,
+    };
   }
 
   async getRoutePreview(userId: string, routeId: string) {
@@ -186,6 +229,29 @@ export class DriverService {
     });
 
     return { message: 'Arrived at stop' };
+  }
+
+  async startStop(userId: string, stopId: string) {
+    const driver = await this.getDriverOrThrow(userId);
+    const stop = await this.prisma.stop.findUnique({
+      where: { id: stopId, driver_id: driver.id },
+    });
+    if (!stop) throw new NotFoundException('Stop not found');
+    if (stop.status === 'completed')
+      throw new ConflictException('Stop already completed');
+
+    await this.prisma.$transaction([
+      this.prisma.stop.update({
+        where: { id: stopId },
+        data: { status: 'pending', started_at: new Date() },
+      }),
+      this.prisma.driver.update({
+        where: { id: driver.id },
+        data: { status: 'active', last_active_at: new Date() },
+      }),
+    ]);
+
+    return { message: 'Stop started successfully' };
   }
 
   async skipStop(userId: string, stopId: string) {

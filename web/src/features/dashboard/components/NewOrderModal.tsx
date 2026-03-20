@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { api } from "../../../lib/api";
+import { Order } from "../../../store/orderStore";
 import {
   Dialog,
   DialogContent,
@@ -18,36 +20,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { LocationPickerMap } from "../../../components/ui/LocationPickerMap";
 
-export type OrderStatus =
-  | "unassigned"
-  | "assigned"
-  | "in_progress"
-  | "completed"
-  | "failed";
-
-export interface Order {
-  id: string;
-  customer_name: string;
-  address: string;
-  city: string;
-  packages: number;
-  priority: "normal" | "high";
-  time_window_start: string | null;
-  time_window_end: string | null;
-  delivery_date: string | null;
-  status: OrderStatus;
-  assigned_to?: string;
-  notes?: string;
-  lat?: number;
-  lng?: number;
-  createdAt: string;
-}
-
 interface NewOrderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreate: (order: Partial<Order>) => void;
   drivers?: string[];
+  initialData?: Partial<Order> | null;
 }
 
 export function NewOrderModal({
@@ -55,12 +33,13 @@ export function NewOrderModal({
   onOpenChange,
   onCreate,
   drivers = [],
+  initialData = null,
 }: NewOrderModalProps) {
   const [form, setForm] = useState({
     customer_name: "",
     address: "",
     city: "",
-    packages: "1",
+    packages: 1,
     deliveryDate: new Date().toISOString().split("T")[0],
     timeWindowStart: "09:00",
     timeWindowEnd: "17:00",
@@ -72,6 +51,35 @@ export function NewOrderModal({
   });
 
   const [loading, setLoading] = useState(false);
+  const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
+  const lastGeocodeRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  // We use the initialData as a base for the form.
+  // To avoid the setState in useEffect lint, we can derive the initial state or use a key.
+  // However, since form state needs to be mutable, we'll keep the useEffect but suppress the lint
+  // or use a more standard pattern.
+  // Given the current structure, we'll just fix the flickering/cascading by ensuring it only runs when necessary.
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm({
+      customer_name: initialData?.customer_name || "",
+      address: initialData?.address || "",
+      city: initialData?.city || "",
+      packages: initialData?.packages || 1,
+      deliveryDate:
+        initialData?.delivery_date || new Date().toISOString().split("T")[0],
+      timeWindowStart: initialData?.time_window_start || "09:00",
+      timeWindowEnd: initialData?.time_window_end || "17:00",
+      priority: initialData?.priority || "normal",
+      assigned_to: "", // Always reset assignment for a copied order
+      notes: initialData?.notes || "",
+      lat: initialData?.lat,
+      lng: initialData?.lng,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialData?.id]);
 
   const handleCreate = () => {
     if (!form.customer_name || !form.address) return;
@@ -82,7 +90,7 @@ export function NewOrderModal({
         customer_name: form.customer_name,
         address: form.address,
         city: form.city,
-        packages: parseInt(form.packages) || 1,
+        packages: form.packages,
         priority: form.priority,
         delivery_date: form.deliveryDate,
         time_window_start: form.timeWindowStart,
@@ -98,7 +106,7 @@ export function NewOrderModal({
         customer_name: "",
         address: "",
         city: "",
-        packages: "1",
+        packages: 1,
         deliveryDate: new Date().toISOString().split("T")[0],
         timeWindowStart: "09:00",
         timeWindowEnd: "17:00",
@@ -110,6 +118,37 @@ export function NewOrderModal({
       });
       onOpenChange(false);
     }, 1200);
+  };
+
+  const handleLocationChange = async (lat: number, lng: number) => {
+    // Only update if significantly changed or first time
+    if (
+      lastGeocodeRef.current &&
+      Math.abs(lastGeocodeRef.current.lat - lat) < 0.0001 &&
+      Math.abs(lastGeocodeRef.current.lng - lng) < 0.0001
+    ) {
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, lat, lng }));
+    lastGeocodeRef.current = { lat, lng };
+
+    setIsReverseGeocoding(true);
+    try {
+      const res = await api.post("/map/reverse-geocode", { lat, lng });
+      if (res.data.formattedAddress) {
+        setForm((prev) => ({
+          ...prev,
+          address: res.data.formattedAddress,
+          // Extract city if possible or keep existing if not returned specifically
+          city: res.data.city || prev.city,
+        }));
+      }
+    } catch (err) {
+      console.error("Reverse geocoding failed:", err);
+    } finally {
+      setIsReverseGeocoding(false);
+    }
   };
 
   return (
@@ -142,6 +181,7 @@ export function NewOrderModal({
                 onChange={(v: string) => setForm({ ...form, address: v })}
                 placeholder="742 Evergreen Terrace"
                 icon={<MapPinIcon className="w-4 h-4 text-emerald-600" />}
+                loading={isReverseGeocoding}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ModalInput
@@ -155,9 +195,11 @@ export function NewOrderModal({
                 />
                 <ModalInput
                   label="Packages"
-                  value={form.packages}
+                  value={form.packages.toString()}
                   type="number"
-                  onChange={(v: string) => setForm({ ...form, packages: v })}
+                  onChange={(v: string) =>
+                    setForm({ ...form, packages: parseInt(v) || 0 })
+                  }
                   icon={<CubeIcon className="w-4 h-4 text-emerald-600" />}
                 />
               </div>
@@ -267,7 +309,7 @@ export function NewOrderModal({
               <LocationPickerMap
                 lat={form.lat || null}
                 lng={form.lng || null}
-                onChange={(lat, lng) => setForm({ ...form, lat, lng })}
+                onChange={handleLocationChange}
               />
               <p className="text-[10px] text-gray-400 italic mt-2 ml-1">
                 {!form.lat && !form.lng
@@ -364,6 +406,7 @@ export function ModalInput({
   type = "text",
   placeholder,
   icon,
+  loading,
 }: {
   label: string;
   value: string;
@@ -371,6 +414,7 @@ export function ModalInput({
   type?: string;
   placeholder?: string;
   icon?: React.ReactNode;
+  loading?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
@@ -380,7 +424,11 @@ export function ModalInput({
       <div className="relative group">
         {icon && (
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all">
-            {icon}
+            {loading ? (
+              <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              icon
+            )}
           </div>
         )}
         <input

@@ -2,6 +2,13 @@ import { create } from "zustand";
 import { api } from "../lib/api";
 import { AxiosError } from "axios";
 
+export type OrderStatus =
+  | "unassigned"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "failed";
+
 export interface Order {
   id: string;
   external_id: string | null;
@@ -18,13 +25,14 @@ export interface Order {
   packages: number;
   service_time_min?: number;
   priority?: "normal" | "high";
-  status: string;
+  status: OrderStatus;
   route_id: string | null;
   driver_id: string | null;
   driver_name?: string;
   assigned_to?: string;
   notes?: string;
   route_name?: string;
+  createdAt?: string;
 }
 
 interface OrderStats {

@@ -50,11 +50,11 @@ function Section({
     <div className="bg-white border border-black/8 rounded-3xl overflow-hidden shadow-sm transition-all hover:shadow-md">
       <div className="px-6 py-5 md:px-8 md:py-6 border-b border-gray-100 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight">
+          <h2 className="text-[15px] font-medium text-gray-700 mb-0.5 tracking-tight">
             {title}
           </h2>
           {subtitle && (
-            <p className="text-[12px] text-gray-400 font-medium">{subtitle}</p>
+            <p className="text-[12px] text-gray-400 font-normal">{subtitle}</p>
           )}
         </div>
         {action && <div className="shrink-0">{action}</div>}
@@ -76,9 +76,7 @@ function SettingRow({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-gray-50 last:border-0 last:pb-0 first:pt-0">
       <div>
-        <p className="text-[14px] font-semibold text-gray-700 mb-0.5">
-          {label}
-        </p>
+        <p className="text-[14px] font-medium text-gray-700 mb-0.5">{label}</p>
         {subtitle && (
           <p className="text-[12px] text-gray-400 leading-normal">{subtitle}</p>
         )}
@@ -101,7 +99,7 @@ function StaticField({
     <div className="bg-gray-50/50 border border-black/5 rounded-2xl p-4.5 group transition-all duration-300 hover:bg-white hover:border-emerald-600/30 hover:shadow-sm">
       <div className="flex items-center gap-2.5 mb-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
         <Icon className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" />
-        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+        <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">
           {label}
         </span>
       </div>
@@ -127,7 +125,7 @@ function InputField({
 }) {
   return (
     <div className="space-y-1.5 flex-1">
-      <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest ml-1">
+      <label className="text-[10px] font-medium text-gray-500 uppercase tracking-widest ml-1">
         {label}
       </label>
       <input
@@ -177,10 +175,10 @@ function EditProfileModal({
       <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-black/5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
         <div className="px-8 pt-8 pb-6 flex items-center justify-between border-b border-gray-100">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+            <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
               Edit Workspace
             </h3>
-            <p className="text-[13px] text-gray-400 mt-0.5 font-medium">
+            <p className="text-[13px] text-gray-400 mt-0.5 font-normal">
               Update company information
             </p>
           </div>
@@ -227,7 +225,7 @@ function EditProfileModal({
         <div className="px-8 py-6 bg-gray-50/50 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3.5 bg-white border border-black/5 text-gray-500 font-bold text-[13px] rounded-2xl hover:bg-gray-100 transition-all active:scale-[0.98]"
+            className="flex-1 py-3.5 bg-white border border-black/5 text-gray-500 font-semibold text-[13px] rounded-2xl hover:bg-gray-100 transition-all active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -237,7 +235,7 @@ function EditProfileModal({
               onClose();
             }}
             disabled={isMutating}
-            className="flex-3 py-3.5 bg-emerald-600 text-white font-bold text-[13px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
+            className="flex-3 py-3.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
           >
             {isMutating ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -274,12 +272,12 @@ function SimpleConfirmModal({
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <p className="text-[13px] text-gray-500 mb-6">{desc}</p>
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
+            className="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
           >
             Cancel
           </button>
@@ -288,7 +286,7 @@ function SimpleConfirmModal({
               onConfirm();
               // Do not automatically close; let the handler close it if needed, or handle async logic onConfirm
             }}
-            className={`flex-1 py-3 ${variant === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"} text-white font-bold text-[13px] rounded-xl shadow-lg transition-all`}
+            className={`flex-1 py-3 ${variant === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"} text-white font-semibold text-[13px] rounded-xl shadow-lg transition-all`}
           >
             {btnText}
           </button>
@@ -318,7 +316,7 @@ function OtpVerifyModal({
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Verify Identity
         </h3>
         <p className="text-[13px] text-gray-500 mb-4">
@@ -335,7 +333,7 @@ function OtpVerifyModal({
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
           disabled={isVerifying}
           placeholder="000000"
-          className="w-full text-center text-3xl tracking-[0.5em] font-bold py-3 mb-6 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="w-full text-center text-3xl tracking-[0.2em] font-semibold py-3 mb-6 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
         <div className="flex gap-2">
           <button
@@ -348,7 +346,7 @@ function OtpVerifyModal({
           <button
             onClick={() => onVerify(otp)}
             disabled={otp.length !== 6 || isVerifying}
-            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[13px] rounded-xl shadow-lg transition-all disabled:opacity-50"
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[13px] rounded-xl shadow-lg transition-all disabled:opacity-50"
           >
             {isVerifying ? "Verifying..." : "Verify"}
           </button>
@@ -474,10 +472,10 @@ export function DashboardSettings() {
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 pb-32">
       {/* Header */}
       <div className="mb-2">
-        <h1 className="text-2xl md:text-[26px] font-bold text-gray-800 mb-0.5 tracking-tight">
+        <h1 className="text-2xl md:text-[26px] font-semibold text-gray-800 mb-0.5 tracking-tight">
           Settings
         </h1>
-        <p className="text-[12.5px] text-gray-400 font-medium">
+        <p className="text-[12.5px] text-gray-400 font-normal">
           Manage your workspace profile and notification preferences
         </p>
       </div>
@@ -486,12 +484,12 @@ export function DashboardSettings() {
       <div className="relative overflow-hidden bg-white border border-black/8 rounded-3xl p-4.5 md:p-5 flex items-center justify-between gap-4 shadow-sm transition-all hover:bg-gray-50/20">
         <div className="relative z-10 flex items-center gap-6">
           <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+            <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
               Fleet Access Code
             </span>
             <div className="flex items-center gap-3">
-              <span className="text-[20px] font-mono font-bold text-gray-800 tracking-tight bg-white px-3 py-1.5 rounded-lg border border-black/5">
+              <span className="text-[20px] font-mono font-semibold text-gray-800 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
                 {companyCode}
               </span>
               <button
@@ -507,7 +505,7 @@ export function DashboardSettings() {
         <button
           onClick={() => regenerateAccessCode()}
           disabled={isMutating}
-          className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+          className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-semibold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
         >
           {isMutating ? "..." : "Regenerate"}
         </button>
@@ -606,22 +604,22 @@ export function DashboardSettings() {
 
       {/* Simplified Danger Zone Section */}
       <div className="bg-white border border-black/5 rounded-3xl p-6">
-        <h3 className="text-[14px] font-semibold text-gray-700 mb-1 tracking-tight">
+        <h3 className="text-[14px] font-medium text-gray-700 mb-1 tracking-tight">
           Danger Zone
         </h3>
-        <p className="text-[12px] text-gray-400 font-medium mb-6">
+        <p className="text-[12px] text-gray-400 font-normal mb-6">
           Irreversible actions for your workspace data and access.
         </p>
         <div className="flex flex-wrap items-center gap-6">
           <button
             onClick={() => setIsDataCleaningOpen(true)}
-            className="text-[12px] font-bold text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+            className="text-[12px] font-semibold text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
           >
             Clear Records
           </button>
           <button
             onClick={() => setIsDeleteAccountOpen(true)}
-            className="px-4 py-2 border border-red-100 text-red-500 rounded-xl text-[11px] font-bold hover:bg-red-50 hover:border-red-200 transition-all cursor-pointer active:scale-95"
+            className="px-4 py-2 border border-red-100 text-red-500 rounded-xl text-[11px] font-semibold hover:bg-red-50 hover:border-red-200 transition-all cursor-pointer active:scale-95"
           >
             Deactivate Account
           </button>

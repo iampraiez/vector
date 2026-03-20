@@ -24,15 +24,16 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   static const _cacheKey = 'cache_assignments_today';
   static const _cacheTtlMinutes = 10;
 
-  int _activeTab = 0; // 0 = today/active, 1 = completed
+  int _activeTab = 0; // 0 = Active, 1 = Upcoming, 2 = Completed
 
   bool _isLoading = true;
   bool _isOffline = false;
   String? _errorMessage;
 
-  // Routes from API
-  List<Map<String, dynamic>> _activeRoutes = [];
-  List<Map<String, dynamic>> _completedRoutes = [];
+  // Assignments from API
+  List<Map<String, dynamic>> _activeAssignments = [];
+  List<Map<String, dynamic>> _upcomingAssignments = [];
+  List<Map<String, dynamic>> _completedAssignments = [];
 
   // Track which routes are being started (spinner per card)
   final Set<String> _startingRoutes = {};
@@ -67,8 +68,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
   Future<void> _fetchFromApi() async {
     try {
-      final today = DateTime.now().toIso8601String().split('T').first;
-      final data = await _api.getAssignments(date: today);
+      final data = await _api.getAssignments();
       await _cache(data);
       if (mounted) {
         _applyData(data);
@@ -94,20 +94,14 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   void _applyData(Map<String, dynamic> data) {
-    final routes = (data['routes'] as List? ?? [])
-        .cast<Map<String, dynamic>>();
-    _activeRoutes = routes
-        .where((r) => r['status'] != 'completed' && r['status'] != 'cancelled')
-        .toList();
-    _completedRoutes = routes
-        .where((r) => r['status'] == 'completed' || r['status'] == 'cancelled')
-        .toList();
+    _activeAssignments = (data['active'] as List? ?? []).cast<Map<String, dynamic>>();
+    _upcomingAssignments = (data['upcoming'] as List? ?? []).cast<Map<String, dynamic>>();
+    _completedAssignments = (data['completed'] as List? ?? []).cast<Map<String, dynamic>>();
   }
 
   Future<void> _refreshInBackground() async {
     try {
-      final today = DateTime.now().toIso8601String().split('T').first;
-      final data = await _api.getAssignments(date: today);
+      final data = await _api.getAssignments();
       await _cache(data);
       if (mounted) setState(() => _applyData(data));
     } catch (_) {}
@@ -144,41 +138,76 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
   Future<void> _startRoute(
     BuildContext context,
-    Map<String, dynamic> route,
+    Map<String, dynamic> item,
   ) async {
     if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
-    final routeId = route['id'] as String;
-    setState(() => _startingRoutes.add(routeId));
+    final isRoute = item['type'] == 'route';
+    final itemId = item['id'] as String;
+    setState(() => _startingRoutes.add(itemId));
 
     try {
-      await _api.startRoute(routeId);
-
-      // Load stops into RouteProgressProvider
-      final stops = route['stops'] as List? ?? [];
-      if (context.mounted) {
-        RouteProgressScope.of(context).loadStops(stops);
-        context.push('/navigation');
+      if (isRoute) {
+        await _api.startRoute(itemId);
+        // Load stops into RouteProgressProvider
+        final stops = item['stops'] as List? ?? [];
+        if (context.mounted) {
+          RouteProgressScope.of(context).loadStops(stops);
+          context.push('/navigation');
+        }
+      } else {
+        await _api.startStop(itemId);
+        // Load single stop into RouteProgressProvider
+        if (context.mounted) {
+          RouteProgressScope.of(context).loadStops([item]);
+          context.push('/navigation');
+        }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to start route: $e'),
+            content: Text('Failed to start: $e'),
             backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _startingRoutes.remove(routeId));
+      if (mounted) setState(() => _startingRoutes.remove(itemId));
     }
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage ?? 'Failed to load assignments',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _loadData(forceRefresh: true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // ... rest of the build method (lines 114 to end)
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),
       bottomNavigationBar: const AppBottomNav(),
@@ -243,7 +272,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Your delivery schedule for today',
+                      'Your delivery schedule and orders',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textMuted,
@@ -269,15 +298,21 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                     children: [
                       _Tab(
                         label: 'Active',
-                        count: _activeRoutes.length,
+                        count: _activeAssignments.length,
                         isActive: _activeTab == 0,
                         onTap: () => setState(() => _activeTab = 0),
                       ),
                       _Tab(
-                        label: 'Completed',
-                        count: _completedRoutes.length,
+                        label: 'Upcoming',
+                        count: _upcomingAssignments.length,
                         isActive: _activeTab == 1,
                         onTap: () => setState(() => _activeTab = 1),
+                      ),
+                      _Tab(
+                        label: 'Completed',
+                        count: _completedAssignments.length,
+                        isActive: _activeTab == 2,
+                        onTap: () => setState(() => _activeTab = 2),
                       ),
                     ],
                   ),
@@ -302,9 +337,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                     : RefreshIndicator(
                         color: AppColors.primary,
                         onRefresh: () => _loadData(forceRefresh: true),
-                        child: _activeTab == 0
-                            ? _buildActiveList(context)
-                            : _buildCompletedList(),
+                        child: _buildAssignmentList(context),
                       ),
               ),
             ],
@@ -314,45 +347,38 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     );
   }
 
-  Widget _buildError() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: 16),
-            Text(
-              _errorMessage ?? 'Failed to load assignments',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _loadData(forceRefresh: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildAssignmentList(BuildContext context) {
+    final List<Map<String, dynamic>> currentList;
+    final String emptyTitle;
+    final String emptyMessage;
+    final IconData emptyIcon;
 
-  Widget _buildActiveList(BuildContext context) {
-    if (_activeRoutes.isEmpty) {
+    if (_activeTab == 0) {
+      currentList = _activeAssignments;
+      emptyTitle = 'No active assignments';
+      emptyMessage = 'Your routes for today will appear here.';
+      emptyIcon = Icons.local_shipping_outlined;
+    } else if (_activeTab == 1) {
+      currentList = _upcomingAssignments;
+      emptyTitle = 'No upcoming routes';
+      emptyMessage = 'Future assignments will appear here.';
+      emptyIcon = Icons.calendar_today_outlined;
+    } else {
+      currentList = _completedAssignments;
+      emptyTitle = 'No completed work';
+      emptyMessage = 'Assignments you finish today will appear here.';
+      emptyIcon = Icons.inventory_2_outlined;
+    }
+
+    if (currentList.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 40),
+        children: [
+          const SizedBox(height: 40),
           EmptyState(
-            title: 'No active assignments',
-            message: 'Your routes for today will appear here.',
-            icon: Icons.local_shipping_outlined,
+            title: emptyTitle,
+            message: emptyMessage,
+            icon: emptyIcon,
           ),
         ],
       );
@@ -361,126 +387,126 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
-      itemCount: _activeRoutes.length,
+      itemCount: currentList.length,
       itemBuilder: (ctx, i) {
-        final route = _activeRoutes[i];
-        final routeId = route['id'] as String;
-        final stops = (route['stops'] as List? ?? []);
-        final totalStops = stops.length;
-        final completedStops =
-            stops.where((s) => (s as Map)['status'] == 'completed').length;
-        final isStarting = _startingRoutes.contains(routeId);
+        final item = currentList[i];
+        final isRoute = item['type'] == 'route';
+        
+        if (_activeTab == 2) {
+          return _buildCompletedCard(item);
+        }
 
-        return _RouteCard(
-          routeId: routeId,
-          name: route['name'] as String? ?? 'Route',
-          status: route['status'] as String? ?? 'assigned',
-          totalStops: totalStops,
-          completedStops: completedStops,
-          date: route['date'] as String? ?? '',
-          isStarting: isStarting,
-          onStart: () => _startRoute(context, route),
-          onContinue: () {
-            // Route already started, re-load stops and go to navigation
-            RouteProgressScope.of(context).loadStops(stops);
-            context.push('/navigation');
-          },
-        );
+        if (isRoute) {
+          final stops = (item['stops'] as List? ?? []);
+          return _RouteCard(
+            routeId: item['id'],
+            name: item['name'] ?? 'Route',
+            status: item['status'] ?? 'assigned',
+            totalStops: stops.length,
+            completedStops: stops.where((s) => (s as Map)['status'] == 'completed').length,
+            date: item['date'] ?? '',
+            isStarting: _startingRoutes.contains(item['id']),
+            onStart: () => _startRoute(context, item),
+            onContinue: () {
+              RouteProgressScope.of(context).loadStops(stops);
+              context.push('/navigation');
+            },
+            isUpcoming: _activeTab == 1,
+          );
+        } else {
+          // Standalone Stop
+          return _RouteCard(
+            routeId: item['id'],
+            name: item['customer_name'] ?? 'Order',
+            status: item['status'] ?? 'assigned',
+            totalStops: 1,
+            completedStops: item['status'] == 'completed' ? 1 : 0,
+            date: item['delivery_date'] ?? '',
+            isStarting: _startingRoutes.contains(item['id']),
+            onStart: () => _startRoute(context, item),
+            onContinue: () {
+              RouteProgressScope.of(context).loadStops([item]);
+              context.push('/navigation');
+            },
+            isUpcoming: _activeTab == 1,
+            isStandalone: true,
+          );
+        }
       },
     );
   }
 
-  Widget _buildCompletedList() {
-    if (_completedRoutes.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 40),
-          EmptyState(
-            title: 'No completed routes',
-            message: 'Routes you finish today will appear here.',
-            icon: Icons.inventory_2_outlined,
-          ),
-        ],
-      );
-    }
+  Widget _buildCompletedCard(Map<String, dynamic> item) {
+    final isRoute = item['type'] == 'route';
+    final title = isRoute ? (item['name'] ?? 'Route') : (item['customer_name'] ?? 'Order');
+    final subtitle = isRoute 
+        ? '${(item['stops'] as List? ?? []).length} stops completed'
+        : 'Order delivered';
 
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      itemCount: _completedRoutes.length,
-      itemBuilder: (ctx, i) {
-        final route = _completedRoutes[i];
-        final stops = (route['stops'] as List? ?? []);
-        final totalStops = stops.length;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(AppSpacing.p4),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(AppSpacing.p4),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.success,
+              size: 22,
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      route['name'] as String? ?? 'Route',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$totalStops stops completed',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.success,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'Done',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.success,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -576,6 +602,8 @@ class _RouteCard extends StatelessWidget {
   final bool isStarting;
   final VoidCallback onStart;
   final VoidCallback onContinue;
+  final bool isUpcoming;
+  final bool isStandalone;
 
   const _RouteCard({
     required this.routeId,
@@ -587,6 +615,8 @@ class _RouteCard extends StatelessWidget {
     required this.isStarting,
     required this.onStart,
     required this.onContinue,
+    this.isUpcoming = false,
+    this.isStandalone = false,
   });
 
   @override
@@ -631,7 +661,7 @@ class _RouteCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.local_shipping_outlined,
+                  isStandalone ? Icons.inventory_2_outlined : Icons.local_shipping_outlined,
                   size: 22,
                   color: isActive ? AppColors.primary : AppColors.textMuted,
                 ),
@@ -651,7 +681,9 @@ class _RouteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$totalStops stops · $date',
+                      isStandalone 
+                        ? 'Standalone Order · $date'
+                        : '$totalStops stops · $date',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -664,19 +696,23 @@ class _RouteCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.primaryLight
-                      : AppColors.surface,
+                  color: isUpcoming
+                      ? const Color(0xFFEFF6FF)
+                      : isActive
+                          ? AppColors.primaryLight
+                          : AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isActive ? 'Active' : 'Assigned',
+                  isUpcoming ? 'Upcoming' : (isActive ? 'Active' : 'Assigned'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: isActive
-                        ? AppColors.primary
-                        : AppColors.textMuted,
+                    color: isUpcoming
+                        ? const Color(0xFF2563EB)
+                        : isActive
+                            ? AppColors.primary
+                            : AppColors.textMuted,
                   ),
                 ),
               ),
@@ -733,18 +769,19 @@ class _RouteCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: isStarting
+              onPressed: (isStarting || isUpcoming)
                   ? null
                   : isActive
                   ? onContinue
                   : onStart,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                backgroundColor: isUpcoming ? AppColors.surface : AppColors.primary,
+                foregroundColor: isUpcoming ? AppColors.textMuted : Colors.white,
+                disabledBackgroundColor: isUpcoming ? AppColors.surface : AppColors.primary.withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: isUpcoming ? 0 : 2,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: isStarting
@@ -757,10 +794,13 @@ class _RouteCard extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      isActive ? 'Continue Route' : 'Start Route',
-                      style: const TextStyle(
+                      isUpcoming 
+                        ? 'Scheduled for $date'
+                        : (isActive ? 'Continue Route' : 'Start Route'),
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
+                        color: isUpcoming ? AppColors.textMuted : Colors.white,
                       ),
                     ),
             ),

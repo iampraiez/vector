@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore, Driver } from "../../../store/driverStore";
+import { api } from "../../../lib/api";
 
 import {
   PlusIcon,
@@ -15,10 +16,12 @@ import {
   CheckIcon,
   DocumentIcon,
   ExclamationTriangleIcon,
+  DocumentDuplicateIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal, ModalInput } from "../components/NewOrderModal";
 import { LocationPickerMap } from "../../../components/ui/LocationPickerMap";
-import { Order } from "../../../store/orderStore";
+import { Order, OrderStatus } from "../../../store/orderStore";
 import {
   Dialog,
   DialogContent,
@@ -26,13 +29,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../../components/ui/dialog";
-
-type OrderStatus =
-  | "unassigned"
-  | "assigned"
-  | "in_progress"
-  | "completed"
-  | "failed";
 
 export function DashboardOrders() {
   const {
@@ -52,6 +48,7 @@ export function DashboardOrders() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [copyingOrder, setCopyingOrder] = useState<Order | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   useEffect(() => {
@@ -307,9 +304,40 @@ export function DashboardOrders() {
                       <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
                     )}
                   </h3>
-                  <p className="text-[12px] text-gray-500 mb-4 line-clamp-1">
+                  <p className="text-[12px] text-gray-500 mb-2 line-clamp-1">
                     {order.address}
                   </p>
+                  {!order.driver_id && !order.driver_name && (
+                    <div className="mb-4">
+                      <select
+                        disabled={
+                          order.status === "completed" ||
+                          order.status === "failed"
+                        }
+                        onChange={async (e) => {
+                          if (e.target.value) {
+                            const matched = drivers.find(
+                              (d) => d.name === e.target.value,
+                            );
+                            if (matched) {
+                              await updateOrder(order.id, {
+                                driver_id: matched.id,
+                                status: "assigned",
+                              });
+                            }
+                          }
+                        }}
+                        className="w-full bg-gray-50 border border-black/8 rounded-xl px-3 py-2 text-[12px] text-gray-500 outline-none focus:border-emerald-600"
+                      >
+                        <option value="">Assign driver...</option>
+                        {driverNames.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex gap-3">
                       <div className="flex items-center gap-1.5">
@@ -322,12 +350,25 @@ export function DashboardOrders() {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setEditingOrder(order)}
-                      className="p-2 border border-black/8 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <PencilIcon className="w-3.5 h-3.5 text-gray-400" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setCopyingOrder(order);
+                          setShowNewOrderModal(true);
+                        }}
+                        className="p-2 border border-black/8 rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                        title="Copy Order"
+                      >
+                        <DocumentDuplicateIcon className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setEditingOrder(order)}
+                        className="p-2 border border-black/8 rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                        title="Edit Order"
+                      >
+                        <PencilIcon className="w-3.5 h-3.5 text-gray-400" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -483,13 +524,17 @@ export function DashboardOrders() {
                               <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
                                 <UserIcon className="w-3.5 h-3.5 text-gray-500" />
                               </div>
-                              <span className="text-[13px] text-gray-700 font-medium">
+                              <span className="text-[13px] text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-30">
                                 {order.driver_name || "Assigned Driver"}
                               </span>
                             </div>
                           ) : (
                             <select
                               id="tour-assign-select"
+                              disabled={
+                                order.status === "completed" ||
+                                order.status === "failed"
+                              }
                               onChange={async (e) => {
                                 if (e.target.value) {
                                   // Find driver ID by name from driver store
@@ -504,7 +549,12 @@ export function DashboardOrders() {
                                   }
                                 }
                               }}
-                              className="bg-gray-50/50 border border-black/8 rounded-lg px-2.5 py-1 text-[12px] text-gray-500 outline-none hover:border-emerald-600/30 transition-colors"
+                              className={`bg-gray-50/50 border border-black/8 rounded-lg px-2.5 py-1 text-[12px] text-gray-500 outline-none transition-colors ${
+                                order.status === "completed" ||
+                                order.status === "failed"
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : "hover:border-emerald-600/30 cursor-pointer"
+                              }`}
                             >
                               <option value="">Assign driver...</option>
                               {driverNames.map((d) => (
@@ -523,12 +573,35 @@ export function DashboardOrders() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => setEditingOrder(order)}
-                            className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setCopyingOrder(order);
+                                setShowNewOrderModal(true);
+                              }}
+                              className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
+                              title="Copy Order"
+                            >
+                              <DocumentDuplicateIcon className="w-4 h-4" />
+                            </button>
+                            {order.status === "completed" ||
+                            order.status === "failed" ? (
+                              <div
+                                className="p-1.5 border border-black/5 rounded-lg text-gray-300 bg-gray-50/50"
+                                title="Finalized - Cannot Edit"
+                              >
+                                <LockClosedIcon className="w-4 h-4" />
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingOrder(order)}
+                                className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
+                                title="Edit Order"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -566,10 +639,15 @@ export function DashboardOrders() {
 
       <NewOrderModal
         open={showNewOrderModal}
-        onOpenChange={setShowNewOrderModal}
+        onOpenChange={(open) => {
+          setShowNewOrderModal(open);
+          if (!open) setCopyingOrder(null);
+        }}
+        initialData={copyingOrder}
         onCreate={(orderData) => {
           createOrder(orderData);
           setShowNewOrderModal(false);
+          setCopyingOrder(null);
         }}
         drivers={driverNames}
       />
@@ -662,6 +740,38 @@ function EditOrderModal({
     delivery_date: formatDateForInput(order.delivery_date),
   });
   const [loading, setLoading] = useState(false);
+  const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
+  const lastGeocodeRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  const handleLocationChange = async (lat: number, lng: number) => {
+    // Only update if significantly changed or first time
+    if (
+      lastGeocodeRef.current &&
+      Math.abs(lastGeocodeRef.current.lat - lat) < 0.0001 &&
+      Math.abs(lastGeocodeRef.current.lng - lng) < 0.0001
+    ) {
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, lat, lng }));
+    lastGeocodeRef.current = { lat, lng };
+
+    setIsReverseGeocoding(true);
+    try {
+      const res = await api.post("/map/reverse-geocode", { lat, lng });
+      if (res.data.formattedAddress) {
+        setForm((prev) => ({
+          ...prev,
+          address: res.data.formattedAddress,
+          city: res.data.city || prev.city,
+        }));
+      }
+    } catch (err) {
+      console.error("Reverse geocoding failed:", err);
+    } finally {
+      setIsReverseGeocoding(false);
+    }
+  };
 
   const handleSave = () => {
     setLoading(true);
@@ -709,9 +819,10 @@ function EditOrderModal({
               onChange={(v: string) => setForm({ ...form, customer_name: v })}
             />
             <ModalInput
-              label="Address"
+              label="Address *"
               value={form.address}
               onChange={(v: string) => setForm({ ...form, address: v })}
+              loading={isReverseGeocoding}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ModalInput
@@ -784,7 +895,7 @@ function EditOrderModal({
               <LocationPickerMap
                 lat={form.lat || null}
                 lng={form.lng || null}
-                onChange={(lat, lng) => setForm({ ...form, lat, lng })}
+                onChange={handleLocationChange}
               />
               <p className="text-[10px] text-gray-400 italic mt-2">
                 {!form.lat && !form.lng
@@ -881,7 +992,6 @@ function UploadCSVModal({
   const [file, setFile] = useState<File | null>(null);
   const [importOrders, setImportOrders] = useState<Partial<Order>[]>([]);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (f: File) => {
@@ -911,13 +1021,20 @@ function UploadCSVModal({
     reader.readAsText(f);
   };
 
-  const handleUpdateRow = (index: number, field: keyof Order, value: any) => {
+  const handleUpdateRow = (
+    index: number,
+    field: keyof Order,
+    value: string | number | null,
+  ) => {
     const updated = [...importOrders];
     updated[index] = { ...updated[index], [field]: value };
     setImportOrders(updated);
   };
 
-  const handleBatchUpdate = (field: keyof Order, value: any) => {
+  const handleBatchUpdate = (
+    field: keyof Order,
+    value: string | number | null,
+  ) => {
     const updated = importOrders.map((order, i) =>
       selectedRows.has(i) ? { ...order, [field]: value } : order,
     );
@@ -1036,7 +1153,10 @@ function UploadCSVModal({
                         </button>
                         <select
                           onChange={(e) => {
-                            if (e.target.value === "high" || e.target.value === "normal") {
+                            if (
+                              e.target.value === "high" ||
+                              e.target.value === "normal"
+                            ) {
                               handleBatchUpdate("priority", e.target.value);
                             }
                             e.target.value = "";
@@ -1094,7 +1214,9 @@ function UploadCSVModal({
                           <tr
                             key={i}
                             className={`group transition-colors ${
-                              selectedRows.has(i) ? "bg-emerald-50/30" : "hover:bg-gray-50/50"
+                              selectedRows.has(i)
+                                ? "bg-emerald-50/30"
+                                : "hover:bg-gray-50/50"
                             }`}
                           >
                             <td className="p-4">
@@ -1109,7 +1231,11 @@ function UploadCSVModal({
                               <input
                                 value={order.customer_name}
                                 onChange={(e) =>
-                                  handleUpdateRow(i, "customer_name", e.target.value)
+                                  handleUpdateRow(
+                                    i,
+                                    "customer_name",
+                                    e.target.value,
+                                  )
                                 }
                                 className="w-full bg-transparent border-none focus:ring-0 font-bold text-gray-900 p-0 hover:bg-black/5 rounded px-1 -mx-1"
                               />
@@ -1128,7 +1254,11 @@ function UploadCSVModal({
                                 type="number"
                                 value={order.packages}
                                 onChange={(e) =>
-                                  handleUpdateRow(i, "packages", parseInt(e.target.value) || 0)
+                                  handleUpdateRow(
+                                    i,
+                                    "packages",
+                                    parseInt(e.target.value) || 0,
+                                  )
                                 }
                                 className="w-full bg-transparent border-none focus:ring-0 text-gray-700 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-center"
                               />
@@ -1138,7 +1268,11 @@ function UploadCSVModal({
                                 type="time"
                                 value={order.time_window_start || "09:00"}
                                 onChange={(e) =>
-                                  handleUpdateRow(i, "time_window_start", e.target.value)
+                                  handleUpdateRow(
+                                    i,
+                                    "time_window_start",
+                                    e.target.value,
+                                  )
                                 }
                                 className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-[11px]"
                               />
@@ -1148,7 +1282,11 @@ function UploadCSVModal({
                                 type="time"
                                 value={order.time_window_end || "17:00"}
                                 onChange={(e) =>
-                                  handleUpdateRow(i, "time_window_end", e.target.value)
+                                  handleUpdateRow(
+                                    i,
+                                    "time_window_end",
+                                    e.target.value,
+                                  )
                                 }
                                 className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-[11px]"
                               />
@@ -1158,7 +1296,11 @@ function UploadCSVModal({
                                 type="date"
                                 value={order.delivery_date || ""}
                                 onChange={(e) =>
-                                  handleUpdateRow(i, "delivery_date", e.target.value)
+                                  handleUpdateRow(
+                                    i,
+                                    "delivery_date",
+                                    e.target.value,
+                                  )
                                 }
                                 className="w-full bg-transparent border-none focus:ring-0 text-gray-500 p-0 hover:bg-black/5 rounded px-1 -mx-1 text-[11px]"
                               />

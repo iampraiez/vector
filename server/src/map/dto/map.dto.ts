@@ -30,3 +30,11 @@ export class DirectionsDto {
   @Type(() => WaypointDto)
   waypoints: WaypointDto[];
 }
+
+export class ReverseGeocodeDto {
+  @IsNumber()
+  lat: number;
+
+  @IsNumber()
+  lng: number;
+}

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GeocodeDto, DirectionsDto } from './dto/map.dto';
+import { GeocodeDto, DirectionsDto, ReverseGeocodeDto } from './dto/map.dto';
 
 export interface GeocodeResult {
   lat: number;
@@ -19,6 +19,8 @@ export class MapService {
   private readonly logger = new Logger(MapService.name);
   private readonly apiKey: string;
   private readonly geocodeBase = 'https://api.geoapify.com/v1/geocode/search';
+  private readonly reverseGeocodeBase =
+    'https://api.geoapify.com/v1/geocode/reverse';
   private readonly routingBase = 'https://api.geoapify.com/v1/routing';
 
   constructor(private config: ConfigService) {
@@ -61,6 +63,41 @@ export class MapService {
     if (!data.results || data.results.length === 0) {
       throw new BadRequestException(
         `Could not geocode address: "${dto.address}"`,
+      );
+    }
+
+    const first = data.results[0];
+    return {
+      lat: first.lat,
+      lng: first.lon,
+      formattedAddress: first.formatted,
+    };
+  }
+
+  async reverseGeocode(dto: ReverseGeocodeDto): Promise<GeocodeResult> {
+    this.requireKey();
+
+    const url = new URL(this.reverseGeocodeBase);
+    url.searchParams.set('lat', dto.lat.toString());
+    url.searchParams.set('lon', dto.lng.toString());
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('limit', '1');
+    url.searchParams.set('apiKey', this.apiKey);
+
+    let data: {
+      results?: Array<{ lat: number; lon: number; formatted: string }>;
+    };
+    try {
+      const res = await fetch(url.toString());
+      data = (await res.json()) as typeof data;
+    } catch (err) {
+      this.logger.error('Reverse geocoding network error', err);
+      throw new BadRequestException('Reverse geocoding request failed.');
+    }
+
+    if (!data.results || data.results.length === 0) {
+      throw new BadRequestException(
+        `Could not reverse geocode coordinates: ${dto.lat}, ${dto.lng}`,
       );
     }
 

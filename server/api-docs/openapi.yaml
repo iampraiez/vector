@@ -743,6 +743,24 @@ paths:
               schema:
                 type: object
       tags: *a8
+  /map/reverse-geocode:
+    post:
+      operationId: MapController_reverseGeocode
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReverseGeocodeDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: *a8
   /driver/home:
     get:
       operationId: HomeController_getHome
@@ -784,12 +802,7 @@ paths:
   /driver/assignments:
     get:
       operationId: AssignmentsController_getAssignments
-      parameters:
-        - name: date
-          required: true
-          in: query
-          schema:
-            type: string
+      parameters: []
       responses:
         "200":
           description: ""
@@ -1550,6 +1563,16 @@ components:
             $ref: "#/components/schemas/WaypointDto"
       required:
         - waypoints
+    ReverseGeocodeDto:
+      type: object
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+      required:
+        - lat
+        - lng
     UpdateStatusDto:
       type: object
       properties:

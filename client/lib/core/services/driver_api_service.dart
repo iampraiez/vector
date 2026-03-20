@@ -65,6 +65,14 @@ class DriverApiService {
     }
   }
 
+  Future<void> startStop(String stopId) async {
+    try {
+      await _dio.post('/driver/delivery/$stopId/start');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── Stops ─────────────────────────────────────────────────────────────────
 
   Future<void> arriveAtStop(String stopId) async {
