@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { api } from "../lib/api";
 import { AxiosError } from "axios";
 
-export type SubscriptionPlan = "free" | "pro" | "enterprise";
+export type SubscriptionPlan = "free" | "starter" | "growth";
 
 interface ApiKey {
   id: string;
@@ -20,6 +20,7 @@ export interface CompanyInfo {
   state: string;
   timezone: string;
   company_code?: string;
+  created_at?: string;
 }
 
 export interface NotificationsConfig {
@@ -33,7 +34,12 @@ export interface NotificationsConfig {
 }
 
 interface BillingInfo {
-  plan: SubscriptionPlan;
+  status: string;
+  plan: {
+    id: SubscriptionPlan;
+    name: string;
+    price_usd: number;
+  };
   subscription_id?: string;
   current_period_start: string;
   current_period_end: string;

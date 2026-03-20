@@ -52,17 +52,23 @@ export function DashboardSignIn() {
 
       navigate("/dashboard");
     } catch (err: unknown) {
-      const error = err as AxiosError<{ message?: string }>;
+      const error = err as AxiosError<{ message?: string; error?: string }>;
       const msg =
         error.response?.data?.message ||
         "Failed to sign in. Please check your credentials.";
 
-      setGlobalError(msg);
+      const errorDetail = error.response?.data?.error;
 
-      // If backend signals unverified email, redirect to verify page immediately
-      if (msg.toLowerCase().includes("verify your email")) {
+      if (
+        msg === "EMAIL_NOT_VERIFIED" ||
+        msg.toLowerCase().includes("verify your email")
+      ) {
         navigate(
           `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
+        );
+      } else {
+        setGlobalError(
+          typeof msg === "string" ? msg : errorDetail || "Failed to sign in",
         );
       }
     }

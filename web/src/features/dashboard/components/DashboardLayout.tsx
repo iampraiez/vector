@@ -199,9 +199,57 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         <main className="flex-1 overflow-y-auto w-full max-w-400 mx-auto">
-          {children || <Outlet />}
+          <BillingLockoutGuard>{children || <Outlet />}</BillingLockoutGuard>
         </main>
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+function BillingLockoutGuard({ children }: { children: React.ReactNode }) {
+  const { billing, fetchBillingInfo } = useSettingsStore();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    fetchBillingInfo();
+  }, [fetchBillingInfo]);
+
+  const isBillingRoute =
+    location.pathname.includes("/dashboard/billing") ||
+    location.pathname.includes("/dashboard/settings");
+
+  if (!billing) return <>{children}</>;
+
+  const isTrialExpired =
+    billing.status === "trialing" &&
+    new Date() > new Date(billing.current_period_end);
+  const isPastDue = billing.status === "past_due";
+  const isLocked = isTrialExpired || isPastDue;
+
+  if (isLocked && !isBillingRoute) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-6 text-center">
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+          <CreditCardIcon className="w-8 h-8 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Subscription Required
+        </h2>
+        <p className="text-gray-500 max-w-md mb-8">
+          {isTrialExpired
+            ? "Your 14-day free trial has expired. To continue using Vector Fleet, please select a plan and add a payment method."
+            : "Your account is past due. Please update your payment method to restore access."}
+        </p>
+        <button
+          onClick={() => navigate("/dashboard/billing")}
+          className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-colors"
+        >
+          Go to Billing
+        </button>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }

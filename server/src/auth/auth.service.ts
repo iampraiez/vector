@@ -228,6 +228,28 @@ export class AuthService {
         },
       });
 
+      const isPaidPlan = dto.plan_id === 'starter' || dto.plan_id === 'growth';
+      const now = new Date();
+      const trialDays = 14;
+      const trialEndDate = new Date(
+        now.getTime() + trialDays * 24 * 60 * 60 * 1000,
+      );
+      const activeEndDate = new Date(
+        now.getTime() + 3650 * 24 * 60 * 60 * 1000,
+      ); // 10 years for free
+
+      await prisma.billingRecord.create({
+        data: {
+          company_id: company.id,
+          plan_id: dto.plan_id,
+          status: isPaidPlan ? 'trialing' : 'active',
+          current_period_start: now,
+          current_period_end: isPaidPlan ? trialEndDate : activeEndDate,
+          seats_included:
+            dto.plan_id === 'free' ? 2 : dto.plan_id === 'starter' ? 5 : 20,
+        },
+      });
+
       const user = await prisma.user.create({
         data: {
           email: dto.email,
@@ -256,7 +278,7 @@ export class AuthService {
         name: result.company.name,
         company_code: result.company.company_code,
       },
-      checkout_url: 'https://paystack.com/pay/stub', // Paystack stub
+      checkout_url: 'https://paystack.com/pay/stub',
     };
   }
 

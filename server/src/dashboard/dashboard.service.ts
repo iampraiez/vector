@@ -610,7 +610,10 @@ export class DashboardService {
 
   async getBillingInfo(companyId: string) {
     const record = await this.prisma.billingRecord.findFirst({
-      where: { company_id: companyId, status: 'active' },
+      where: {
+        company_id: companyId,
+        status: { in: ['active', 'trialing', 'past_due'] },
+      },
       orderBy: { created_at: 'desc' },
     });
 
@@ -630,11 +633,21 @@ export class DashboardService {
       };
     }
 
+    const priceMap: Record<string, { name: string; price: number }> = {
+      free: { name: 'Free Plan', price: 0 },
+      starter: { name: 'Starter Plan', price: 29 },
+      growth: { name: 'Growth Plan', price: 89 },
+    };
+    const planDetails = priceMap[record.plan_id] || {
+      name: 'Custom Plan',
+      price: 0,
+    };
+
     return {
       plan: {
         id: record.plan_id,
-        name: 'Pro Plan', // Stub mapping
-        price_usd: 49,
+        name: planDetails.name,
+        price_usd: planDetails.price,
       },
       status: record.status,
       current_period_end: record.current_period_end,
@@ -654,7 +667,11 @@ export class DashboardService {
 
   async changePlan(companyId: string, dto: ChangePlanDto) {
     const activeRecord = await this.prisma.billingRecord.findFirst({
-      where: { company_id: companyId, status: 'active' },
+      where: {
+        company_id: companyId,
+        status: { in: ['active', 'trialing', 'past_due'] },
+      },
+      orderBy: { created_at: 'desc' },
     });
 
     if (activeRecord) {
@@ -665,25 +682,34 @@ export class DashboardService {
       });
     }
 
+    const isPaidPlan = dto.plan_id === 'starter' || dto.plan_id === 'growth';
+    const activeEndDate = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000); // 10 years for free
+    const paidEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days extension
+
     // Create new plan record
     await this.prisma.billingRecord.create({
       data: {
         company_id: companyId,
         plan_id: dto.plan_id,
         status: 'active',
-        current_period_start: new Date().toISOString(),
-        // Example: start a new 30-day period
-        current_period_end: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
+        current_period_start: new Date(),
+        // If paid plan, they paid so it's active for 30 days. If free, active indefinitely.
+        current_period_end: isPaidPlan ? paidEndDate : activeEndDate,
+        seats_included:
+          dto.plan_id === 'free' ? 2 : dto.plan_id === 'starter' ? 5 : 20,
       },
     });
 
-    // Stub for Paystack/Stripe checkout URL if you actually needed payment intent
+    // Update company subscription tier
+    await this.prisma.company.update({
+      where: { id: companyId },
+      data: { subscription_tier: dto.plan_id },
+    });
+
     return {
       message: 'Plan changed successfully',
       plan_id: dto.plan_id,
-      checkout_url: 'https://paystack.com/pay/stub',
+      checkout_url: isPaidPlan ? 'https://paystack.com/pay/stub' : null,
     };
   }
 
@@ -741,6 +767,7 @@ export class DashboardService {
         state: company.state,
         timezone: company.timezone,
         company_code: company.company_code,
+        created_at: company.created_at,
       },
       notifications: company.notification_settings,
       apiKeys: company.api_keys,

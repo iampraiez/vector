@@ -532,6 +532,19 @@ export function DashboardSettings() {
             icon={BuildingOfficeIcon}
           />
           <StaticField
+            label="Member Since"
+            value={
+              company?.created_at
+                ? new Date(company.created_at).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Just joined"
+            }
+            icon={BuildingOfficeIcon}
+          />
+          <StaticField
             label="Operations Email"
             value={company?.contact_email || user?.email || ""}
             icon={EnvelopeIcon}

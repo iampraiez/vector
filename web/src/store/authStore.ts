@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: string;
   company_id: string;
+  is_onboarded?: boolean;
 }
 
 interface AuthState {
@@ -14,6 +15,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  completeOnboarding: () => void;
   logout: () => void;
 }
 
@@ -32,6 +34,11 @@ export const useAuthStore = create<AuthState>()(
           refreshToken,
           isAuthenticated: true,
         }),
+
+      completeOnboarding: () =>
+        set((state) => ({
+          user: state.user ? { ...state.user, is_onboarded: true } : null,
+        })),
 
       logout: () =>
         set({

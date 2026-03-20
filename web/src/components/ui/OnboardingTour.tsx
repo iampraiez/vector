@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import Joyride, {
   CallBackProps,
+  EVENTS,
   STATUS,
   Step,
   TooltipRenderProps,
 } from "react-joyride";
 import { useNavigate, useLocation } from "react-router";
-
-// Helper to check localStorage
-const HAS_SEEN_TOUR_KEY = "vector-onboarding-completed-v1";
+import { useAuthStore } from "../../store/authStore";
+import { api } from "../../lib/api";
 
 // Steps configuration — targets reliable DOM IDs placed on each page
 const steps: Step[] = [
@@ -29,6 +29,7 @@ const steps: Step[] = [
     title: "Recent Orders",
     content: "Quickly view the latest deliveries and their current status.",
     disableBeacon: true,
+    placement: "auto",
   },
   {
     target: "#tour-new-order-btn",
@@ -42,6 +43,7 @@ const steps: Step[] = [
     title: "Assign a Driver",
     content: "Quickly connect pending deliveries to the best available driver.",
     disableBeacon: true,
+    placement: "center",
   },
   {
     target: "#tour-live-map",
@@ -69,34 +71,53 @@ const steps: Step[] = [
 export function OnboardingTour() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, completeOnboarding } = useAuthStore();
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
-    // Only mount tour if the localStorage key hasn't been set
-    const hasSeenTour = localStorage.getItem(HAS_SEEN_TOUR_KEY);
-    if (!hasSeenTour && !run) {
+    // Only mount tour if the database flag says the user hasn't completed it
+    // and we haven't already started the tour run
+    if (user && user.is_onboarded === false && !run) {
       // If we land on a deep page, move to overview first so the first target exists
-      if (
-        location.pathname !== "/dashboard" &&
-        location.pathname !== "/dashboard/overview"
-      ) {
-        navigate("/dashboard/overview");
+      if (location.pathname == "/dashboard") {
+        navigate("/dashboard");
       }
       // Delay starting slightly more so views and metric stores can load
       const timer = setTimeout(() => setRun(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, [location.pathname, navigate, run]); // Added run to dependencies
+  }, [location.pathname, navigate, run, user]);
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = async (data: CallBackProps) => {
     const { action, index, status, type } = data;
 
     // Tour finished or skipped
     if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       setRun(false);
-      localStorage.setItem(HAS_SEEN_TOUR_KEY, "true");
+
+      // Opt-out from backend immediately
+      try {
+        await api.post("/auth/complete-onboarding");
+        completeOnboarding();
+      } catch (err) {
+        console.error("Failed to mark onboarding as complete", err);
+      }
       return;
+    }
+
+    // Force custom scroll behavior because our layout uses a nested overflow container
+    // instead of the window/body for scrolling.
+    if (type === EVENTS.STEP_BEFORE || type === EVENTS.TOOLTIP) {
+      setTimeout(() => {
+        const targetStr = steps[index]?.target as string;
+        if (targetStr) {
+          const el = document.querySelector(targetStr);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      }, 100);
     }
 
     if (type === "step:after") {
@@ -113,11 +134,7 @@ export function OnboardingTour() {
         if (!location.pathname.includes("/drivers"))
           navigate("/dashboard/drivers");
       } else if (nextIndex >= 0 && nextIndex <= 2) {
-        if (
-          !location.pathname.includes("/overview") &&
-          location.pathname !== "/dashboard"
-        )
-          navigate("/dashboard/overview");
+        if (location.pathname == "/dashboard") navigate("/dashboard");
       }
 
       // We give the router/store slightly less time, 800ms for a snappier feel
@@ -135,11 +152,12 @@ export function OnboardingTour() {
       run={run}
       stepIndex={stepIndex}
       continuous
-      scrollToFirstStep
+      scrollToFirstStep={false}
+      disableScrolling
       showProgress
       showSkipButton
       disableOverlayClose
-      spotlightPadding={10}
+      spotlightPadding={4}
       callback={handleJoyrideCallback}
       tooltipComponent={CustomTooltip}
       styles={{
@@ -149,16 +167,12 @@ export function OnboardingTour() {
         },
         overlay: {
           backgroundColor: "rgba(0, 0, 0, 0.4)",
-          backdropFilter: "blur(4px)",
         },
       }}
     />
   );
 }
 
-// -------------------------------------------------------------
-// Custom Tooltip Component (Glassmorphism & Mobile-First)
-// -------------------------------------------------------------
 const CustomTooltip = ({
   index,
   step,

@@ -440,7 +440,7 @@ export function DashboardSignUp() {
                     Choose your plan
                   </h1>
                   <p className="text-[14px] text-gray-400 font-medium">
-                    All plans include a 14-day free trial
+                    All paid plans include a 14-day free trial
                   </p>
                 </div>
 

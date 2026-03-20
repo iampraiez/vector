@@ -1,4 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  useSettingsStore,
+  SubscriptionPlan,
+} from "../../../store/settingsStore";
 
 import {
   CreditCardIcon,
@@ -57,8 +61,44 @@ const plans = [
 ];
 
 export function DashboardBilling() {
+  const { billing, fetchBillingInfo, changePlan, isLoading } =
+    useSettingsStore();
+
+  useEffect(() => {
+    fetchBillingInfo();
+  }, [fetchBillingInfo]);
+
   const [showChangePlan, setShowChangePlan] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  if (isLoading && !billing) {
+    return (
+      <div className="p-4 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-400 font-medium">
+          Loading billing information...
+        </p>
+      </div>
+    );
+  }
+
+  const activePlanId = billing?.plan?.id || "free";
+  const isTrial = billing?.status === "trialing";
+  const trialDaysLeft =
+    isTrial && billing?.current_period_end
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(billing.current_period_end).getTime() - Date.now()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 0;
+
+  const dynamicPlans = plans.map((p) => ({
+    ...p,
+    current: p.id === activePlanId,
+  }));
 
   // In a real app, these would come from the backend or a billing store
   const usageItems = [
@@ -97,20 +137,25 @@ export function DashboardBilling() {
               </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
-              Fleet Professional
+              {billing?.plan?.name || "Loading..."}
             </h2>
             <div className="flex flex-wrap items-center gap-4 text-gray-500 text-[13px]">
               <p className="flex items-center gap-1.5 font-medium">
                 Next billing:{" "}
-                <span className="font-bold text-gray-900">April 1, 2026</span>
-              </p>
-              <div className="w-1 h-1 rounded-full bg-gray-200" />
-              <p className="flex items-center gap-1.5 font-medium">
-                Credit:{" "}
-                <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 rounded-md">
-                  $0.00
+                <span className="font-bold text-gray-900">
+                  {billing?.current_period_end
+                    ? new Date(billing.current_period_end).toLocaleDateString()
+                    : "-"}
                 </span>
               </p>
+              {isTrial && (
+                <>
+                  <div className="w-1 h-1 rounded-full bg-gray-200" />
+                  <p className="flex items-center gap-1.5 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                    Trial Ends in {trialDaysLeft} days
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
@@ -118,7 +163,7 @@ export function DashboardBilling() {
             <div>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tighter">
-                  $49
+                  ${billing?.plan?.price_usd || 0}
                 </span>
                 <span className="text-gray-400 font-bold tracking-tight text-[13px]">
                   /mo
@@ -143,10 +188,10 @@ export function DashboardBilling() {
 
       {/* Toggled Plan Grid */}
       <div
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${showChangePlan ? "max-h-500 mb-12 opacity-100" : "max-h-0 opacity-0"}`}
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${showChangePlan ? "max-h-300 mb-12 opacity-100" : "max-h-0 opacity-0"}`}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          {plans.map((plan) => (
+          {dynamicPlans.map((plan) => (
             <div
               key={plan.id}
               className={`group relative bg-white border-2 rounded-3xl p-8 transition-all hover:shadow-2xl hover:-translate-y-1 text-center ${
@@ -200,10 +245,24 @@ export function DashboardBilling() {
 
               {!plan.current && (
                 <button
-                  onClick={() => {
-                    const planId = plan.id;
-                    setLoadingPlan(planId);
-                    setTimeout(() => setLoadingPlan(null), 1500);
+                  onClick={async () => {
+                    if (plan.id === "free" && activePlanId !== "free") {
+                      if (
+                        !confirm(
+                          "Are you sure you want to downgrade to Free? No pro-rated refunds are provided.",
+                        )
+                      )
+                        return;
+                    }
+                    setLoadingPlan(plan.id);
+                    try {
+                      await changePlan(plan.id as SubscriptionPlan);
+                      setShowChangePlan(false);
+                    } catch {
+                      alert("Failed to change plan.");
+                    } finally {
+                      setLoadingPlan(null);
+                    }
                   }}
                   disabled={!!loadingPlan}
                   className={`w-full py-4 rounded-2xl text-[14px] font-bold transition-all flex items-center justify-center gap-2 ${
