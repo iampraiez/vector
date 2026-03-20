@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 const PERIODS = ["7 days", "30 days", "90 days"];
 
@@ -208,22 +209,28 @@ function KPICard({
   label,
   value,
   icon: Icon,
+  isLoading,
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
+  isLoading?: boolean;
 }) {
   return (
     <div className="group bg-white border border-black/8 rounded-2xl p-6 transition-all hover:shadow-lg hover:-translate-y-0.5">
       <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors">
         <Icon className="w-5 h-5 text-emerald-600 group-hover:text-white transition-colors" />
       </div>
-      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest mb-1.5">
+      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
         {label}
       </p>
-      <p className="text-2xl font-semibold text-gray-800 tracking-tight">
-        {value}
-      </p>
+      {isLoading ? (
+        <Skeleton className="w-16 h-8" />
+      ) : (
+        <p className="text-2xl font-bold text-gray-900 tracking-tight">
+          {value || "—"}
+        </p>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal } from "../components/NewOrderModal";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 const today = new Date().toLocaleDateString("en-US", {
   weekday: "long",
@@ -21,7 +22,7 @@ const today = new Date().toLocaleDateString("en-US", {
 });
 
 const statusStyle = (status: string) => {
-  switch (status.toLowerCase()) {
+  switch ((status || "").toLowerCase()) {
     case "completed":
       return { bg: "#ECFDF5", color: "#059669" };
     case "in-progress":
@@ -131,14 +132,6 @@ export function DashboardOverview() {
     fetchDashboardData();
   };
 
-  if (isLoading && !metrics) {
-    return (
-      <div className="p-4 md:p-8 max-w-350 mx-auto flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="p-4 md:p-8 max-w-350 mx-auto">
@@ -166,36 +159,50 @@ export function DashboardOverview() {
           id="tour-metrics-grid"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
         >
-          {metricsData.map((m) => {
-            const Icon = m.icon;
-            return (
-              <div
-                key={m.label}
-                className="bg-white rounded-2xl p-5 border border-black/5 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 hover:-translate-y-0.5"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 border border-black/5 flex items-center justify-center transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100">
-                    <Icon className="w-5 h-5 text-gray-400 group-hover:text-emerald-600" />
+          {isLoading && !metrics
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-5 border border-black/5 shadow-sm"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <Skeleton className="w-10 h-10 rounded-xl" />
+                    <Skeleton className="w-12 h-5 rounded-md" />
                   </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                      m.trend === "up"
-                        ? "text-emerald-600 bg-emerald-50 border-emerald-100"
-                        : "text-red-500 bg-red-50 border-red-100"
-                    }`}
-                  >
-                    {m.change}
-                  </span>
+                  <Skeleton className="w-24 h-3 mb-2" />
+                  <Skeleton className="w-16 h-8" />
                 </div>
-                <p className="text-[11px] text-gray-500 mb-1 uppercase tracking-widest font-semibold">
-                  {m.label}
-                </p>
-                <p className="text-2xl font-bold text-gray-800 tracking-tight">
-                  {m.value}
-                </p>
-              </div>
-            );
-          })}
+              ))
+            : metricsData.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <div
+                    key={m.label}
+                    className="bg-white rounded-2xl p-5 border border-black/5 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 hover:-translate-y-0.5"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 border border-black/5 flex items-center justify-center transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100">
+                        <Icon className="w-5 h-5 text-gray-400 group-hover:text-emerald-600" />
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                          m.trend === "up"
+                            ? "text-emerald-600 bg-emerald-50 border-emerald-100"
+                            : "text-red-500 bg-red-50 border-red-100"
+                        }`}
+                      >
+                        {m.change}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mb-1 uppercase tracking-widest font-semibold text-nowrap">
+                      {m.label}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-800 tracking-tight">
+                      {m.value}
+                    </p>
+                  </div>
+                );
+              })}
         </div>
 
         {/* Content Grid */}
@@ -207,30 +214,44 @@ export function DashboardOverview() {
           >
             <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
               <div>
-                <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight">
+                <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight text-nowrap">
                   Active Drivers
                 </h2>
                 <p className="text-[12px] text-gray-400">
-                  {activeDrivers.filter((d) => d.status === "active").length} on
-                  delivery right now
+                  {isLoading ? (
+                    <Skeleton className="w-32 h-3" />
+                  ) : (
+                    `${(activeDrivers || []).filter((d) => (d.status || "").toLowerCase() === "active").length} on delivery right now`
+                  )}
                 </p>
               </div>
               <button
                 onClick={() => navigate("/dashboard/drivers")}
-                className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider"
+                className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider text-nowrap"
               >
                 View all <ChevronRightIcon className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="p-3">
-              {activeDrivers.length === 0 ? (
+              {isLoading && activeDrivers.length === 0 ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 p-3.5">
+                    <Skeleton className="w-11 h-11 rounded-xl" />
+                    <div className="flex-1">
+                      <Skeleton className="w-32 h-4 mb-2" />
+                      <Skeleton className="w-48 h-3" />
+                    </div>
+                    <Skeleton className="w-20 h-7 rounded-lg" />
+                  </div>
+                ))
+              ) : (activeDrivers || []).length === 0 ? (
                 <CompactEmptyState
                   icon={UsersIcon}
                   title="No active drivers"
                   subtitle="Drivers will appear here when they start their route"
                 />
               ) : (
-                activeDrivers.map((driver, i) => (
+                (activeDrivers || []).map((driver, i) => (
                   <div
                     key={i}
                     className="flex items-center gap-4 p-3.5 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
@@ -241,13 +262,13 @@ export function DashboardOverview() {
                       <div className="flex flex-col items-center justify-center">
                         <UsersIcon className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 mb-0.5" />
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter group-hover:text-emerald-500">
-                          {driver.id.slice(-4)}
+                          {(driver.id || "").slice(-4)}
                         </span>
                       </div>
                       {/* Presence Indicator */}
                       <div
                         className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
-                          driver.status === "active"
+                          (driver.status || "").toLowerCase() === "active"
                             ? "bg-emerald-500"
                             : "bg-amber-500"
                         }`}
@@ -258,7 +279,7 @@ export function DashboardOverview() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="text-[14px] font-bold text-gray-800 truncate tracking-tight leading-none">
-                          {driver.name}
+                          {driver.name || "Unknown Driver"}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
@@ -274,20 +295,22 @@ export function DashboardOverview() {
                     <div className="text-right shrink-0">
                       <div
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all shadow-sm ${
-                          driver.status === "active"
+                          (driver.status || "").toLowerCase() === "active"
                             ? "bg-emerald-50/50 border-emerald-100 text-emerald-700 font-bold"
                             : "bg-amber-50/50 border-amber-100 text-amber-700 font-bold"
                         }`}
                       >
                         <div
                           className={`w-1.5 h-1.5 rounded-full ${
-                            driver.status === "active"
+                            (driver.status || "").toLowerCase() === "active"
                               ? "bg-emerald-500"
                               : "bg-amber-500"
                           }`}
                         />
                         <span className="text-[10px] uppercase tracking-wider">
-                          {driver.status === "active" ? "On Delivery" : "Idle"}
+                          {(driver.status || "").toLowerCase() === "active"
+                            ? "On Delivery"
+                            : "Idle"}
                         </span>
                       </div>
                     </div>
@@ -304,29 +327,42 @@ export function DashboardOverview() {
           >
             <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
               <div>
-                <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight">
+                <h2 className="text-[15px] font-semibold text-gray-700 mb-0.5 tracking-tight text-nowrap">
                   Recent Orders
                 </h2>
-                <p className="text-[12px] text-gray-400">
+                <p className="text-[12px] text-gray-400 text-nowrap">
                   Latest deliveries and status
                 </p>
               </div>
               <button
                 onClick={() => navigate("/dashboard/orders")}
-                className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider"
+                className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider text-nowrap"
               >
                 View all <ChevronRightIcon className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="p-3">
-              {recentOrders.length === 0 ? (
+              {isLoading && recentOrders.length === 0 ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 p-3">
+                    <Skeleton className="w-10 h-10 rounded-xl" />
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-2">
+                        <Skeleton className="w-32 h-4" />
+                        <Skeleton className="w-16 h-5" />
+                      </div>
+                      <Skeleton className="w-48 h-3" />
+                    </div>
+                  </div>
+                ))
+              ) : (recentOrders || []).length === 0 ? (
                 <CompactEmptyState
                   icon={ArchiveBoxIcon}
                   title="No orders yet"
                   subtitle="Latest deliveries will appear here when created"
                 />
               ) : (
-                recentOrders.map((order, i) => {
+                (recentOrders || []).map((order, i) => {
                   const s = statusStyle(order.status);
                   return (
                     <div
@@ -338,8 +374,8 @@ export function DashboardOverview() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-[14px] font-semibold text-gray-800 truncate tracking-tight">
-                            {order.customer_name}
+                          <p className="text-[14px] font-semibold text-gray-800 truncate tracking-tight text-nowrap">
+                            {order.customer_name || "Unknown Customer"}
                           </p>
                           <span
                             className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider border shrink-0"
@@ -349,12 +385,13 @@ export function DashboardOverview() {
                               borderColor: `${s.color}20`,
                             }}
                           >
-                            {order.status}
+                            {order.status || "Unknown"}
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
                           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
-                            {order.external_id || `#${recentOrders.length - i}`}
+                            {order.external_id ||
+                              `#${(recentOrders || []).length - i}`}
                           </p>
                           <div className="flex items-center gap-1 text-[12px] text-gray-400 font-medium min-w-0">
                             <MapPinIcon className="w-3.5 h-3.5 shrink-0" />

@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../../components/ui/dialog";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardOrders() {
   const {
@@ -59,13 +60,17 @@ export function DashboardOrders() {
 
   const driverNames = drivers.map((d) => d.name);
 
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = (orders || []).filter((order) => {
     const matchesSearch =
-      order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.address.toLowerCase().includes(searchQuery.toLowerCase());
+      (order.customer_name || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (order.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.address || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
-      activeFilter === "all" || order.status === activeFilter;
+      activeFilter === "all" ||
+      (order.status || "").toLowerCase().replace("-", "_") ===
+        activeFilter.toLowerCase().replace("-", "_");
     return matchesSearch && matchesFilter;
   });
 
@@ -103,14 +108,6 @@ export function DashboardOrders() {
         return status;
     }
   };
-
-  if (isLoading && orders.length === 0) {
-    return (
-      <div className="p-4 md:p-8 max-w-350 mx-auto flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -173,21 +170,28 @@ export function DashboardOrders() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Orders" value={stats?.total || 0} />
+          <StatCard
+            label="Total Orders"
+            value={stats?.total || 0}
+            isLoading={isLoading && orders.length === 0}
+          />
           <StatCard
             label="Unassigned"
             value={stats?.unassigned || 0}
             color="amber"
+            isLoading={isLoading && orders.length === 0}
           />
           <StatCard
             label="In Progress"
             value={stats?.in_progress || 0}
             color="emerald"
+            isLoading={isLoading && orders.length === 0}
           />
           <StatCard
             label="Completed"
             value={stats?.completed || 0}
             color="emerald"
+            isLoading={isLoading && orders.length === 0}
           />
         </div>
 
@@ -233,7 +237,25 @@ export function DashboardOrders() {
         <div className="space-y-3 sm:space-y-0">
           {/* Mobile Card List */}
           <div className="grid grid-cols-1 gap-3 sm:hidden">
-            {filteredOrders.length === 0 ? (
+            {isLoading && orders.length === 0 ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-black/8 rounded-2xl p-4 shadow-sm"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <Skeleton className="w-24 h-4" />
+                    <Skeleton className="w-16 h-4 rounded-lg" />
+                  </div>
+                  <Skeleton className="w-48 h-5 mb-2" />
+                  <Skeleton className="w-full h-4 mb-3" />
+                  <div className="pt-3 border-t border-gray-100 flex justify-between">
+                    <Skeleton className="w-32 h-4" />
+                    <Skeleton className="w-16 h-8 rounded-lg" />
+                  </div>
+                </div>
+              ))
+            ) : filteredOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
                   <ArchiveBoxIcon className="w-7 h-7 text-gray-300" />
@@ -424,7 +446,36 @@ export function DashboardOrders() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredOrders.length === 0 ? (
+                  {isLoading && orders.length === 0 ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-5 h-5 rounded-md" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-20 h-4" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-32 h-4" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-48 h-4" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-32 h-4" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-24 h-8 rounded-lg" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <Skeleton className="w-16 h-6 rounded-lg" />
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Skeleton className="w-16 h-8 rounded-lg ml-auto" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : filteredOrders.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-6 py-14 text-center">
                         <div className="flex flex-col items-center gap-3">
@@ -662,10 +713,12 @@ function StatCard({
   label,
   value,
   color = "gray",
+  isLoading,
 }: {
   label: string;
   value: number;
   color?: "emerald" | "amber" | "gray";
+  isLoading?: boolean;
 }) {
   const colorMap = {
     gray: "text-gray-900 border-black/8 shadow-sm",
@@ -680,7 +733,11 @@ function StatCard({
       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
         {label}
       </p>
-      <p className="text-2xl md:text-3xl font-bold tracking-tight">{value}</p>
+      {isLoading ? (
+        <Skeleton className="w-12 h-9" />
+      ) : (
+        <p className="text-2xl md:text-3xl font-bold tracking-tight">{value}</p>
+      )}
     </div>
   );
 }

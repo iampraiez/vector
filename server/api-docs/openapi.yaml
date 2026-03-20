@@ -875,6 +875,20 @@ paths:
         "200":
           description: ""
       tags: *a11
+  /driver/delivery/{stop_id}/start:
+    post:
+      operationId: DeliveryController_startStop
+      parameters:
+        - name: stop_id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: &a12
+        - Delivery
   /driver/delivery/{stop_id}/complete:
     post:
       operationId: DeliveryController_completeDelivery
@@ -893,8 +907,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a12
-        - Delivery
+      tags: *a12
   /driver/delivery/{stop_id}/fail:
     post:
       operationId: DeliveryController_failDelivery

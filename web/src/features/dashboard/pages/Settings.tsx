@@ -6,16 +6,15 @@ import {
 } from "../../../store/settingsStore";
 import { useAuthStore } from "../../../store/authStore";
 import {
+  XMarkIcon,
   BuildingOfficeIcon,
   BellIcon,
   PencilIcon,
   EnvelopeIcon,
   MapPinIcon,
   ClipboardDocumentIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
-
-/* --- Shared Components --- */
+import { Skeleton } from "../../../components/ui/skeleton";
 
 function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
   return (
@@ -90,22 +89,28 @@ function StaticField({
   label,
   value,
   icon: Icon,
+  isLoading,
 }: {
   label: string;
   value: string;
   icon: React.ElementType;
+  isLoading?: boolean;
 }) {
   return (
     <div className="bg-gray-50/50 border border-black/5 rounded-2xl p-4.5 group transition-all duration-300 hover:bg-white hover:border-emerald-600/30 hover:shadow-sm">
       <div className="flex items-center gap-2.5 mb-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
         <Icon className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" />
-        <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">
+        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
           {label}
         </span>
       </div>
-      <p className="text-[13px] font-medium text-gray-700 tracking-tight leading-none">
-        {value}
-      </p>
+      {isLoading ? (
+        <Skeleton className="w-full h-4" />
+      ) : (
+        <p className="text-[13px] font-medium text-gray-700 tracking-tight leading-none">
+          {value || "—"}
+        </p>
+      )}
     </div>
   );
 }
@@ -458,24 +463,18 @@ export function DashboardSettings() {
     }
   };
 
-  if (isLoading && !company) {
-    return (
-      <div className="p-4 md:p-8 flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const isLoadingInitial = isLoading && !company;
 
   const companyCode = company?.company_code || "VECT-XXXX";
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 pb-32">
       {/* Header */}
-      <div className="mb-2">
-        <h1 className="text-2xl md:text-[26px] font-semibold text-gray-800 mb-0.5 tracking-tight">
+      <div className="mb-2 font-inter">
+        <h1 className="text-2xl md:text-[26px] font-bold text-gray-900 mb-0.5 tracking-tight">
           Settings
         </h1>
-        <p className="text-[12.5px] text-gray-400 font-normal">
+        <p className="text-[12.5px] text-gray-500 font-normal">
           Manage your workspace profile and notification preferences
         </p>
       </div>
@@ -484,31 +483,39 @@ export function DashboardSettings() {
       <div className="relative overflow-hidden bg-white border border-black/8 rounded-3xl p-4.5 md:p-5 flex items-center justify-between gap-4 shadow-sm transition-all hover:bg-gray-50/20">
         <div className="relative z-10 flex items-center gap-6">
           <div className="flex flex-col">
-            <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
               Fleet Access Code
             </span>
             <div className="flex items-center gap-3">
-              <span className="text-[20px] font-mono font-semibold text-gray-800 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
-                {companyCode}
-              </span>
-              <button
-                onClick={() => navigator.clipboard.writeText(companyCode)}
-                className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
-                title="Copy code"
-              >
-                <ClipboardDocumentIcon className="w-4 h-4" />
-              </button>
+              {isLoadingInitial ? (
+                <Skeleton className="w-32 h-8" />
+              ) : (
+                <span className="text-[20px] font-mono font-bold text-gray-900 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
+                  {companyCode}
+                </span>
+              )}
+              {!isLoadingInitial && (
+                <button
+                  onClick={() => navigator.clipboard.writeText(companyCode)}
+                  className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
+                  title="Copy code"
+                >
+                  <ClipboardDocumentIcon className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
-        <button
-          onClick={() => regenerateAccessCode()}
-          disabled={isMutating}
-          className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-semibold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
-        >
-          {isMutating ? "..." : "Regenerate"}
-        </button>
+        {!isLoadingInitial && (
+          <button
+            onClick={() => regenerateAccessCode()}
+            disabled={isMutating}
+            className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {isMutating ? "..." : "Regenerate"}
+          </button>
+        )}
       </div>
 
       {/* Workspace Section */}
@@ -528,8 +535,9 @@ export function DashboardSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StaticField
             label="Operating Name"
-            value={company?.name || "Vector Fleet Services"}
+            value={company?.name || ""}
             icon={BuildingOfficeIcon}
+            isLoading={isLoadingInitial}
           />
           <StaticField
             label="Member Since"
@@ -540,19 +548,22 @@ export function DashboardSettings() {
                     day: "numeric",
                     year: "numeric",
                   })
-                : "Just joined"
+                : ""
             }
             icon={BuildingOfficeIcon}
+            isLoading={isLoadingInitial}
           />
           <StaticField
             label="Operations Email"
             value={company?.contact_email || user?.email || ""}
             icon={EnvelopeIcon}
+            isLoading={isLoadingInitial}
           />
           <StaticField
             label="Fleet Hotline"
             value={company?.phone || ""}
             icon={BellIcon}
+            isLoading={isLoadingInitial}
           />
           <StaticField
             label="Region"
@@ -562,6 +573,7 @@ export function DashboardSettings() {
                 : company?.city || company?.state || ""
             }
             icon={MapPinIcon}
+            isLoading={isLoadingInitial}
           />
         </div>
       </Section>

@@ -105,11 +105,11 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const today = new Date().toISOString().split('T')[0];
 
-    // 1. Fetch all routes for this driver (Today + Future)
+    // 1. Fetch all routes for this driver (Active + Today + Future)
     const routes = await this.prisma.route.findMany({
       where: {
         driver_id: driver.id,
-        OR: [{ date: today }, { date: { gt: today } }],
+        OR: [{ status: 'active' }, { date: today }, { date: { gt: today } }],
       },
       include: {
         stops: { orderBy: { sequence: 'asc' } },
@@ -122,7 +122,11 @@ export class DriverService {
       where: {
         driver_id: driver.id,
         route_id: null,
-        OR: [{ delivery_date: today }, { delivery_date: { gt: today } }],
+        OR: [
+          { status: 'in_progress' },
+          { delivery_date: today },
+          { delivery_date: { gt: today } },
+        ],
       },
       orderBy: { created_at: 'asc' },
     });
@@ -134,9 +138,9 @@ export class DriverService {
 
     // Process Routes
     routes.forEach((route) => {
-      if (route.status === 'completed') {
+      if (route.status === 'completed' || route.status === 'cancelled') {
         completed.push({ ...route, type: 'route' });
-      } else if (route.date === today) {
+      } else if (route.status === 'active' || route.date === today) {
         active.push({ ...route, type: 'route' });
       } else {
         upcoming.push({ ...route, type: 'route' });
@@ -145,9 +149,16 @@ export class DriverService {
 
     // Process Standalone Stops
     standaloneStops.forEach((stop) => {
-      if (stop.status === 'completed' || stop.status === 'failed') {
+      if (
+        stop.status === 'completed' ||
+        stop.status === 'failed' ||
+        stop.status === 'returned'
+      ) {
         completed.push({ ...stop, type: 'stop' });
-      } else if (stop.delivery_date === today) {
+      } else if (
+        stop.status === 'in_progress' ||
+        stop.delivery_date === today
+      ) {
         active.push({ ...stop, type: 'stop' });
       } else {
         upcoming.push({ ...stop, type: 'stop' });
@@ -243,7 +254,10 @@ export class DriverService {
     await this.prisma.$transaction([
       this.prisma.stop.update({
         where: { id: stopId },
-        data: { status: 'pending', started_at: new Date() },
+        data: {
+          status: 'pending',
+          started_at: new Date(),
+        } as unknown as Prisma.StopUpdateInput,
       }),
       this.prisma.driver.update({
         where: { id: driver.id },

@@ -11,6 +11,7 @@ import {
   SparklesIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 const plans = [
   {
@@ -71,17 +72,6 @@ export function DashboardBilling() {
   const [showChangePlan, setShowChangePlan] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  if (isLoading && !billing) {
-    return (
-      <div className="p-4 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-400 font-medium">
-          Loading billing information...
-        </p>
-      </div>
-    );
-  }
-
   const activePlanId = billing?.plan?.id || "free";
   const isTrial = billing?.status === "trialing";
   const trialDaysLeft =
@@ -111,11 +101,13 @@ export function DashboardBilling() {
     },
   ];
 
+  const isLoadingInitial = isLoading && !billing;
+
   return (
     <div className="p-4 md:p-8 max-w-300 mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-[28px] font-semibold text-gray-800 mb-1 tracking-tight">
+      <div className="mb-8 font-inter">
+        <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
           Billing & Subscription
         </h1>
         <p className="text-[14px] text-gray-500">
@@ -132,28 +124,40 @@ export function DashboardBilling() {
           <div className="flex-1 min-w-60">
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-medium text-emerald-700 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
                 Active Plan
               </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-2 tracking-tight">
-              {billing?.plan?.name || "Loading..."}
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+              {isLoadingInitial ? (
+                <Skeleton className="w-48 h-8" />
+              ) : (
+                billing?.plan?.name || "Standard Plan"
+              )}
             </h2>
             <div className="flex flex-wrap items-center gap-4 text-gray-500 text-[13px]">
-              <p className="flex items-center gap-1.5 font-medium">
-                Next billing:{" "}
-                <span className="text-gray-700 font-medium whitespace-nowrap">
-                  {billing?.current_period_end
-                    ? new Date(billing.current_period_end).toLocaleDateString()
-                    : "-"}
-                </span>
-              </p>
-              {isTrial && (
+              {isLoadingInitial ? (
+                <Skeleton className="w-64 h-4" />
+              ) : (
                 <>
-                  <div className="w-1 h-1 rounded-full bg-gray-200" />
-                  <p className="flex items-center gap-1.5 font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                    Trial Ends in {trialDaysLeft} days
+                  <p className="flex items-center gap-1.5 font-medium">
+                    Next billing:{" "}
+                    <span className="text-gray-700 font-bold whitespace-nowrap">
+                      {billing?.current_period_end
+                        ? new Date(
+                            billing.current_period_end,
+                          ).toLocaleDateString()
+                        : "-"}
+                    </span>
                   </p>
+                  {isTrial && (
+                    <>
+                      <div className="w-1 h-1 rounded-full bg-gray-200" />
+                      <p className="flex items-center gap-1.5 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                        Trial Ends in {trialDaysLeft} days
+                      </p>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -162,20 +166,27 @@ export function DashboardBilling() {
           <div className="flex flex-col items-start md:items-end gap-4">
             <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl md:text-4xl font-semibold text-gray-800 tracking-tighter">
-                  ${billing?.plan?.price_usd || 0}
-                </span>
-                <span className="text-gray-400 font-medium tracking-tight text-[13px]">
-                  /mo
-                </span>
+                {isLoadingInitial ? (
+                  <Skeleton className="w-24 h-10" />
+                ) : (
+                  <>
+                    <span className="text-3xl md:text-4xl font-bold text-gray-800 tracking-tighter">
+                      ${billing?.plan?.price_usd || 0}
+                    </span>
+                    <span className="text-gray-400 font-bold tracking-tight text-[13px]">
+                      /mo
+                    </span>
+                  </>
+                )}
               </div>
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1 text-center md:text-right">
+              <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest mt-1 text-center md:text-right">
                 Billed monthly
               </p>
             </div>
             <button
               onClick={() => setShowChangePlan(!showChangePlan)}
-              className="px-5 py-2.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center gap-2"
+              disabled={isLoadingInitial}
+              className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center gap-2 disabled:opacity-50"
             >
               {showChangePlan ? "Hide Plans" : "Change Plan"}
               <ChevronRightIcon
@@ -324,12 +335,13 @@ export function DashboardBilling() {
           </h2>
           <div className="space-y-6">
             {usageItems.map((item) => {
-              const pct = Math.round((item.used / item.total) * 100);
+              const pct =
+                item.total > 0 ? Math.round((item.used / item.total) * 100) : 0;
               return (
                 <div key={item.label}>
                   <div className="flex justify-between items-end mb-2.5">
                     <div>
-                      <p className="text-[13px] font-semibold text-gray-800 tracking-tight">
+                      <p className="text-[13px] font-bold text-gray-900 tracking-tight">
                         {item.label}
                       </p>
                       <p className="text-[11px] text-gray-400 font-medium">
@@ -337,15 +349,21 @@ export function DashboardBilling() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[15px] font-semibold text-gray-800 tracking-tight">
-                        {item.used.toLocaleString()}
-                      </span>
-                      <span className="text-[12px] text-gray-300 font-semibold mx-1">
-                        /
-                      </span>
-                      <span className="text-[12px] text-gray-400 font-semibold">
-                        {item.total.toLocaleString()}
-                      </span>
+                      {isLoadingInitial ? (
+                        <Skeleton className="w-16 h-5" />
+                      ) : (
+                        <>
+                          <span className="text-[15px] font-bold text-gray-900 tracking-tight">
+                            {item.used.toLocaleString()}
+                          </span>
+                          <span className="text-[12px] text-gray-300 font-bold mx-1">
+                            /
+                          </span>
+                          <span className="text-[12px] text-gray-400 font-bold">
+                            {item.total.toLocaleString()}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden border border-black/5">
@@ -355,13 +373,13 @@ export function DashboardBilling() {
                     />
                   </div>
                   <div className="flex justify-between mt-2">
-                    <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">
-                      {pct}% utilized
+                    <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest">
+                      {isLoadingInitial ? "calculating..." : `${pct}% utilized`}
                     </span>
-                    {pct > 80 && (
+                    {!isLoadingInitial && pct > 80 && (
                       <div className="flex items-center gap-1">
                         <ExclamationCircleIcon className="w-3 h-3 text-amber-500" />
-                        <span className="text-[9px] font-medium text-amber-500 uppercase tracking-widest">
+                        <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest">
                           Near Limit
                         </span>
                       </div>

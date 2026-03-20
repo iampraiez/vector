@@ -30,6 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // 1. Blacklist check: Ensure this specific token hasn't been revoked
     const isRedeemed = await this.redis.get(`bl:${token}`);
     if (isRedeemed) {
+      console.error(
+        `JWT Validation Failed: Token has been revoked for user ${payload.sub}`,
+      );
       throw new UnauthorizedException('Token has been revoked');
     }
 
