@@ -10,6 +10,7 @@ import {
   PhoneIcon,
   XMarkIcon,
   ChevronRightIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Driver } from "../../../store/driverStore";
@@ -20,6 +21,11 @@ export function DashboardTracking() {
 
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [viewMode, setViewMode] = useState<"board" | "list">("board");
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     fetchDrivers({ limit: 100 });
@@ -67,6 +73,35 @@ export function DashboardTracking() {
       default:
         return "text-gray-400";
     }
+  };
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setSelectedDriver(null); // Clear selected driver to focus on user
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Unable to retrieve your location");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
+
+  const handleResetView = () => {
+    setSelectedDriver(null);
+    setUserLocation(null);
   };
 
   return (
@@ -157,15 +192,29 @@ export function DashboardTracking() {
                         : "Fleet Overview"}
                     </span>
                   </div>
-                  {selectedDriver && (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setSelectedDriver(null)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-black/5 rounded-xl text-[11px] font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={handleLocateMe}
+                      disabled={isLocating}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-[11px] font-bold text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <XMarkIcon className="w-3.5 h-3.5" />
-                      Reset View
+                      {isLocating ? (
+                        <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <MapPinIcon className="w-3.5 h-3.5" />
+                      )}
+                      Locate Me
                     </button>
-                  )}
+                    {(selectedDriver || userLocation) && (
+                      <button
+                        onClick={handleResetView}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-black/5 rounded-xl text-[11px] font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+                      >
+                        <XMarkIcon className="w-3.5 h-3.5" />
+                        Reset View
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Map Component Container */}
@@ -173,6 +222,7 @@ export function DashboardTracking() {
                   <MapView
                     drivers={drivers}
                     selectedDriverId={selectedDriver?.id}
+                    userLocation={userLocation}
                   />
                 </div>
               </div>

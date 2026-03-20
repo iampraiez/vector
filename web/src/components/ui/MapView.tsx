@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Truck } from "lucide-react";
+import { Truck, Navigation } from "lucide-react";
 import { renderToString } from "react-dom/server";
 
 // Fix for default marker icons in Leaflet when used with bundlers like Vite
@@ -31,6 +31,7 @@ interface Driver {
 interface MapViewProps {
   drivers: Driver[];
   selectedDriverId?: string | null;
+  userLocation?: { lat: number; lng: number } | null;
   className?: string;
 }
 
@@ -60,6 +61,7 @@ function MapViewUpdater({
 const MapView: React.FC<MapViewProps> = ({
   drivers,
   selectedDriverId,
+  userLocation,
   className,
 }) => {
   const selectedDriver = useMemo(
@@ -68,6 +70,7 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   const center: [number, number] = useMemo(() => {
+    if (userLocation) return [userLocation.lat, userLocation.lng];
     if (selectedDriver?.location_lat && selectedDriver?.location_lng) {
       return [selectedDriver.location_lat, selectedDriver.location_lng];
     }
@@ -79,7 +82,7 @@ const MapView: React.FC<MapViewProps> = ({
       return [firstWithCoords.location_lat, firstWithCoords.location_lng];
     }
     return DEFAULT_CENTER;
-  }, [selectedDriver, drivers]);
+  }, [userLocation, selectedDriver, drivers]);
 
   const zoom = selectedDriver ? 15 : 12;
 
@@ -113,6 +116,33 @@ const MapView: React.FC<MapViewProps> = ({
     });
   };
 
+  const createUserIcon = () => {
+    return L.divIcon({
+      html: renderToString(
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "36px",
+            height: "36px",
+            backgroundColor: "#2563EB",
+            color: "#FFFFFF",
+            borderRadius: "50%",
+            border: "2px solid #FFFFFF",
+            boxShadow:
+              "0 0 0 4px rgba(37, 99, 235, 0.2), 0 4px 6px -1px rgb(0 0 0 / 0.1)",
+          }}
+        >
+          <Navigation size={20} style={{ transform: "rotate(-45deg)" }} />
+        </div>,
+      ),
+      className: "custom-user-marker",
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
+  };
+
   return (
     <div
       className={`relative w-full h-full rounded-xl overflow-hidden border border-border bg-slate-50 ${className}`}
@@ -131,6 +161,23 @@ const MapView: React.FC<MapViewProps> = ({
         />
 
         <MapViewUpdater center={center} zoom={zoom} />
+
+        {userLocation && (
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={createUserIcon()}
+          >
+            <Popup>
+              <div style={{ padding: "4px", textAlign: "center" }}>
+                <p
+                  style={{ fontWeight: "bold", fontSize: "14px", margin: "0" }}
+                >
+                  Your Current Location
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {drivers.map((driver) => {
           if (!driver.location_lat || !driver.location_lng) return null;
