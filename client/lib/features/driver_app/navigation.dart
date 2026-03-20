@@ -1,7 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/colors.dart';
+import '../../core/constants/map_constants.dart';
+import '../../core/services/map_service.dart';
 import '../../main.dart' show RouteProgressScope;
 
 class NavigationScreen extends StatefulWidget {
@@ -11,85 +17,107 @@ class NavigationScreen extends StatefulWidget {
   State<NavigationScreen> createState() => _NavigationScreenState();
 }
 
-class _NavigationScreenState extends State<NavigationScreen>
-    with SingleTickerProviderStateMixin {
-  final int _currentStop = 0;
-  late AnimationController _animController;
+class _NavigationScreenState extends State<NavigationScreen> {
+  final MapController _mapController = MapController();
 
-  final _stops = [
-    {
-      'id': 1,
-      'customer': 'Jane Smith',
-      'address': '456 Market Street, Downtown',
-      'phone': '+1 (555) 234-5678',
-      'eta': '8 min',
-      'distance': '2.3 km',
-      'packages': 2,
-    },
-    {
-      'id': 2,
-      'customer': 'Bob Johnson',
-      'address': '789 Oak Avenue, Midtown',
-      'phone': '+1 (555) 345-6789',
-      'eta': '18 min',
-      'distance': '5.7 km',
-      'packages': 1,
-    },
-    {
-      'id': 3,
-      'customer': 'Sarah Williams',
-      'address': '321 Pine Road, Uptown',
-      'phone': '+1 (555) 456-7890',
-      'eta': '32 min',
-      'distance': '12.4 km',
-      'packages': 3,
-    },
-    {
-      'id': 4,
-      'customer': 'Mike Davis',
-      'address': '654 Elm Street, Eastside',
-      'phone': '+1 (555) 567-8901',
-      'eta': '45 min',
-      'distance': '18.9 km',
-      'packages': 1,
-    },
-  ];
+  LatLng? _currentPosition;
+  StreamSubscription<Position>? _positionStream;
+  Timer? _locationSyncTimer;
+  bool _locationPermissionGranted = false;
+  bool _mapReady = false;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
+    _initLocationTracking();
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _positionStream?.cancel();
+    _locationSyncTimer?.cancel();
+    _mapController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initLocationTracking() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) setState(() => _locationPermissionGranted = false);
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.denied) {
+      if (mounted) setState(() => _locationPermissionGranted = false);
+      return;
+    }
+
+    if (mounted) setState(() => _locationPermissionGranted = true);
+
+    // Get initial position
+    final pos = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    if (mounted) {
+      setState(() => _currentPosition = LatLng(pos.latitude, pos.longitude));
+      if (_mapReady) {
+        _mapController.move(_currentPosition!, 16);
+      }
+    }
+
+    // Stream location changes
+    _positionStream =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10, // update every 10 metres
+          ),
+        ).listen((Position p) {
+          if (!mounted) return;
+          setState(() => _currentPosition = LatLng(p.latitude, p.longitude));
+          if (_mapReady) {
+            _mapController.move(_currentPosition!, _mapController.camera.zoom);
+          }
+        });
+
+    // Push location to backend every 15 seconds
+    _locationSyncTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
+      if (_currentPosition != null) {
+        await MapService.instance.updateDriverLocation(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+        );
+      }
+    });
+  }
+
+  void _stopLocationTracking() {
+    _positionStream?.cancel();
+    _locationSyncTimer?.cancel();
+    _positionStream = null;
+    _locationSyncTimer = null;
   }
 
   @override
   Widget build(BuildContext context) {
-    // ── Read from shared RouteProgressProvider (rebuilds on advance) ──────
     final progress = RouteProgressScope.of(context);
     final currentStop = progress.currentStop;
     final upcomingStops = progress.upcomingStops;
 
     if (currentStop == null || progress.isRouteComplete) {
-      // All stops done — this handles back-navigation edge case
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) context.go('/assignments');
       });
       return const Scaffold(
-        body: Center(
-          child: Text('Route Complete! Heading back...'),
-        ),
+        body: Center(child: Text('Route Complete! Heading back...')),
       );
     }
 
-    // Adapter: map StopModel fields to the Map shape used by child widgets
     final currentData = {
       'id': progress.currentIndex + 1,
       'customer': currentStop.customerName,
@@ -100,167 +128,239 @@ class _NavigationScreenState extends State<NavigationScreen>
       'packages': currentStop.packages,
     };
     final remainingData = upcomingStops
-        .map((s) => {
-              'id': progress.allStops.indexOf(s) + 1,
-              'customer': s.customerName,
-              'address': s.address,
-              'phone': s.phone,
-              'eta': s.eta,
-              'distance': s.distance,
-              'packages': s.packages,
-            })
+        .map(
+          (s) => {
+            'id': progress.allStops.indexOf(s) + 1,
+            'customer': s.customerName,
+            'address': s.address,
+            'phone': s.phone,
+            'eta': s.eta,
+            'distance': s.distance,
+            'packages': s.packages,
+          },
+        )
         .toList();
+
+    final mapCenter = _currentPosition ?? const LatLng(6.5244, 3.3792);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Map View (Background)
+          // ── Real Map Background ─────────────────────────────────────────
           Positioned.fill(
-            child: Stack(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: mapCenter,
+                initialZoom: 15,
+                onMapReady: () => setState(() => _mapReady = true),
+              ),
               children: [
-                // Mock Map Background
-                Container(
-                  width: double.infinity,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: CustomPaint(
-                    painter: _MockNavMapPainter(animation: _animController),
-                  ),
+                TileLayer(
+                  urlTemplate: MapConstants.osmTileUrl,
+                  userAgentPackageName: 'com.vector.driver',
                 ),
-                // Top Control Bar
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => context.go('/assignments'),
-                              icon: const Icon(Icons.close, color: AppColors.textPrimary),
-                              style: IconButton.styleFrom(
-                                backgroundColor: AppColors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 48,
-                                      height: 48,
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            AppColors.primary,
-                                            Color(0xFF047857),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Icon(
-                                        Icons.near_me,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '${currentData['eta']}',
-                                            style: TextStyle(
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.w700,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                              height: 1,
-                                            ),
-                                          ),
-                                          Text(
-                                            '${currentData['distance']} away',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        // Progress Indicator
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.inventory_2_outlined,
-                                size: 16,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Stop ${_currentStop + 1} of ${_stops.length}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 100,
-                        ), // Spacing from bottom sheet
-                      ],
-                    ),
+
+                // Current position marker
+                if (_currentPosition != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _currentPosition!,
+                        width: 52,
+                        height: 52,
+                        child: _PulsingLocationDot(),
+                      ),
+                    ],
                   ),
+
+                // OSM attribution
+                RichAttributionWidget(
+                  attributions: [
+                    TextSourceAttribution('© OpenStreetMap contributors'),
+                  ],
                 ),
               ],
             ),
           ),
 
-          // Bottom Draggable Drawer
+          // ── Top Control Bar ─────────────────────────────────────────────
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _stopLocationTracking();
+                          context.go('/assignments');
+                        },
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textPrimary,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.border.withValues(alpha: 0.15),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.primary,
+                                      Color(0xFF047857),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.near_me,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${currentData['eta']}',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        height: 1,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${currentData['distance']} away',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Stop progress pill
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.border.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.inventory_2_outlined,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Stop ${progress.currentIndex + 1} of ${progress.allStops.length}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Location disabled banner ────────────────────────────────────
+          if (!_locationPermissionGranted)
+            Positioned(
+              top: 100,
+              left: 16,
+              right: 16,
+              child: SafeArea(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.location_off,
+                        size: 18,
+                        color: Color(0xFFD97706),
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Location access disabled — enable it in Settings for real-time tracking.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Bottom Draggable Drawer ─────────────────────────────────────
           DraggableScrollableSheet(
             initialChildSize: 0.5,
             minChildSize: 0.3,
@@ -282,7 +382,6 @@ class _NavigationScreenState extends State<NavigationScreen>
                 ),
                 child: Column(
                   children: [
-                    // Handle
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 12),
                       width: 40,
@@ -436,12 +535,12 @@ class _NavigationScreenState extends State<NavigationScreen>
       children: [
         Expanded(
           child: _ActionBtn(
-            icon: Icons.phone, 
-            label: 'Call', 
+            icon: Icons.phone,
+            label: 'Call',
             onTap: () async {
               final uri = Uri.parse('tel:${currentData['phone']}');
               if (await canLaunchUrl(uri)) await launchUrl(uri);
-            }
+            },
           ),
         ),
         const SizedBox(width: 12),
@@ -461,7 +560,10 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   Widget _buildArriveButton(BuildContext context) {
     return InkWell(
-      onTap: () => context.push('/proof-delivery?fromNav=true'),
+      onTap: () {
+        _stopLocationTracking();
+        context.push('/proof-delivery?fromNav=true');
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
@@ -471,7 +573,9 @@ class _NavigationScreenState extends State<NavigationScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.25),
               offset: const Offset(0, 4),
               blurRadius: 12,
             ),
@@ -505,8 +609,8 @@ class _NavigationScreenState extends State<NavigationScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primaryLight),
       ),
-      child: Column(
-        children: const [
+      child: const Column(
+        children: [
           Icon(Icons.flag_circle_rounded, color: AppColors.primary, size: 48),
           SizedBox(height: 12),
           Text(
@@ -521,10 +625,7 @@ class _NavigationScreenState extends State<NavigationScreen>
           Text(
             'This is the last delivery on your current route.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -545,14 +646,16 @@ class _NavigationScreenState extends State<NavigationScreen>
           ),
         ),
         const SizedBox(height: 12),
-        ...remainingStops.map((s) {
-          return Container(
+        ...remainingStops.map(
+          (s) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.15),
+              ),
             ),
             child: Row(
               children: [
@@ -583,14 +686,14 @@ class _NavigationScreenState extends State<NavigationScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        s['customer'],
+                        s['customer'] as String,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        s['address'],
+                        s['address'] as String,
                         style: TextStyle(
                           fontSize: 13,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -601,12 +704,79 @@ class _NavigationScreenState extends State<NavigationScreen>
                     ],
                   ),
                 ),
-                // Removed the pointy arrow/chevron to keep it simple since it's un-tappable
               ],
             ),
-          );
-        }),
+          ),
+        ),
       ],
+    );
+  }
+}
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
+
+class _PulsingLocationDot extends StatefulWidget {
+  @override
+  State<_PulsingLocationDot> createState() => _PulsingLocationDotState();
+}
+
+class _PulsingLocationDotState extends State<_PulsingLocationDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _radiusAnim;
+  late Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+    _radiusAnim = Tween<double>(begin: 12, end: 26).animate(_ctrl);
+    _opacityAnim = Tween<double>(begin: 0.5, end: 0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, _) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: _radiusAnim.value * 2,
+            height: _radiusAnim.value * 2,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(
+                0xFF3B82F6,
+              ).withValues(alpha: _opacityAnim.value),
+            ),
+          ),
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF3B82F6),
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -653,83 +823,4 @@ class _ActionBtn extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MockNavMapPainter extends CustomPainter {
-  final Animation<double> animation;
-  _MockNavMapPainter({required this.animation}) : super(repaint: animation);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Grid
-    final gridPaint = Paint()
-      ..color = const Color(0xFFE5E7EB)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    for (double i = 0; i < size.width; i += 30) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), gridPaint);
-    }
-    for (double i = 0; i < size.height; i += 30) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), gridPaint);
-    }
-
-    final path = Path()
-      ..moveTo(size.width / 2, size.height * 0.9)
-      ..quadraticBezierTo(
-        size.width * 0.4,
-        size.height * 0.7,
-        size.width / 2,
-        size.height * 0.5,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.6,
-        size.height * 0.3,
-        size.width / 2,
-        size.height * 0.2,
-      );
-
-    final routePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          AppColors.primary.withValues(alpha: 0.8),
-          AppColors.primary.withValues(alpha: 0.3),
-        ],
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawPath(path, routePaint);
-
-    // Destination
-    final destOffset = Offset(size.width / 2, size.height * 0.2);
-    canvas.drawCircle(destOffset, 8, Paint()..color = AppColors.primary);
-    canvas.drawCircle(
-      destOffset,
-      20,
-      Paint()..color = AppColors.primary.withValues(alpha: 0.2),
-    );
-
-    // Current location pulsing
-    final currentOffset = Offset(size.width / 2, size.height * 0.9);
-    canvas.drawCircle(
-      currentOffset,
-      12,
-      Paint()..color = const Color(0xFF3B82F6),
-    );
-
-    double progress = animation.value;
-    double radius = 12 + (18 * progress);
-    double opacity = 0.5 - (0.5 * progress);
-    canvas.drawCircle(
-      currentOffset,
-      radius,
-      Paint()..color = const Color(0xFF3B82F6).withValues(alpha: opacity),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

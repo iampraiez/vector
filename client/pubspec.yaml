@@ -22,6 +22,12 @@ dependencies:
   connectivity_plus: ^6.1.4
   intl: ^0.19.0
 
+  # ── Map: Tile rendering + GPS + Routing ──────────────────────────────────
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.2
+  flutter_map_cancellable_tile_provider: ^3.0.0
+
   # ── PoD: Photo capture ──────────────────────────────────────────────────
   # API-ready: swap onTap stub with ImagePicker().pickImage(source: ImageSource.camera)
   image_picker: ^1.1.2

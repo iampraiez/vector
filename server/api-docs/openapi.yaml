@@ -1138,6 +1138,43 @@ paths:
         "201":
           description: ""
       tags: *a17
+  /map/geocode:
+    post:
+      operationId: MapController_geocode
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeocodeDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: &a18
+        - Map
+  /map/directions:
+    post:
+      operationId: MapController_getDirections
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DirectionsDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: *a18
 info:
   title: Vector API
   description: Full API specification for the Vector fleet management platform
@@ -1579,3 +1616,29 @@ components:
           type: string
       required:
         - driver_id
+    GeocodeDto:
+      type: object
+      properties:
+        address:
+          type: string
+      required:
+        - address
+    WaypointDto:
+      type: object
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+      required:
+        - lat
+        - lng
+    DirectionsDto:
+      type: object
+      properties:
+        waypoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/WaypointDto"
+      required:
+        - waypoints

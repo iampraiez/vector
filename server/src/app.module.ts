@@ -20,6 +20,7 @@ import { DriverModule } from './driver/driver.module';
 import { RoutesModule } from './routes/routes.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { MapModule } from './map/map.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     RoutesModule,
     TrackingModule,
     NotificationsModule,
+    MapModule,
   ],
   controllers: [AppController],
   providers: [
