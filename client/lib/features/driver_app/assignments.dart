@@ -309,7 +309,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         onTap: () => setState(() => _activeTab = 1),
                       ),
                       _Tab(
-                        label: 'Completed',
+                        label: 'Activity',
                         count: _completedAssignments.length,
                         isActive: _activeTab == 2,
                         onTap: () => setState(() => _activeTab = 2),
@@ -434,14 +434,23 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         }
       },
     );
-  }
-
-  Widget _buildCompletedCard(Map<String, dynamic> item) {
+  }  Widget _buildCompletedCard(Map<String, dynamic> item) {
+    final status = (item['status'] ?? '').toString().toLowerCase();
+    final isFailed = status == 'failed';
+    
     final isRoute = item['type'] == 'route';
     final title = isRoute ? (item['name'] ?? 'Route') : (item['customer_name'] ?? 'Order');
-    final subtitle = isRoute 
-        ? '${(item['stops'] as List? ?? []).length} stops completed'
-        : 'Order delivered';
+    
+    String subtitle;
+    if (isRoute) {
+      subtitle = '${(item['stops'] as List? ?? []).length} stops completed';
+    } else {
+      subtitle = isFailed ? 'Delivery failed' : 'Order delivered';
+    }
+
+    final statusColor = isFailed ? AppColors.error : AppColors.success;
+    final statusBg = isFailed ? AppColors.errorLight : const Color(0xFFECFDF5);
+    final statusLabel = isFailed ? 'Failed' : 'Done';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -457,12 +466,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFECFDF5),
+              color: statusBg,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.check_circle_rounded,
-              color: AppColors.success,
+            child: Icon(
+              isFailed ? Icons.cancel_rounded : Icons.check_circle_rounded,
+              color: statusColor,
               size: 22,
             ),
           ),
@@ -493,15 +502,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFECFDF5),
+              color: statusBg,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Text(
-              'Done',
+            child: Text(
+              statusLabel,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.success,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: statusColor,
               ),
             ),
           ),
@@ -655,13 +664,13 @@ class _RouteCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.successLight
-                      : AppColors.surface,
+                  color: isActive ? AppColors.successLight : AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  isStandalone ? Icons.inventory_2_outlined : Icons.local_shipping_outlined,
+                  isStandalone
+                      ? Icons.inventory_2_outlined
+                      : Icons.local_shipping_outlined,
                   size: 22,
                   color: isActive ? AppColors.primary : AppColors.textMuted,
                 ),
@@ -681,9 +690,9 @@ class _RouteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isStandalone 
-                        ? 'Standalone Order · $date'
-                        : '$totalStops stops · $date',
+                      isStandalone
+                          ? 'Standalone Order · $date'
+                          : '$totalStops stops · $date',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -693,8 +702,7 @@ class _RouteCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isUpcoming
                       ? const Color(0xFFEFF6FF)
@@ -718,7 +726,6 @@ class _RouteCard extends StatelessWidget {
               ),
             ],
           ),
-
           if (isActive && totalStops > 0) ...[
             const SizedBox(height: 12),
             Row(
@@ -764,7 +771,6 @@ class _RouteCard extends StatelessWidget {
               ],
             ),
           ],
-
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -772,12 +778,16 @@ class _RouteCard extends StatelessWidget {
               onPressed: (isStarting || isUpcoming)
                   ? null
                   : isActive
-                  ? onContinue
-                  : onStart,
+                      ? onContinue
+                      : onStart,
               style: ElevatedButton.styleFrom(
-                backgroundColor: isUpcoming ? AppColors.surface : AppColors.primary,
-                foregroundColor: isUpcoming ? AppColors.textMuted : Colors.white,
-                disabledBackgroundColor: isUpcoming ? AppColors.surface : AppColors.primary.withValues(alpha: 0.5),
+                backgroundColor:
+                    isUpcoming ? AppColors.surface : AppColors.primary,
+                foregroundColor:
+                    isUpcoming ? AppColors.textMuted : Colors.white,
+                disabledBackgroundColor: isUpcoming
+                    ? AppColors.surface
+                    : AppColors.primary.withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -794,9 +804,9 @@ class _RouteCard extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      isUpcoming 
-                        ? 'Scheduled for $date'
-                        : (isActive ? 'Continue Route' : 'Start Route'),
+                      isUpcoming
+                          ? 'Upcoming'
+                          : (isActive ? 'Continue Route' : 'Start Route'),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
@@ -805,6 +815,39 @@ class _RouteCard extends StatelessWidget {
                     ),
             ),
           ),
+          if (!isUpcoming && !isActive) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => context.push(
+                  '/route-preview',
+                  extra: {
+                    'id': routeId,
+                    'name': name,
+                    'status': status,
+                    'date': date,
+                    'stops': [], // Stops are typically part of the item from API
+                  },
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text(
+                  'View Route',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

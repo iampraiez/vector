@@ -25,6 +25,9 @@ class _HomeSummary {
   final int totalDeliveries;
   final int pendingStops;
   final double rating;
+  final String? companyName;
+  final String? managerName;
+  final String? activeRouteName;
 
   const _HomeSummary({
     required this.status,
@@ -32,14 +35,20 @@ class _HomeSummary {
     required this.totalDeliveries,
     required this.pendingStops,
     required this.rating,
+    this.companyName,
+    this.managerName,
+    this.activeRouteName,
   });
 
   factory _HomeSummary.fromJson(Map<String, dynamic> j) => _HomeSummary(
-        status: j['status'] as String? ?? 'idle',
+        status: j['status'] as String? ?? 'offline',
         deliveriesToday: (j['deliveries_today'] as num?)?.toInt() ?? 0,
         totalDeliveries: (j['total_deliveries'] as num?)?.toInt() ?? 0,
         pendingStops: (j['pending_stops'] as num?)?.toInt() ?? 0,
         rating: (j['rating'] as num?)?.toDouble() ?? 0.0,
+        companyName: j['company_name'] as String?,
+        managerName: j['manager_name'] as String?,
+        activeRouteName: j['active_route_name'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +57,9 @@ class _HomeSummary {
         'total_deliveries': totalDeliveries,
         'pending_stops': pendingStops,
         'rating': rating,
+        'company_name': companyName,
+        'manager_name': managerName,
+        'active_route_name': activeRouteName,
       };
 }
 
@@ -67,19 +79,77 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   LocationPermission _locationPermission = LocationPermission.always;
   StreamSubscription<ServiceStatus>? _locationServiceSubscription;
 
+  // Session state
+  Timer? _sessionTimer;
+  Duration _sessionDuration = Duration.zero;
+  DateTime? _onDutySince;
+  bool _isToggling = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadData();
+    _loadData().then((_) {
+      if (_summary?.status != 'offline') {
+        _startTimer();
+      }
+    });
     _checkLocationStatus();
     _initLocationListener();
+  }
+
+  void _startTimer() {
+    _sessionTimer?.cancel();
+    _onDutySince = DateTime.now(); // In real app, fetch this from backend session
+    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _sessionDuration = DateTime.now().difference(_onDutySince!);
+        });
+      }
+    });
+  }
+
+  void _stopTimer() {
+    _sessionTimer?.cancel();
+    _sessionTimer = null;
+    if (mounted) {
+      setState(() {
+        _sessionDuration = Duration.zero;
+      });
+    }
+  }
+
+  Future<void> _toggleDuty(bool online) async {
+    if (_isToggling) return;
+    setState(() => _isToggling = true);
+
+    try {
+      final newStatus = online ? 'active' : 'offline';
+      await _api.updateStatus(newStatus);
+      if (online) {
+        _startTimer();
+      } else {
+        _stopTimer();
+      }
+      // Reload summary to reflect backend state
+      await _loadData(forceRefresh: true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update status: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isToggling = false);
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _locationServiceSubscription?.cancel();
+    _sessionTimer?.cancel();
     super.dispose();
   }
 
@@ -306,7 +376,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '$greeting, $userName',
+                                _summary?.companyName != null && _summary!.companyName!.isNotEmpty
+                                    ? _summary!.companyName!
+                                    : '$greeting, $userName',
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.w800,
@@ -314,6 +386,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   color: AppColors.textPrimary,
                                 ),
                               ),
+                              if (_summary?.companyName != null && _summary!.companyName!.isNotEmpty)
+                                Text(
+                                  'Logged in as $userName',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                             ],
                           ),
                           InkWell(
@@ -484,6 +565,80 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Duty Toggle Card
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.p4),
+          decoration: BoxDecoration(
+            color: s?.status == 'offline' ? AppColors.white : AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: s?.status == 'offline' ? AppColors.border : AppColors.primary.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: s?.status == 'offline' ? AppColors.surface : AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  s?.status == 'offline' ? Icons.power_settings_new : Icons.bolt,
+                  color: s?.status == 'offline' ? AppColors.textMuted : AppColors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s?.status == 'offline' ? 'Currently Offline' : 'You are Online',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (s?.status != 'offline')
+                      Text(
+                        'Session: ${_sessionDuration.inHours.toString().padLeft(2, '0')}:${(_sessionDuration.inMinutes % 60).toString().padLeft(2, '0')}:${(_sessionDuration.inSeconds % 60).toString().padLeft(2, '0')}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    else
+                      const Text(
+                        'Switch to online to begin receiving orders',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              _isToggling
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Switch.adaptive(
+                      value: s?.status != 'offline',
+                      activeTrackColor: AppColors.primary,
+                      onChanged: _toggleDuty,
+                    ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.p6),
+
         // Active Route / No Route
         const Text(
           'ACTIVE ROUTE',
@@ -540,13 +695,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Active Route',
-                                    style: TextStyle(
+                                  Text(
+                                    s?.activeRouteName ?? 'Active Route',
+                                    style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: -0.15,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   Row(
                                     children: [

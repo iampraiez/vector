@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore, Driver } from "../../../store/driverStore";
 import { api } from "../../../lib/api";
@@ -44,6 +45,7 @@ export function DashboardOrders() {
     importBulkOrders,
   } = useOrderStore();
   const { drivers, fetchDrivers } = useDriverStore();
+  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | OrderStatus>("all");
@@ -275,7 +277,8 @@ export function DashboardOrders() {
               filteredOrders.map((order, index) => (
                 <div
                   key={order.id}
-                  className={`bg-white border rounded-2xl p-4 shadow-sm transition-all ${
+                  onClick={() => navigate(`/dashboard/orders/${order.id}`)}
+                  className={`bg-white border rounded-2xl p-4 shadow-sm transition-all cursor-pointer hover:border-emerald-500/50 ${
                     selectedOrders.includes(order.id)
                       ? "border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-500"
                       : "border-black/8"
@@ -331,7 +334,7 @@ export function DashboardOrders() {
                     {order.address}
                   </p>
                   {!order.driver_id && !order.driver_name && (
-                    <div className="mb-4">
+                    <div className="mb-4" onClick={(e) => e.stopPropagation()}>
                       <select
                         disabled={
                           order.status === "completed" ||
@@ -373,7 +376,10 @@ export function DashboardOrders() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div
+                      className="flex gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => {
                           setCopyingOrder(order);
@@ -499,7 +505,10 @@ export function DashboardOrders() {
                     filteredOrders.map((order, index) => (
                       <tr
                         key={order.id}
-                        className={`transition-colors hover:bg-gray-50/50 group ${
+                        onClick={() =>
+                          navigate(`/dashboard/orders/${order.id}`)
+                        }
+                        className={`transition-colors hover:bg-gray-50/50 group cursor-pointer ${
                           selectedOrders.includes(order.id)
                             ? "bg-emerald-50/30"
                             : ""
@@ -570,7 +579,10 @@ export function DashboardOrders() {
                               : "Any time"}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td
+                          className="px-6 py-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {order.driver_id || order.driver_name ? (
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
@@ -624,7 +636,10 @@ export function DashboardOrders() {
                             {getStatusLabel(order.status)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td
+                          className="px-6 py-4 text-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => {

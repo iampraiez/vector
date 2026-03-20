@@ -22,6 +22,7 @@ import {
   RefreshTokenDto,
   ResendVerificationDto,
   UpdateDriverProfileDto,
+  JoinCompanyDto,
 } from './dto/auth.dto';
 import { JwtPayload } from './interfaces/auth.interface';
 
@@ -486,6 +487,43 @@ export class AuthService {
     return this.prisma.user.update({
       where: { id: userId },
       data: { is_onboarded: true },
+    });
+  }
+
+  async joinCompany(userId: string, dto: JoinCompanyDto) {
+    const company = await this.prisma.company.findUnique({
+      where: { company_code: dto.company_code.toUpperCase() },
+    });
+
+    if (!company) {
+      throw new NotFoundException('No company found with that code');
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        company_id: company.id,
+        is_onboarded: false, // Force re-onboarding for the new fleet
+      },
+      include: { driver_profile: true },
+    });
+
+    // Update driver profile company_id as well
+    if (user.driver_profile) {
+      await this.prisma.driver.update({
+        where: { id: user.driver_profile.id },
+        data: { company_id: company.id },
+      });
+    }
+
+    return this.generateTokens({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      company_id: user.company_id,
+      email_verified: user.email_verified,
+      is_onboarded: false,
+      full_name: user.full_name,
     });
   }
 }

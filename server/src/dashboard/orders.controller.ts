@@ -41,6 +41,14 @@ export class OrdersController {
     return this.dashboardService.getRecentOrders(companyId);
   }
 
+  @Get(':stop_id')
+  getOrderDetail(
+    @CurrentUser('company_id') companyId: string,
+    @Param('stop_id') stopId: string,
+  ) {
+    return this.dashboardService.getOrderDetail(companyId, stopId);
+  }
+
   @Post()
   createOrder(
     @CurrentUser('company_id') companyId: string,

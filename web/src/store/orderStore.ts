@@ -32,7 +32,16 @@ export interface Order {
   assigned_to?: string;
   notes?: string;
   route_name?: string;
-  createdAt?: string;
+  created_at?: string;
+  driver?: {
+    id: string;
+    user: {
+      full_name: string;
+      email: string;
+      phone?: string;
+      avatar_url?: string;
+    };
+  };
 }
 
 interface OrderStats {
@@ -48,6 +57,7 @@ interface OrderState {
   orders: Order[];
   stats: OrderStats | null;
   totalOrders: number;
+  selectedOrder: Order | null;
   isLoading: boolean;
   isMutating: boolean;
   error: string | null;
@@ -63,12 +73,14 @@ interface OrderState {
   deleteOrder: (id: string) => Promise<void>;
   deleteOrders: (ids: string[]) => Promise<void>;
   importBulkOrders: (data: Partial<Order>[]) => Promise<unknown>;
+  fetchOrderDetail: (id: string) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   stats: null,
   totalOrders: 0,
+  selectedOrder: null,
   isLoading: false,
   isMutating: false,
   error: null,
@@ -186,6 +198,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         isMutating: false,
       });
       throw err;
+    }
+  },
+
+  fetchOrderDetail: async (id: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.get(`/dashboard/orders/${id}`);
+      set({
+        selectedOrder: res.data,
+        isLoading: false,
+      });
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error: error.response?.data?.message || "Failed to fetch order details",
+        isLoading: false,
+      });
     }
   },
 }));

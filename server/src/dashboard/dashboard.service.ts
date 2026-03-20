@@ -55,21 +55,30 @@ export class DashboardService {
   }
 
   async getMetrics(companyId: string) {
-    const [activeDrivers, pendingOrders, completedStops, totalStops] =
-      await Promise.all([
-        this.prisma.driver.count({
-          where: { company_id: companyId, status: 'active' },
-        }),
-        this.prisma.stop.count({
-          where: { company_id: companyId, status: 'unassigned' },
-        }),
-        this.prisma.stop.count({
-          where: { company_id: companyId, status: 'completed' },
-        }),
-        this.prisma.stop.count({
-          where: { company_id: companyId },
-        }),
-      ]);
+    const [
+      activeDrivers,
+      pendingStops,
+      completedStops,
+      totalStops,
+      activeRoute,
+    ] = await Promise.all([
+      this.prisma.driver.count({
+        where: { company_id: companyId, status: 'active' },
+      }),
+      this.prisma.stop.count({
+        where: { company_id: companyId, status: 'unassigned' },
+      }),
+      this.prisma.stop.count({
+        where: { company_id: companyId, status: 'completed' },
+      }),
+      this.prisma.stop.count({
+        where: { company_id: companyId },
+      }),
+      this.prisma.route.findFirst({
+        where: { company_id: companyId, status: 'active' },
+        orderBy: { created_at: 'desc' },
+      }),
+    ]);
 
     const onTimeRate =
       totalStops > 0
@@ -79,8 +88,9 @@ export class DashboardService {
     return {
       active_drivers: activeDrivers,
       active_drivers_change: '+0',
-      pending_orders: pendingOrders,
-      pending_orders_change: '+0',
+      pending_stops: pendingStops,
+      active_route_name: activeRoute?.name || null,
+      rating: 4.8, // Mock rating
       on_time_rate: onTimeRate,
       on_time_rate_change: '+0',
       fuel_saved_usd: 0,
@@ -244,6 +254,39 @@ export class DashboardService {
       },
       stats: await this.getOrderStats(companyId),
     };
+  }
+
+  async getOrderDetail(companyId: string, stopId: string) {
+    const order = await this.prisma.stop.findUnique({
+      where: { id: stopId, company_id: companyId },
+      include: {
+        driver: {
+          include: {
+            user: {
+              select: {
+                full_name: true,
+                email: true,
+                phone: true,
+                avatar_url: true,
+              },
+            },
+          },
+        },
+        route: {
+          include: {
+            stops: {
+              orderBy: { sequence: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
   }
 
   private async getOrderStats(companyId: string) {

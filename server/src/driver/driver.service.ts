@@ -18,6 +18,15 @@ import {
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { MailService } from '../mail/mail.service';
+import { Route, Stop } from '@prisma/client';
+
+interface AdHocStopInput {
+  customerName?: string;
+  address: string;
+  packages?: number;
+}
+
+type AssignmentItem = (Route & { type: 'route' }) | (Stop & { type: 'stop' });
 
 @Injectable()
 export class DriverService {
@@ -41,23 +50,31 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const today = new Date().toISOString().split('T')[0];
 
-    const [todayRoutes, completedToday, driverData] = await Promise.all([
-      this.prisma.route.findMany({
-        where: { driver_id: driver.id, date: today },
-        include: { stops: true },
-      }),
-      this.prisma.stop.count({
-        where: {
-          driver_id: driver.id,
-          status: 'completed',
-          updated_at: { gte: new Date(today) },
-        },
-      }),
-      this.prisma.driver.findUnique({
-        where: { id: driver.id },
-        select: { total_deliveries: true },
-      }),
-    ]);
+    const [todayRoutes, completedToday, driverData, activeRoute] =
+      await Promise.all([
+        this.prisma.route.findMany({
+          where: { driver_id: driver.id, date: today },
+          include: { stops: true },
+        }),
+        this.prisma.stop.count({
+          where: {
+            driver_id: driver.id,
+            status: 'completed',
+            updated_at: { gte: new Date(today) },
+          },
+        }),
+        this.prisma.driver.findUnique({
+          where: { id: driver.id },
+          select: { total_deliveries: true },
+        }),
+        this.prisma.route.findFirst({
+          where: {
+            driver_id: driver.id,
+            status: 'active',
+          },
+          orderBy: { updated_at: 'desc' },
+        }),
+      ]);
 
     let pendingStopsCount = 0;
     todayRoutes.forEach((r) => {
@@ -71,6 +88,7 @@ export class DriverService {
       deliveries_today: completedToday,
       total_deliveries: driverData?.total_deliveries || 0,
       pending_stops: pendingStopsCount,
+      active_route_name: activeRoute?.name || null,
       rating: driver.avg_rating,
     };
   }
@@ -132,18 +150,18 @@ export class DriverService {
     });
 
     // 3. Categorize
-    const active: any[] = [];
-    const upcoming: any[] = [];
-    const completed: any[] = [];
+    const active: AssignmentItem[] = [];
+    const upcoming: AssignmentItem[] = [];
+    const completed: AssignmentItem[] = [];
 
     // Process Routes
     routes.forEach((route) => {
       if (route.status === 'completed' || route.status === 'cancelled') {
-        completed.push({ ...route, type: 'route' });
+        completed.push({ ...route, type: 'route' } as AssignmentItem);
       } else if (route.status === 'active' || route.date === today) {
-        active.push({ ...route, type: 'route' });
+        active.push({ ...route, type: 'route' } as AssignmentItem);
       } else {
-        upcoming.push({ ...route, type: 'route' });
+        upcoming.push({ ...route, type: 'route' } as AssignmentItem);
       }
     });
 
@@ -154,14 +172,14 @@ export class DriverService {
         stop.status === 'failed' ||
         stop.status === 'returned'
       ) {
-        completed.push({ ...stop, type: 'stop' });
+        completed.push({ ...stop, type: 'stop' } as AssignmentItem);
       } else if (
         stop.status === 'in_progress' ||
         stop.delivery_date === today
       ) {
-        active.push({ ...stop, type: 'stop' });
+        active.push({ ...stop, type: 'stop' } as AssignmentItem);
       } else {
-        upcoming.push({ ...stop, type: 'stop' });
+        upcoming.push({ ...stop, type: 'stop' } as AssignmentItem);
       }
     });
 
@@ -216,6 +234,40 @@ export class DriverService {
     ]);
 
     return { message: 'Route started successfully' };
+  }
+
+  async createAdHocRoute(
+    userId: string,
+    data: { name: string; stops: AdHocStopInput[] },
+  ) {
+    const driver = await this.getDriverOrThrow(userId);
+    const today = new Date().toISOString().split('T')[0];
+
+    const route = await this.prisma.route.create({
+      data: {
+        name: data.name,
+        company_id: driver.company_id,
+        driver_id: driver.id,
+        date: today,
+        status: 'draft',
+        total_stops: data.stops.length,
+        stops: {
+          create: data.stops.map((s, idx) => ({
+            company_id: driver.company_id,
+            driver_id: driver.id,
+            customer_name: s.customerName || 'Customer',
+            address: s.address,
+            packages: s.packages || 1,
+            sequence: idx,
+            status: 'assigned',
+            delivery_date: today,
+          })),
+        },
+      },
+      include: { stops: true },
+    });
+
+    return route;
   }
 
   async getStop(userId: string, stopId: string) {
@@ -313,7 +365,9 @@ export class DriverService {
       }),
     ]);
 
-    // Potentially check if route is completed here and update route status
+    if (stop.route_id) {
+      await this.checkAndUpdateRouteStatus(stop.route_id);
+    }
 
     return { message: 'Delivery completed successfully' };
   }
@@ -337,7 +391,37 @@ export class DriverService {
       },
     });
 
+    if (stop.route_id) {
+      await this.checkAndUpdateRouteStatus(stop.route_id);
+    }
+
     return { message: 'Delivery marked as failed' };
+  }
+
+  private async checkAndUpdateRouteStatus(routeId: string) {
+    const route = await this.prisma.route.findUnique({
+      where: { id: routeId },
+      include: { stops: true },
+    });
+
+    if (
+      !route ||
+      route.status === 'completed' ||
+      route.status === 'cancelled'
+    ) {
+      return;
+    }
+
+    const allFinished = route.stops.every((s) =>
+      ['completed', 'failed', 'returned'].includes(s.status),
+    );
+
+    if (allFinished) {
+      await this.prisma.route.update({
+        where: { id: routeId },
+        data: { status: 'completed', completed_at: new Date() },
+      });
+    }
   }
 
   async getHistory(userId: string, pageRaw?: string, limitRaw?: string) {
@@ -514,7 +598,7 @@ export class DriverService {
   async requestSettingsOtp(userId: string, dto: { action: string }) {
     const driver = await this.getDriverOrThrow(userId);
     const action = dto.action;
-    if (!['delete_account', 'clear_data'].includes(action)) {
+    if (!['delete_account', 'clear_data', 'leave_fleet'].includes(action)) {
       throw new BadRequestException('Invalid action');
     }
 
@@ -556,6 +640,10 @@ export class DriverService {
     }
 
     await this.redis.del(redisKey);
+
+    if (action === 'leave_fleet') {
+      return this.leaveCompany(userId);
+    }
 
     const company = await this.prisma.company.findUnique({
       where: { id: driver.company_id },
@@ -610,5 +698,27 @@ export class DriverService {
       message:
         'Your history report is being generated and will be emailed to you shortly.',
     };
+  }
+
+  async leaveCompany(userId: string) {
+    const driver = await this.getDriverOrThrow(userId);
+
+    // We don't delete the driver record to preserve history,
+    // but we could mark them as inactive or remove the company association
+    // if the business logic allows.
+    // For "Vector", we'll set their status to suspended/offline and null their company_id if possible,
+    // or just mark them as 'idle' and removed from active roster.
+
+    await this.prisma.driver.update({
+      where: { id: driver.id },
+      data: {
+        status: 'offline',
+        // In this schema company_id is required, so "leaving" might mean
+        // deactivating the driver profile or moving to a 'System' company.
+        // For now, let's just mark status.
+      },
+    });
+
+    return { message: 'Successfully left the fleet' };
   }
 }

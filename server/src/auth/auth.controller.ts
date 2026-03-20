@@ -22,6 +22,7 @@ import {
   RefreshTokenDto,
   ResendVerificationDto,
   UpdateDriverProfileDto,
+  JoinCompanyDto,
 } from './dto/auth.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -122,5 +123,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   completeOnboarding(@Request() req: RequestWithUser) {
     return this.authService.completeOnboarding(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('join-company')
+  @HttpCode(HttpStatus.OK)
+  joinCompany(@Request() req: RequestWithUser, @Body() dto: JoinCompanyDto) {
+    return this.authService.joinCompany(req.user.id, dto);
   }
 }

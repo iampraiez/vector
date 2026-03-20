@@ -99,7 +99,9 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/route-preview',
-      builder: (context, state) => const RoutePreviewScreen(),
+      builder: (context, state) => RoutePreviewScreen(
+        routeData: state.extra as Map<String, dynamic>?,
+      ),
     ),
     GoRoute(
       path: '/navigation',

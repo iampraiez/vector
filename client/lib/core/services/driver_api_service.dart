@@ -174,6 +174,31 @@ class DriverApiService {
     }
   }
 
+  Future<void> leaveFleet() async {
+    try {
+      await _dio.post('/driver/profile/leave');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ── Route Creation ────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> createRoute({
+    required String name,
+    required List<Map<String, dynamic>> stops,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/driver/routes',
+        data: {'name': name, 'stops': stops},
+      );
+      return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── Notifications ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getNotifications({

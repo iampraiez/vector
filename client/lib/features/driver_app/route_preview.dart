@@ -7,9 +7,12 @@ import '../../core/theme/colors.dart';
 import '../../core/constants/map_constants.dart';
 import '../../core/services/map_service.dart';
 import '../../shared/widgets/buttons.dart';
+import '../../main.dart' show RouteProgressScope;
+import '../../core/services/driver_api_service.dart';
 
 class RoutePreviewScreen extends StatefulWidget {
-  const RoutePreviewScreen({super.key});
+  final Map<String, dynamic>? routeData;
+  const RoutePreviewScreen({super.key, this.routeData});
 
   @override
   State<RoutePreviewScreen> createState() => _RoutePreviewScreenState();
@@ -26,24 +29,58 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
   int _durationMin = 0;
   bool _loading = true;
 
-  // Hard-coded stub stops wired to RouteProgressScope
-  final _stops = [
-    {'number': 1, 'address': '123 Main Street, Downtown', 'eta': '9:15 AM', 'customer': 'John Doe', 'packages': 3},
-    {'number': 2, 'address': '456 Market Street, Midtown', 'eta': '9:45 AM', 'customer': 'Jane Smith', 'packages': 2},
-    {'number': 3, 'address': '789 Oak Avenue, Uptown', 'eta': '10:30 AM', 'customer': 'Bob Johnson', 'packages': 4},
-    {'number': 4, 'address': '321 Pine Road, Eastside', 'eta': '11:15 AM', 'customer': 'Alice Williams', 'packages': 3},
-    {'number': 5, 'address': '555 Cedar Lane, Suburb', 'eta': '11:50 AM', 'customer': 'Mike Chen', 'packages': 2},
-  ];
+  // Stops derived from routeData or empty if missing
+  List<Map<String, dynamic>> _dynamicStops = [];
+  bool _fetchingFullRoute = false;
+
+  List<Map<String, dynamic>> get _stops {
+    final raw = widget.routeData?['stops'] as List? ?? [];
+    if (raw.isNotEmpty) return raw.cast<Map<String, dynamic>>();
+    return _dynamicStops;
+  }
+
+  String get _routeName => widget.routeData?['name'] as String? ?? 'Delivery Route';
+  String? get _routeId => widget.routeData?['id'] as String?;
 
   @override
   void initState() {
     super.initState();
-    _geocodeStopsAndDrawRoute();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    if (_stops.isEmpty && _routeId != null) {
+      setState(() => _fetchingFullRoute = true);
+      try {
+        final data = await DriverApiService.instance.getRoutePreview(_routeId!);
+        if (mounted) {
+          setState(() {
+            _dynamicStops = (data['stops'] as List? ?? []).cast<Map<String, dynamic>>();
+            _fetchingFullRoute = false;
+          });
+          if (_dynamicStops.isNotEmpty) {
+            _geocodeStopsAndDrawRoute();
+          } else {
+            setState(() => _loading = false);
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _fetchingFullRoute = false;
+            _loading = false;
+          });
+        }
+      }
+    } else if (_stops.isNotEmpty) {
+      _geocodeStopsAndDrawRoute();
+    } else {
+      setState(() => _loading = false);
+    }
   }
 
   @override
   void dispose() {
-    _mapController.dispose();
     super.dispose();
   }
 
@@ -121,7 +158,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('Downtown Route', style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        Text(_routeName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                         Text(dateStr, style: TextStyle(fontSize: 13, color: AppColors.textPrimary.withValues(alpha: 0.5), fontWeight: FontWeight.w500)),
                       ],
                     ),
@@ -198,7 +235,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                           ),
 
                           // Loading overlay
-                          if (_loading)
+                          if (_loading || _fetchingFullRoute)
                             const Positioned.fill(
                               child: ColoredBox(
                                 color: Color(0x88FFFFFF),
@@ -303,7 +340,14 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
           label: 'Start navigation',
           icon: const Icon(Icons.near_me, size: 16),
           isFullWidth: true,
-          onPressed: () => context.push('/navigation'),
+          onPressed: () {
+            if (_stops.isNotEmpty) {
+              RouteProgressScope.of(context).loadStops(_stops);
+              context.push('/navigation');
+            } else {
+              context.pop();
+            }
+          },
         ),
       ),
     );
@@ -385,7 +429,7 @@ class _StopCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Text('${stop['number']}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isFirst ? AppColors.white : AppColors.primary)),
+            child: Text('${(stop['number'] ?? (stop.containsKey('index') ? stop['index']! + 1 : '?'))}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isFirst ? AppColors.white : AppColors.primary)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -395,7 +439,7 @@ class _StopCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(stop['customer'] as String, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+                    Text(stop['customer_name'] as String? ?? 'Customer', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
                     if (isFirst)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

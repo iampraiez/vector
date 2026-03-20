@@ -113,12 +113,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final stops = (r['stops'] as List? ?? []);
       final completedStops =
           stops.where((s) => (s as Map)['status'] == 'completed').length;
+      final failedStops =
+          stops.where((s) => (s as Map)['status'] == 'failed').length;
       return {
         'id': r['id'] ?? '',
         'name': r['name'] ?? 'Route',
         'date': _formatDate(r['date'] as String? ?? r['completed_at'] as String? ?? ''),
         'stops': stops.length,
         'completed': completedStops,
+        'failed': failedStops,
         'duration': '--',
         'distance': r['total_distance_km'] != null
             ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
@@ -679,7 +682,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            '${r['completed']}/${r['stops']} stops',
+                                            r['failed'] > 0 
+                                              ? '${r['completed']} done, ${r['failed']} failed • ${r['stops']} total'
+                                              : '${r['completed']}/${r['stops']} stops',
                                             style: const TextStyle(
                                               fontSize: 12,
                                               color: AppColors.textSecondary,

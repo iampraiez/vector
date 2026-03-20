@@ -5,6 +5,7 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/inputs.dart';
 import '../../shared/widgets/buttons.dart';
+import '../../core/services/driver_api_service.dart';
 
 class NewRouteScreen extends StatefulWidget {
   const NewRouteScreen({super.key});
@@ -33,11 +34,29 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
     }
   }
 
-  void _createRoute() {
+  Future<void> _createRoute() async {
+    if (_nameController.text.isEmpty) return;
+    
     setState(() => _creating = true);
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) context.push('/route-preview');
-    });
+    try {
+      final validStops = _stops.where((s) => (s['address'] as String).isNotEmpty).toList();
+      final route = await DriverApiService.instance.createRoute(
+        name: _nameController.text,
+        stops: validStops,
+      );
+      
+      if (mounted) {
+        context.push('/route-preview', extra: route);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create route: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
   }
 
   @override

@@ -25,4 +25,9 @@ export class ProfileController {
   uploadAvatar(@CurrentUser('id') userId: string, @Body() dto: any) {
     return this.driverService.uploadAvatar(userId, dto);
   }
+
+  @Post('leave')
+  leaveCompany(@CurrentUser('id') userId: string) {
+    return this.driverService.leaveCompany(userId);
+  }
 }

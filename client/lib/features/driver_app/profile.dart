@@ -29,6 +29,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _licenseCtrl;
   bool _isSavingVehicle = false;
   bool _isSavingProfile = false;
+  bool _updating = false;
+  bool _requestingOtp = false;
 
   int _totalDeliveries = 0;
   double _rating = 0.0;
@@ -63,6 +65,136 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _licenseCtrl = TextEditingController(text: user?.licenseNumber);
       _isInitialized = true;
     }
+  }
+
+  Future<void> _handleLeaveFleet() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Fleet?'),
+        content: const Text(
+            'Are you sure you want to disconnect from this fleet? You will need an OTP to confirm.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Continue')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _requestingOtp = true);
+    try {
+      await DriverApiService.instance.requestSettingsOtp('leave_fleet');
+      if (mounted) {
+        final otp = await _showOtpDialog();
+        if (otp != null) {
+          await DriverApiService.instance.verifySettingsOtp(
+              'leave_fleet', otp);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Successfully left the fleet.')));
+            AuthScope.of(context).logout(); // For now, logout to reset state
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _requestingOtp = false);
+    }
+  }
+
+  Future<void> _handleSwitchFleet() async {
+    final code = await _showSwitchFleetDialog();
+    if (code == null || code.isEmpty) return;
+    if (!mounted) return;
+
+    setState(() => _updating = true);
+    try {
+      await AuthScope.of(context).joinCompany(code);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Joined new fleet successfully!')));
+        context.go('/onboarding'); // Redirect to onboarding for new fleet
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error joining fleet: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
+
+  Future<String?> _showOtpDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enter OTP'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('A verification code has been sent to your email.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                  hintText: '6-digit code', border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Verify')),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _showSwitchFleetDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch Fleet'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+                'Enter the company code of the new fleet you want to join.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                  hintText: 'Company Code', border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Switch')),
+        ],
+      ),
+    );
   }
 
   Future<void> _fetchLiveStats() async {
@@ -624,6 +756,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const Divider(height: 1, indent: 66),
                       _MenuItem(icon: Icons.security, label: 'Privacy & Security', sub: 'Manage your data', onTap: () => context.push('/settings')),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  _SectionCard(
+                    label: 'Fleet Management',
+                    children: [
+                      _MenuItem(
+                        icon: Icons.swap_horiz_rounded,
+                        label: 'Switch Fleet',
+                        sub: 'Join another company roster',
+                        onTap: _updating ? null : _handleSwitchFleet,
+                      ),
+                      const Divider(height: 1, indent: 66),
+                      _MenuItem(
+                        icon: Icons.exit_to_app_rounded,
+                        label: 'Leave Current Fleet',
+                        sub: 'Disconnect from ${_fleetName ?? 'Company'}',
+                        onTap: _requestingOtp ? null : _handleLeaveFleet,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),

@@ -178,6 +178,20 @@ paths:
         "200":
           description: ""
       tags: *a1
+  /auth/join-company:
+    post:
+      operationId: AuthController_joinCompany
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinCompanyDto"
+      responses:
+        "200":
+          description: ""
+      tags: *a1
   /dashboard/metrics:
     get:
       operationId: OverviewController_getMetrics
@@ -243,6 +257,22 @@ paths:
           description: ""
       tags: *a2
   /dashboard/orders/{stop_id}:
+    get:
+      operationId: OrdersController_getOrderDetail
+      parameters:
+        - name: stop_id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: *a2
     patch:
       operationId: OrdersController_updateOrder
       parameters:
@@ -835,6 +865,18 @@ paths:
         "200":
           description: ""
       tags: *a10
+  /driver/routes:
+    post:
+      operationId: RoutesController_createRoute
+      parameters: []
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+      tags: *a10
   /driver/navigation/stops/{stop_id}:
     get:
       operationId: NavigationController_getStop
@@ -979,6 +1021,14 @@ paths:
   /driver/profile/avatar:
     post:
       operationId: ProfileController_uploadAvatar
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a14
+  /driver/profile/leave:
+    post:
+      operationId: ProfileController_leaveCompany
       parameters: []
       responses:
         "201":
@@ -1368,6 +1418,13 @@ components:
           type: string
           minLength: 5
           maxLength: 30
+    JoinCompanyDto:
+      type: object
+      properties:
+        company_code:
+          type: string
+      required:
+        - company_code
     CreateOrderDto:
       type: object
       properties:

@@ -129,6 +129,22 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> joinCompany(
+    String accessToken,
+    String companyCode,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/auth/join-company',
+        data: {'company_code': companyCode},
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   String _handleError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {

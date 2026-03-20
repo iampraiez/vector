@@ -6,6 +6,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Body,
 } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -34,5 +35,13 @@ export class RoutesController {
     @Param('route_id') routeId: string,
   ) {
     return this.driverService.startRoute(userId, routeId);
+  }
+
+  @Post()
+  createRoute(
+    @CurrentUser('id') userId: string,
+    @Body() data: { name: string; stops: any[] },
+  ) {
+    return this.driverService.createAdHocRoute(userId, data);
   }
 }

@@ -177,3 +177,9 @@ export class UpdateDriverProfileDto {
   @MaxLength(30)
   license_number?: string;
 }
+
+export class JoinCompanyDto {
+  @IsString()
+  @IsNotEmpty()
+  company_code!: string;
+}

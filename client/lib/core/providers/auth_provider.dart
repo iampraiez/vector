@@ -229,6 +229,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> joinCompany(String companyCode) async {
+    if (_accessToken == null) return;
+    final data = await _authService.joinCompany(_accessToken!, companyCode);
+    await _handleAuthResponse(data);
+  }
+
   Future<void> refresh() async {
     if (_refreshToken == null) return;
     final data = await _authService.refresh(_refreshToken!);
