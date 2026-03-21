@@ -209,6 +209,8 @@ model Stop {
   customer_rating         Int?
   customer_rating_comment String?
   customer_rated_at       DateTime?
+  location_confirmed      Boolean      @default(false)
+  tracking_token          String       @unique @default(uuid())
   created_at              DateTime     @default(now())
   updated_at              DateTime     @updatedAt
 

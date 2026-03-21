@@ -38,6 +38,8 @@ export function NewOrderModal({
 }: NewOrderModalProps) {
   const [form, setForm] = useState({
     customer_name: "",
+    customer_email: "",
+    customer_phone: "",
     address: "",
     city: "",
     packages: 1,
@@ -66,6 +68,8 @@ export function NewOrderModal({
 
     setForm({
       customer_name: initialData?.customer_name || "",
+      customer_email: initialData?.customer_email || "",
+      customer_phone: initialData?.customer_phone || "",
       address: initialData?.address || "",
       city: initialData?.city || "",
       packages: initialData?.packages || 1,
@@ -76,8 +80,8 @@ export function NewOrderModal({
       priority: initialData?.priority || "normal",
       assigned_to: "", // Always reset assignment for a copied order
       notes: initialData?.notes || "",
-      lat: initialData?.lat,
-      lng: initialData?.lng,
+      lat: initialData?.lat ?? undefined,
+      lng: initialData?.lng ?? undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData?.id]);
@@ -89,6 +93,8 @@ export function NewOrderModal({
       onCreate({
         id: `DEL-${Math.floor(Math.random() * 900) + 100}`,
         customer_name: form.customer_name,
+        customer_email: form.customer_email || undefined,
+        customer_phone: form.customer_phone || undefined,
         address: form.address,
         city: form.city,
         packages: form.packages,
@@ -105,6 +111,8 @@ export function NewOrderModal({
       setLoading(false);
       setForm({
         customer_name: "",
+        customer_email: "",
+        customer_phone: "",
         address: "",
         city: "",
         packages: 1,
@@ -189,6 +197,54 @@ export function NewOrderModal({
                 placeholder="Acme Corp"
                 icon={<UserIcon className="w-4 h-4 text-emerald-600" />}
               />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ModalInput
+                  label="Customer Email"
+                  value={form.customer_email}
+                  onChange={(v: string) =>
+                    setForm({ ...form, customer_email: v })
+                  }
+                  placeholder="customer@example.com"
+                  icon={
+                    <svg
+                      className="w-4 h-4 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  }
+                />
+                <ModalInput
+                  label="Customer Phone"
+                  value={form.customer_phone}
+                  onChange={(v: string) =>
+                    setForm({ ...form, customer_phone: v })
+                  }
+                  placeholder="+234..."
+                  icon={
+                    <svg
+                      className="w-4 h-4 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
+                    </svg>
+                  }
+                />
+              </div>
               <ModalInput
                 label="Address *"
                 value={form.address}
@@ -432,7 +488,7 @@ export function ModalInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[10px] font-bold text-gray-400 border-gray-100 uppercase tracking-widest ml-1">
+      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
         {label}
       </label>
       <div className="relative group">

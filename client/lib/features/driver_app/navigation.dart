@@ -100,8 +100,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _fetchDirections();
     });
 
-    // Push location to backend every 15 seconds
-    _locationSyncTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
+    // Push location to backend every 5 seconds
+    _locationSyncTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       if (_currentPosition != null) {
         await MapService.instance.updateDriverLocation(
           _currentPosition!.latitude,
@@ -608,27 +608,35 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   Widget _buildActionButtons(Map<String, dynamic> currentData) {
+    final hasPhone = currentData['phone'] != null && (currentData['phone'] as String).isNotEmpty;
+    
     return Row(
       children: [
         Expanded(
-          child: _ActionBtn(
-            icon: Icons.phone,
-            label: 'Call',
-            onTap: () async {
-              final uri = Uri.parse('tel:${currentData['phone']}');
-              if (await canLaunchUrl(uri)) await launchUrl(uri);
-            },
+          child: Opacity(
+            opacity: hasPhone ? 1.0 : 0.4,
+            child: _ActionBtn(
+              icon: Icons.phone,
+              label: 'Call',
+              onTap: hasPhone ? () {
+                final uri = Uri.parse('tel:${currentData['phone']}');
+                launchUrl(uri);
+              } : null,
+            ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _ActionBtn(
-            icon: Icons.message,
-            label: 'Message',
-            onTap: () async {
-              final uri = Uri.parse('sms:${currentData['phone']}');
-              if (await canLaunchUrl(uri)) await launchUrl(uri);
-            },
+          child: Opacity(
+            opacity: hasPhone ? 1.0 : 0.4,
+            child: _ActionBtn(
+              icon: Icons.message,
+              label: 'Message',
+              onTap: hasPhone ? () {
+                final uri = Uri.parse('sms:${currentData['phone']}');
+                launchUrl(uri);
+              } : null,
+            ),
           ),
         ),
       ],
@@ -916,11 +924,11 @@ class _PulsingLocationDotState extends State<_PulsingLocationDot>
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _ActionBtn({
     required this.icon,
     required this.label,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

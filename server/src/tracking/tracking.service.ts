@@ -1,5 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, Stop } from '@prisma/client';
+
+type StopWithRelations = Prisma.StopGetPayload<{
+  include: {
+    driver: {
+      include: { user: { select: { full_name: true; phone: true } } };
+    };
+    company: {
+      select: { name: true; contact_email: true; phone: true };
+    };
+    route: {
+      select: { id: true; assigned_at: true; started_at: true };
+    };
+  };
+}>;
 
 @Injectable()
 export class TrackingService {
@@ -8,8 +23,8 @@ export class TrackingService {
   async getTrackingData(token: string) {
     if (!token) throw new NotFoundException('Tracking token is required');
 
-    const stop = await this.prisma.stop.findFirst({
-      where: { external_id: token },
+    const result = await this.prisma.stop.findUnique({
+      where: { tracking_token: token },
       include: {
         driver: {
           include: { user: { select: { full_name: true, phone: true } } },
@@ -18,60 +33,124 @@ export class TrackingService {
           select: { name: true, contact_email: true, phone: true },
         },
         route: {
-          select: { assigned_at: true, started_at: true },
+          select: { id: true, assigned_at: true, started_at: true },
         },
       },
     });
 
-    if (!stop) throw new NotFoundException('Invalid tracking link');
+    if (!result) throw new NotFoundException('Invalid tracking link');
+
+    const primaryStop = result as StopWithRelations;
+
+    // Grouping: Find other stops on the same route with the same email
+    const allStops: Stop[] = [primaryStop as unknown as Stop];
+    if (primaryStop.customer_email && primaryStop.route_id) {
+      const others = await this.prisma.stop.findMany({
+        where: {
+          route_id: primaryStop.route_id,
+          customer_email: primaryStop.customer_email,
+          id: { not: primaryStop.id },
+        },
+      });
+      allStops.push(...others);
+    }
+
+    const stopData = primaryStop as unknown as Stop & {
+      driver: {
+        id: string;
+        user: { full_name: string; phone: string };
+        avg_rating: number;
+        total_deliveries: number;
+        vehicle_color: string | null;
+        vehicle_make: string | null;
+        vehicle_model: string | null;
+        vehicle_plate: string | null;
+        current_lat: number | null;
+        current_lng: number | null;
+      } | null;
+      company: { name: string; contact_email: string; phone: string };
+      route: { id: string; assigned_at: Date; started_at: Date } | null;
+      tracking_token: string;
+      location_confirmed: boolean;
+    };
 
     return {
-      trackingId: stop.external_id,
-      status: stop.status,
-      address: stop.address,
-      customerName: stop.customer_name,
-      packageCount: stop.packages,
+      trackingToken: stopData.tracking_token,
+      status: stopData.status,
+      locationConfirmed: stopData.location_confirmed,
+      address: stopData.address,
+      customerName: stopData.customer_name,
+      stops: allStops.map((s) => ({
+        id: s.id,
+        externalId: s.external_id,
+        status: s.status,
+        packages: s.packages,
+        notes: s.notes,
+      })),
       estimatedTime:
-        stop.time_window_start && stop.time_window_end
-          ? `${stop.time_window_start} - ${stop.time_window_end}`
+        stopData.time_window_start && stopData.time_window_end
+          ? `${stopData.time_window_start} - ${stopData.time_window_end}`
           : 'Not specified',
-      arrivedAt: stop.arrived_at,
-      completedAt: stop.completed_at,
+      arrivedAt: stopData.arrived_at,
+      completedAt: stopData.completed_at,
       company: {
-        name: stop.company.name,
-        email: stop.company.contact_email || 'support@vector.com',
-        phone: stop.company.phone || '+2348000000000',
+        name: stopData.company.name,
+        email: stopData.company.contact_email || 'support@vector.com',
+        phone: stopData.company.phone || '+2348000000000',
       },
-      driver: stop.driver?.user
+      driver: stopData.driver
         ? {
-            name: stop.driver.user.full_name,
-            phone: stop.driver.user.phone,
-            rating: stop.driver.avg_rating,
-            deliveries: stop.driver.total_deliveries,
+            id: stopData.driver.id,
+            name: stopData.driver.user.full_name,
+            phone: stopData.driver.user.phone,
+            rating: stopData.driver.avg_rating,
+            deliveries: stopData.driver.total_deliveries,
             vehicle:
-              `${stop.driver.vehicle_color || ''} ${stop.driver.vehicle_make || ''} ${stop.driver.vehicle_model || ''} (${stop.driver.vehicle_plate || ''})`.trim() ||
+              `${stopData.driver.vehicle_color || ''} ${stopData.driver.vehicle_make || ''} ${stopData.driver.vehicle_model || ''} (${stopData.driver.vehicle_plate || ''})`.trim() ||
               'Not specified',
           }
         : null,
-      liveLocation: stop.driver?.current_lat
-        ? { lat: stop.driver.current_lat, lng: stop.driver.current_lng }
+      liveLocation: stopData.driver?.current_lat
+        ? {
+            lat: stopData.driver.current_lat,
+            lng: stopData.driver.current_lng || 0,
+          }
         : null,
       timeline: {
-        created_at: stop.created_at,
-        assigned_at: stop.route?.assigned_at || null,
-        started_at:
-          (stop as { started_at?: Date | null }).started_at ||
-          stop.route?.started_at ||
-          null,
-        arrived_at: stop.arrived_at,
-        completed_at: stop.completed_at,
+        created_at: stopData.created_at,
+        assigned_at: stopData.route?.assigned_at || null,
+        started_at: stopData.started_at || stopData.route?.started_at || null,
+        arrived_at: stopData.arrived_at,
+        completed_at: stopData.completed_at,
       },
     };
   }
 
+  async confirmLocation(token: string, lat: number, lng: number) {
+    const stop = await this.prisma.stop.findUnique({
+      where: { tracking_token: token },
+    });
+
+    if (!stop) throw new NotFoundException('Tracking token not found');
+
+    await this.prisma.stop.updateMany({
+      where: {
+        route_id: stop.route_id,
+        customer_email: stop.customer_email,
+      },
+      data: {
+        lat,
+        lng,
+        location_confirmed: true,
+      },
+    });
+
+    return { message: 'Location confirmed successfully', lat, lng };
+  }
+
   async rateDelivery(token: string, dto: { rating: number; comment?: string }) {
-    const stop = await this.prisma.stop.findFirst({
-      where: { external_id: token, status: 'completed' },
+    const stop = await this.prisma.stop.findUnique({
+      where: { tracking_token: token, status: 'completed' },
     });
 
     if (!stop) {

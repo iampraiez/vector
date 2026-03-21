@@ -38,7 +38,8 @@ export class DriverService {
     private redis: RedisService,
     private mailService: MailService,
     private mapService: MapService,
-    @InjectQueue('account') private accountQueue: Queue,
+    @InjectQueue('account') private readonly accountQueue: Queue,
+    @InjectQueue('email') private readonly emailQueue: Queue,
   ) {}
 
   private async getDriverOrThrow(userId: string) {
@@ -94,6 +95,7 @@ export class DriverService {
       pending_stops: pendingStopsCount,
       active_route_name: activeRoute?.name || null,
       rating: driver.avg_rating,
+      last_active_at: driver.last_active_at,
     };
   }
 
@@ -251,6 +253,27 @@ export class DriverService {
         data: { status: 'pending' },
       }),
     ]);
+
+    // Queue tracking notifications for all stops in the route
+    const stops = await this.prisma.stop.findMany({
+      where: { route_id: routeId },
+      include: { company: true },
+    });
+
+    const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
+
+    for (const stop of stops) {
+      if (stop.customer_email) {
+        await this.emailQueue.add('sendTrackingLink', {
+          email: stop.customer_email,
+          customerName: stop.customer_name,
+          trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
+          orderId: stop.external_id,
+          status: 'active',
+          driverName: driver.user.full_name,
+        });
+      }
+    }
 
     return { message: 'Route started successfully' };
   }

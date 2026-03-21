@@ -250,6 +250,7 @@ export function DashboardTracking() {
                 <div id="tour-live-map" className="flex-1 relative">
                   <MapView
                     drivers={drivers}
+                    routes={routes}
                     selectedDriverId={selectedDriver?.id}
                     userLocation={userLocation}
                   />

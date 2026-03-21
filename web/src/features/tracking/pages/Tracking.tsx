@@ -7,6 +7,7 @@ import {
   PhoneIcon,
   StarIcon,
   XMarkIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import {
   StarIcon as StarSolid,
@@ -33,12 +34,19 @@ const formatTime = (dateStr: string | null) => {
 };
 
 interface TrackingData {
-  trackingId: string;
+  trackingToken: string;
   status: DeliveryStatus;
+  locationConfirmed: boolean;
   customerName: string;
-  packageCount: number;
-  estimatedTime: string;
   address: string;
+  stops: Array<{
+    id: string;
+    externalId: string;
+    status: string;
+    packages: number;
+    notes?: string;
+  }>;
+  estimatedTime: string;
   arrivedAt: string | null;
   completedAt: string | null;
   company: {
@@ -47,6 +55,7 @@ interface TrackingData {
     phone: string;
   };
   driver: {
+    id: string;
     name: string;
     phone: string;
     rating: number;
@@ -69,6 +78,7 @@ export function CustomerTracking() {
 
   const [delivery, setDelivery] = useState<TrackingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [hoverRating, setHoverRating] = useState(0);
@@ -109,6 +119,43 @@ export function CustomerTracking() {
     fetchData();
   }, [token]);
 
+  const handleConfirmLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsConfirming(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          await api.post(`/track/confirm?token=${token}`, {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          // Refresh data
+          const res = await api.get(`/track?token=${token}`);
+          setDelivery(res.data);
+          alert(
+            "Your location has been confirmed! Our driver is heading to your precise spot.",
+          );
+        } catch (err: unknown) {
+          const error = err as AxiosError<{ message: string }>;
+          alert(error.response?.data?.message || "Failed to confirm location.");
+        } finally {
+          setIsConfirming(false);
+        }
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert(
+          "Unable to retrieve your location. Please check your permissions.",
+        );
+        setIsConfirming(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
   const handleSubmitRating = async () => {
     if (selectedRating === 0 || !token) return;
     try {
@@ -311,6 +358,26 @@ export function CustomerTracking() {
       </div>
 
       <div className="max-w-120 mx-auto p-4">
+        {/* Verification QR (Persistent if out for delivery) */}
+        {status === "out_for_delivery" && (
+          <div className="bg-white rounded-2xl border border-black/8 p-6 mb-3 shadow-sm text-center">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+              Verification Code
+            </p>
+            <div className="inline-block p-4 bg-gray-50 rounded-2xl border border-black/5 mb-4">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${delivery.trackingToken}`}
+                alt="Delivery QR"
+                className="w-32 h-32 mix-blend-multiply"
+              />
+            </div>
+            <p className="text-xs text-gray-500 px-4 leading-relaxed font-medium">
+              Please present this QR code to the driver upon arrival to confirm
+              your delivery.
+            </p>
+          </div>
+        )}
+
         {/* Status Card */}
         <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">
           {/* Status badge */}
@@ -342,10 +409,41 @@ export function CustomerTracking() {
             </div>
           )}
 
+          {/* Precision Button */}
+          {!delivery.locationConfirmed &&
+            (status === "out_for_delivery" || status === "assigned") && (
+              <button
+                onClick={handleConfirmLocation}
+                disabled={isConfirming}
+                className="w-full mb-4 group relative flex items-center justify-center gap-2 p-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-70 overflow-hidden"
+              >
+                {isConfirming ? (
+                  <ArrowPathIcon className="w-4 h-4 animate-spin text-emerald-400" />
+                ) : (
+                  <MapPinIcon className="w-4 h-4 text-emerald-400" />
+                )}
+                {isConfirming ? "Confirming..." : "Verify My Precise Position"}
+                {isConfirming && (
+                  <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-500/20">
+                    <div className="h-full bg-emerald-500 animate-[shimmer_2s_infinite] w-1/3" />
+                  </div>
+                )}
+              </button>
+            )}
+
+          {delivery.locationConfirmed && (
+            <div className="flex items-center gap-2 p-3 bg-emerald-50/50 border border-emerald-600/10 rounded-xl mb-4">
+              <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
+              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+                Precision position confirmed
+              </p>
+            </div>
+          )}
+
           {/* Address */}
           <div className="flex items-start gap-2.5 p-3 px-3.5 bg-gray-50 rounded-xl border border-black/6">
             <MapPinIcon className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-[11px] text-gray-400 font-medium mb-0.5 uppercase tracking-wider">
                 Delivering to
               </p>
@@ -353,10 +451,47 @@ export function CustomerTracking() {
                 {delivery.address}
               </p>
             </div>
+            {!delivery.locationConfirmed && (
+              <button
+                onClick={handleConfirmLocation}
+                className="text-[11px] font-bold text-emerald-600 underline"
+              >
+                Redo
+              </button>
+            )}
           </div>
 
-          <p className="text-[11px] text-gray-300 mt-2.5">
-            Tracking ID: {delivery.trackingId}
+          {/* Grouped Stops */}
+          {delivery.stops.length > 1 && (
+            <div className="mt-4 pt-4 border-t border-black/5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+                Shipment Includes ({delivery.stops.length} packages)
+              </p>
+              <div className="space-y-2">
+                {delivery.stops.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between p-2.5 bg-gray-50/50 rounded-lg border border-black/5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <LocalShippingIcon size={14} className="text-gray-400" />
+                      <span className="text-xs font-bold text-gray-700">
+                        {s.externalId}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold uppercase py-0.5 px-2 rounded-md ${s.status === "completed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
+                    >
+                      {s.status.replace("_", " ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-[11px] text-gray-300 mt-4">
+            Tracking ID: {delivery.trackingToken}
           </p>
         </div>
 

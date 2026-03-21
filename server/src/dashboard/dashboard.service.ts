@@ -196,7 +196,7 @@ export class DashboardService {
       }
     }
 
-    return this.prisma.stop.create({
+    const stop = await this.prisma.stop.create({
       data: {
         ...dto,
         company_id: companyId,
@@ -206,6 +206,20 @@ export class DashboardService {
         lng,
       },
     });
+
+    // Queue "Order Received" notification
+    if (stop.customer_email) {
+      const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
+      await this.emailQueue.add('sendTrackingLink', {
+        email: stop.customer_email,
+        customerName: stop.customer_name,
+        trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
+        orderId: stop.external_id,
+        status: 'assigned', // Processor handles this as "Scheduled/Received"
+      });
+    }
+
+    return stop;
   }
 
   async getOrders(companyId: string, query: OrderQueryDto) {

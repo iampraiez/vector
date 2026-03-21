@@ -28,6 +28,7 @@ class _HomeSummary {
   final String? companyName;
   final String? managerName;
   final String? activeRouteName;
+  final DateTime? lastActiveAt;
 
   const _HomeSummary({
     required this.status,
@@ -38,6 +39,7 @@ class _HomeSummary {
     this.companyName,
     this.managerName,
     this.activeRouteName,
+    this.lastActiveAt,
   });
 
   factory _HomeSummary.fromJson(Map<String, dynamic> j) => _HomeSummary(
@@ -49,6 +51,9 @@ class _HomeSummary {
         companyName: j['company_name'] as String?,
         managerName: j['manager_name'] as String?,
         activeRouteName: j['active_route_name'] as String?,
+        lastActiveAt: j['last_active_at'] != null 
+            ? DateTime.tryParse(j['last_active_at'] as String) 
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -60,6 +65,7 @@ class _HomeSummary {
         'company_name': companyName,
         'manager_name': managerName,
         'active_route_name': activeRouteName,
+        'last_active_at': lastActiveAt?.toIso8601String(),
       };
 }
 
@@ -82,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // Session state
   Timer? _sessionTimer;
   Duration _sessionDuration = Duration.zero;
-  DateTime? _onDutySince;
   bool _isToggling = false;
 
   @override
@@ -100,11 +105,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _startTimer() {
     _sessionTimer?.cancel();
-    _onDutySince = DateTime.now(); // In real app, fetch this from backend session
+    if (_summary?.lastActiveAt == null) return;
+    
+    // Initial calculation
+    _sessionDuration = DateTime.now().difference(_summary!.lastActiveAt!);
+    
     _sessionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+      if (mounted && _summary?.lastActiveAt != null) {
         setState(() {
-          _sessionDuration = DateTime.now().difference(_onDutySince!);
+          _sessionDuration = DateTime.now().difference(_summary!.lastActiveAt!);
         });
       }
     });
@@ -127,13 +136,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       final newStatus = online ? 'active' : 'offline';
       await _api.updateStatus(newStatus);
+      
+      // Reload summary immediately to get the fresh last_active_at from backend
+      await _loadData(forceRefresh: true);
+      
       if (online) {
         _startTimer();
       } else {
         _stopTimer();
       }
-      // Reload summary to reflect backend state
-      await _loadData(forceRefresh: true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -603,7 +614,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     if (s?.status != 'offline')
                       Text(
-                        'Session: ${_sessionDuration.inHours.toString().padLeft(2, '0')}:${(_sessionDuration.inMinutes % 60).toString().padLeft(2, '0')}:${(_sessionDuration.inSeconds % 60).toString().padLeft(2, '0')}',
+                        _sessionDuration.inHours > 0 
+                          ? 'Online for ${_sessionDuration.inHours}h ${(_sessionDuration.inMinutes % 60)}m'
+                          : 'Online for ${_sessionDuration.inMinutes}m',
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.primary,

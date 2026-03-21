@@ -173,4 +173,66 @@ export class EmailProcessor {
       throw err;
     }
   }
+
+  @Process('sendTrackingLink')
+  async handleSendTrackingLink(
+    job: Job<{
+      email: string;
+      customerName: string;
+      trackingLink: string;
+      orderId: string;
+      status: string;
+      driverName?: string;
+    }>,
+  ) {
+    const { email, customerName, trackingLink, orderId, status, driverName } =
+      job.data;
+    this.logger.log(`Processing tracking link email for ${email}`);
+
+    const isScheduled = status === 'scheduled' || status === 'assigned';
+    const title = isScheduled
+      ? 'Your Delivery is Scheduled'
+      : 'Your Delivery is Out for Delivery';
+
+    const statusText = isScheduled
+      ? `Your order <strong>#${orderId}</strong> has been scheduled for delivery.`
+      : `Good news! Your order <strong>#${orderId}</strong> is out for delivery.`;
+
+    const text = `${title}: ${statusText} Track here: ${trackingLink}`;
+
+    const content = `
+      <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">${title}</h2>
+      <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Hi ${customerName},</p>
+      <p style="color: #475569; font-size: 16px; margin-bottom: 32px;">${statusText}</p>
+      
+      ${
+        driverName
+          ? `
+      <div style="background-color: #f8fafc; padding: 24px; border-radius: 20px; margin: 32px 0; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; background-color: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #64748b;">
+          ${driverName.charAt(0)}
+        </div>
+        <div>
+          <p style="margin: 0; font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase;">Your Driver</p>
+          <p style="margin: 0; font-size: 16px; color: #0f172a; font-weight: 700;">${driverName}</p>
+        </div>
+      </div>
+      `
+          : ''
+      }
+
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="${trackingLink}" style="background-color: #10b981; color: #ffffff; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);">Track Your Delivery</a>
+      </div>
+      
+      <p style="font-size: 14px; color: #64748b; margin-top: 32px; font-weight: 500;">You can use this link to see live updates, confirm your precise location, and view the driver's estimated time of arrival.</p>
+    `;
+
+    await this.mailService.sendMail(
+      email,
+      title,
+      this.generateBaseTemplate(content, title),
+      text,
+    );
+  }
 }

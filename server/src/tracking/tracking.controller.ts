@@ -12,6 +12,15 @@ export class TrackingController {
     return this.trackingService.getTrackingData(token);
   }
 
+  @Post('confirm')
+  @Public()
+  confirmLocation(
+    @Query('token') token: string,
+    @Body() dto: { lat: number; lng: number },
+  ) {
+    return this.trackingService.confirmLocation(token, dto.lat, dto.lng);
+  }
+
   @Post('rate')
   @Public()
   rateDelivery(

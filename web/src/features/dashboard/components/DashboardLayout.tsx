@@ -28,6 +28,7 @@ import {
   useSidebar,
 } from "../../../components/ui/sidebar";
 import { OnboardingTour } from "../../../components/ui/OnboardingTour";
+import { Toaster } from "../../../components/ui/sonner";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -179,6 +180,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider>
       <OnboardingTour />
       <DashboardSidebar />
+      <Toaster position="top-right" />
 
       {/* ── Main content area ── */}
       <SidebarInset className="bg-gray-50/50">

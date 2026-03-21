@@ -6,6 +6,9 @@ export interface RouteStop {
   id: string;
   order_id: string;
   sequence: number;
+  lat: number | null;
+  lng: number | null;
+  status: string;
 }
 
 export interface Route {

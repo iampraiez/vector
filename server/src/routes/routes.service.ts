@@ -6,10 +6,15 @@ import {
   UpdateRouteDto,
   AssignRouteDto,
 } from './dto/routes.dto';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class RoutesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue('email') private readonly emailQueue: Queue,
+  ) {}
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getRoutes(_companyId: string, _query: any) {
@@ -133,12 +138,34 @@ export class RoutesService {
   }
 
   async assignRoute(companyId: string, routeId: string, dto: AssignRouteDto) {
-    return this.prisma.route.update({
+    const route = await this.prisma.route.update({
       where: { id: routeId, company_id: companyId },
       data: {
         driver_id: dto.driver_id,
         status: RouteStatus.scheduled,
       },
+      include: {
+        driver: { include: { user: true } },
+        stops: true,
+      },
     });
+
+    const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
+
+    // Queue notifications for all stops
+    for (const stop of route.stops) {
+      if (stop.customer_email) {
+        await this.emailQueue.add('sendTrackingLink', {
+          email: stop.customer_email,
+          customerName: stop.customer_name,
+          trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
+          orderId: stop.external_id,
+          status: 'scheduled',
+          driverName: route.driver?.user.full_name,
+        });
+      }
+    }
+
+    return route;
   }
 }

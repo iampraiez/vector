@@ -53,6 +53,12 @@ interface OrderStats {
   failed: number;
 }
 
+export interface BulkImportResponse {
+  imported: number;
+  skipped: number;
+  errors: { row: number; reason: string }[];
+}
+
 interface OrderState {
   orders: Order[];
   stats: OrderStats | null;
@@ -72,7 +78,7 @@ interface OrderState {
   updateOrder: (id: string, data: Partial<Order>) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   deleteOrders: (ids: string[]) => Promise<void>;
-  importBulkOrders: (data: Partial<Order>[]) => Promise<unknown>;
+  importBulkOrders: (data: Partial<Order>[]) => Promise<BulkImportResponse>;
   fetchOrderDetail: (id: string) => Promise<void>;
 }
 

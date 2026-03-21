@@ -1,11 +1,19 @@
 import React, { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  Polyline,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Truck, Navigation } from "lucide-react";
 import { renderToString } from "react-dom/server";
+import { Route, RouteStop } from "../../store/routeStore";
+import { Driver } from "../../store/driverStore";
 
-// Fix for default marker icons in Leaflet when used with bundlers like Vite
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -20,21 +28,25 @@ L.Marker.prototype.options.icon = DefaultIcon;
 // Default to Lagos, Nigeria
 const DEFAULT_CENTER: [number, number] = [6.5244, 3.3792];
 
-interface Driver {
-  id: string;
-  name: string;
-  status: string;
-  location_lat: number | null;
-  location_lng: number | null;
-}
-
 interface MapViewProps {
   drivers: Driver[];
+  routes?: Route[];
   selectedDriverId?: string | null;
   userLocation?: { lat: number; lng: number } | null;
   onLocationDetected?: (lat: number, lng: number) => void;
   className?: string;
 }
+
+const getDriverColor = (driverId: string | null) => {
+  if (!driverId) return "#94A3B8"; // Slate-400 for unassigned routes
+  // Generate a stable color from the ID
+  let hash = 0;
+  for (let i = 0; i < driverId.length; i++) {
+    hash = driverId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 70%, 50%)`;
+};
 
 /**
  * Internal helper component to handle map movements
@@ -61,6 +73,7 @@ function MapViewUpdater({
  */
 const MapView: React.FC<MapViewProps> = ({
   drivers,
+  routes = [],
   selectedDriverId,
   userLocation,
   onLocationDetected,
@@ -116,9 +129,12 @@ const MapView: React.FC<MapViewProps> = ({
   const zoom = selectedDriver || userLocation ? 15 : 12;
 
   // Custom marker icon using L.divIcon and Lucide icons
-  const createTruckIcon = (isSelected: boolean, status: string) => {
+  const createTruckIcon = (
+    isSelected: boolean,
+    status: string,
+    color: string,
+  ) => {
     const isActive = status === "active";
-    const brandColor = isActive ? "#059669" : "#9CA3AF";
 
     return L.divIcon({
       html: renderToString(
@@ -135,7 +151,7 @@ const MapView: React.FC<MapViewProps> = ({
           {isActive && (
             <div
               className="pulse-ring-active"
-              style={{ backgroundColor: brandColor }}
+              style={{ backgroundColor: color }}
             />
           )}
           <div
@@ -145,12 +161,12 @@ const MapView: React.FC<MapViewProps> = ({
               justifyContent: "center",
               width: "36px",
               height: "36px",
-              backgroundColor: isSelected ? "#059669" : "#FFFFFF",
-              color: isSelected ? "#FFFFFF" : brandColor,
+              backgroundColor: isSelected ? color : "#FFFFFF",
+              color: isSelected ? "#FFFFFF" : color,
               borderRadius: "50%",
-              border: `2px solid ${isSelected ? "#FFFFFF" : brandColor}`,
+              border: `2px solid ${isSelected ? "#FFFFFF" : color}`,
               boxShadow: isSelected
-                ? "0 0 0 4px rgba(5, 150, 105, 0.2), 0 4px 6px -1px rgb(0 0 0 / 0.1)"
+                ? `0 0 0 4px ${color}33, 0 4px 6px -1px rgb(0 0 0 / 0.1)`
                 : "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
               zIndex: 10,
               position: "relative",
@@ -239,16 +255,53 @@ const MapView: React.FC<MapViewProps> = ({
           </Marker>
         )}
 
+        {/* Route Polylines */}
+        {routes.map((route) => {
+          if (!route.stops || route.stops.length === 0) return null;
+          const driverColor = getDriverColor(route.driver_id);
+          const points = (route.stops || [])
+            .filter(
+              (s: RouteStop): s is RouteStop & { lat: number; lng: number } =>
+                !!(s.lat && s.lng),
+            )
+            .map((s) => [s.lat, s.lng] as [number, number]);
+
+          // Also include current driver location if available
+          const driver = drivers.find((d) => d.id === route.driver_id);
+          if (
+            driver?.location_lat &&
+            driver?.location_lng &&
+            route.status === "active"
+          ) {
+            // Logic to find closest stop or just append?
+            // Better to show the path between stops.
+          }
+
+          if (points.length < 2) return null;
+
+          return (
+            <Polyline
+              key={route.id}
+              positions={points}
+              color={driverColor}
+              weight={3}
+              opacity={0.6}
+              dashArray={route.status === "pending" ? "10, 10" : undefined}
+            />
+          );
+        })}
+
         {drivers.map((driver) => {
           if (!driver.location_lat || !driver.location_lng) return null;
 
           const isSelected = driver.id === selectedDriverId;
+          const driverColor = getDriverColor(driver.id);
 
           return (
             <Marker
               key={driver.id}
               position={[driver.location_lat, driver.location_lng]}
-              icon={createTruckIcon(isSelected, driver.status)}
+              icon={createTruckIcon(isSelected, driver.status, driverColor)}
             >
               <Popup>
                 <div style={{ minWidth: "160px", padding: "4px" }}>
@@ -265,8 +318,7 @@ const MapView: React.FC<MapViewProps> = ({
                         width: "8px",
                         height: "8px",
                         borderRadius: "50%",
-                        backgroundColor:
-                          driver.status === "active" ? "#10B981" : "#9CA3AF",
+                        backgroundColor: driverColor,
                       }}
                     />
                     <span style={{ fontWeight: "bold", fontSize: "14px" }}>

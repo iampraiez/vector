@@ -140,6 +140,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final dateStr = r['date'] as String? ?? r['completed_at'] as String? ?? '';
         final rawDate = dateStr.isNotEmpty ? (DateTime.tryParse(dateStr) ?? DateTime.now()) : DateTime(0);
         
+        // Dynamic Earnings: $10 base + $2 per completed stop
+        final double earnings = 10.0 + (completedStops * 2.0);
+
         final parsed = {
           'id': r['id'] ?? 'item-$i',
           'name': name,
@@ -152,7 +155,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           'distance': r['total_distance_km'] != null
               ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
               : '--',
-          'earnings': '--',
+          'earnings': '\$${earnings.toStringAsFixed(2)}',
           'rating': (r['rating'] as num?)?.toDouble() ?? 0.0,
           'timeline': (isRoute ? stops : [r]).map((s) {
             final sm = s as Map<String, dynamic>;
@@ -161,20 +164,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
               'address': sm['address'] ?? '',
               'time': sm['completed_at'] != null ? _formatTime(sm['completed_at']) : '--',
               'customer': sm['customer_name'] ?? '',
+              'raw_completed_at': sm['completed_at'],
               'status': sStatus,
             };
           }).toList(),
         };
 
-        // Calculate duration if possible
+        // Calculate actual duration: Last stop time - First stop time
         final timeline = (parsed['timeline'] as List).cast<Map<String, dynamic>>();
-        final times = timeline
-            .where((t) => t['time'] != '--')
-            .map((t) => t['time'] as String)
-            .toList();
+        final completedTimes = timeline
+            .where((t) => t['raw_completed_at'] != null)
+            .map((t) => DateTime.parse(t['raw_completed_at'] as String))
+            .toList()
+          ..sort();
 
-        if (times.isNotEmpty) {
-          parsed['duration'] = times.length == 1 ? 'Completed at ${times.first}' : 'Last stop at ${times.last}';
+        if (completedTimes.length >= 2) {
+          final diff = completedTimes.last.difference(completedTimes.first);
+          if (diff.inHours > 0) {
+            parsed['duration'] = '${diff.inHours}h ${diff.inMinutes % 60}m';
+          } else {
+            parsed['duration'] = '${diff.inMinutes}m';
+          }
+        } else if (completedTimes.length == 1) {
+          parsed['duration'] = 'Single stop';
         }
 
         results.add(parsed);

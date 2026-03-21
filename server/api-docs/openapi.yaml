@@ -1251,6 +1251,10 @@ paths:
       responses:
         "201":
           description: ""
+          content:
+            application/json:
+              schema:
+                type: object
       tags: *a18
   /track:
     get:
@@ -1266,6 +1270,19 @@ paths:
           description: ""
       tags: &a19
         - Tracking
+  /track/confirm:
+    post:
+      operationId: TrackingController_confirmLocation
+      parameters:
+        - name: token
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      tags: *a19
   /track/rate:
     post:
       operationId: TrackingController_rateDelivery
