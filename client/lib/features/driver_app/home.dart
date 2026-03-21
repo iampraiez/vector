@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' show ServiceStatus, LocationPermission;
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/bottom_nav.dart';
@@ -173,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _initLocationListener() {
     _locationServiceSubscription =
-        Geolocator.getServiceStatusStream().listen((status) {
+        _locationService.getServiceStatusStream().listen((status) {
           if (mounted) {
             setState(() {
               _isLocationEnabled = status == ServiceStatus.enabled;
@@ -195,7 +195,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isOffline = false;
     });
 
-    // Try cached data first (if not forcing refresh)
     if (!forceRefresh) {
       final cached = await _getCached();
       if (cached != null && mounted) {
@@ -203,7 +202,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _summary = cached;
           _isLoading = false;
         });
-        // Still refresh in background
         _refreshInBackground();
         return;
       }

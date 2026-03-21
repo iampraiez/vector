@@ -82,6 +82,7 @@ class MapService {
       final feature = features.first as Map<String, dynamic>;
       final props = feature['properties'] as Map<String, dynamic>;
       final geometry = feature['geometry'] as Map<String, dynamic>;
+      final coords = geometry['coordinates'] as List;
 
       // Distance in metres → km
       final distanceKm =
@@ -91,17 +92,8 @@ class MapService {
       final durationMin =
           (((props['time'] as num?)?.toDouble() ?? 0) / 60).round();
 
-      // Decode LineString coordinates [lon, lat]
-      final coords = geometry['coordinates'] as List;
-      final points = coords
-          .map((c) {
-            final pair = c as List;
-            return LatLng(
-              (pair[1] as num).toDouble(),
-              (pair[0] as num).toDouble(),
-            );
-          })
-          .toList();
+      // Offload heavy list transformation to background isolate
+      final points = await compute(_parseCoordinates, coords);
 
       return MapRouteData(
         polylinePoints: points,
@@ -122,8 +114,8 @@ class MapService {
       const storage = FlutterSecureStorage();
       final token = await storage.read(key: 'access_token');
       if (token == null) return;
-      await _dio.put(
-        '/driver/location',
+      await _dio.patch(
+        '/driver/status/location',
         data: {'lat': lat, 'lng': lng},
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
@@ -137,36 +129,73 @@ class MapService {
   // ── Decode polyline (fallback for encoded strings) ────────────────────────
 
   /// Decodes a Google-encoded polyline string to a list of [LatLng].
-  static List<LatLng> decodePolyline(String encoded) {
-    final List<LatLng> points = [];
-    int index = 0;
-    int lat = 0;
-    int lng = 0;
-
-    while (index < encoded.length) {
-      int shift = 0;
-      int result = 0;
-      int b;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1F) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      final dLat = (result & 1) != 0 ? ~(result >> 1) : result >> 1;
-      lat += dLat;
-
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1F) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      final dLng = (result & 1) != 0 ? ~(result >> 1) : result >> 1;
-      lng += dLng;
-
-      points.add(LatLng(lat / 1e5, lng / 1e5));
-    }
-    return points;
+  static Future<List<LatLng>> decodePolylineAsync(String encoded) async {
+    return compute(_decodePolylineInternal, encoded);
   }
+
+  // Keep synchronous version for small strings if needed
+  static List<LatLng> decodePolyline(String encoded) {
+    return _decodePolylineInternal(encoded);
+  }
+}
+
+// ── Background Helpers (Top-level for compute()) ─────────────────────────────
+
+List<LatLng> _parseCoordinates(List<dynamic> coords) {
+  if (coords.isEmpty) return [];
+
+  // Robustly handle nested MultiLineString or flat LineString
+  final firstElement = coords.first;
+  if (firstElement is List && firstElement.isNotEmpty && firstElement.first is List) {
+    // MultiLineString: [ [[lon, lat], ...], [[lon, lat], ...] ]
+    return coords
+        .expand((line) => line as List)
+        .map((c) {
+          final pair = c as List;
+          return LatLng((pair[1] as num).toDouble(), (pair[0] as num).toDouble());
+        })
+        .toList();
+  }
+
+  // LineString: [ [lon, lat], [lon, lat], ... ]
+  return coords.map((c) {
+    final pair = c as List;
+    return LatLng(
+      (pair[1] as num).toDouble(),
+      (pair[0] as num).toDouble(),
+    );
+  }).toList();
+}
+
+List<LatLng> _decodePolylineInternal(String encoded) {
+  final List<LatLng> points = [];
+  int index = 0;
+  int lat = 0;
+  int lng = 0;
+
+  while (index < encoded.length) {
+    int shift = 0;
+    int result = 0;
+    int b;
+    do {
+      b = encoded.codeUnitAt(index++) - 63;
+      result |= (b & 0x1F) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    final dLat = (result & 1) != 0 ? ~(result >> 1) : result >> 1;
+    lat += dLat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.codeUnitAt(index++) - 63;
+      result |= (b & 0x1F) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    final dLng = (result & 1) != 0 ? ~(result >> 1) : result >> 1;
+    lng += dLng;
+
+    points.add(LatLng(lat / 1e5, lng / 1e5));
+  }
+  return points;
 }

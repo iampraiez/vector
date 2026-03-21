@@ -9,7 +9,7 @@ import '../../core/services/map_service.dart';
 import '../../shared/widgets/buttons.dart';
 import '../../main.dart' show RouteProgressScope;
 import '../../core/services/driver_api_service.dart';
-import 'package:geolocator/geolocator.dart';
+import '../../core/services/location_service.dart';
 
 class RoutePreviewScreen extends StatefulWidget {
   final Map<String, dynamic>? routeData;
@@ -57,7 +57,8 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
       setState(() => _fetchingFullRoute = true);
       try {
         // 1. Get current location
-        Position position = await Geolocator.getCurrentPosition();
+        final position = await LocationService.instance.getCurrentPosition();
+        if (position == null) throw Exception('Could not get current location');
         
         // 2. Call AI optimization
         final data = await DriverApiService.instance.optimizeAssignments(

@@ -27,6 +27,13 @@ class _NavigationScreenState extends State<NavigationScreen> {
   bool _locationPermissionGranted = false;
   bool _mapReady = false;
 
+  // Route calculation state
+  List<LatLng> _routePoints = [];
+  String _distanceLabel = '---';
+  String _etaLabel = '-- mins';
+  Timer? _routeUpdateTimer;
+  bool _followUser = true; // Added followUser toggle
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +44,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   void dispose() {
     _positionStream?.cancel();
     _locationSyncTimer?.cancel();
+    _routeUpdateTimer?.cancel();
     _mapController.dispose();
     super.dispose();
   }
@@ -75,10 +83,22 @@ class _NavigationScreenState extends State<NavigationScreen> {
         locService.getPositionStream(distanceFilter: 10).listen((Position p) {
           if (!mounted) return;
           setState(() => _currentPosition = LatLng(p.latitude, p.longitude));
-          if (_mapReady) {
+          
+          // Refresh route on significant movement
+          _fetchDirections();
+
+          if (_mapReady && _followUser) {
             _mapController.move(_currentPosition!, _mapController.camera.zoom);
           }
         });
+
+    // Initial route fetch
+    _fetchDirections();
+
+    // Periodic route refresh (every 30 seconds)
+    _routeUpdateTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _fetchDirections();
+    });
 
     // Push location to backend every 15 seconds
     _locationSyncTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
@@ -89,6 +109,30 @@ class _NavigationScreenState extends State<NavigationScreen> {
         );
       }
     });
+  }
+
+  Future<void> _fetchDirections() async {
+    if (!mounted || _currentPosition == null) return;
+
+    final progress = RouteProgressScope.of(context);
+    final currentStop = progress.currentStop;
+    if (currentStop == null || currentStop.lat == null || currentStop.lng == null) {
+      return;
+    }
+
+    final destination = LatLng(currentStop.lat!, currentStop.lng!);
+    final routeData = await MapService.instance.getDirections([
+      _currentPosition!,
+      destination,
+    ]);
+
+    if (routeData != null && mounted) {
+      setState(() {
+        _routePoints = routeData.polylinePoints;
+        _distanceLabel = '${routeData.distanceKm.toStringAsFixed(1)} km';
+        _etaLabel = '${routeData.durationMin} mins';
+      });
+    }
   }
 
   void _stopLocationTracking() {
@@ -118,8 +162,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
       'customer': currentStop.customerName,
       'address': currentStop.address,
       'phone': currentStop.phone,
-      'eta': currentStop.eta,
-      'distance': currentStop.distance,
+      'eta': _etaLabel,
+      'distance': _distanceLabel,
       'packages': currentStop.packages,
     };
     final remainingData = upcomingStops
@@ -150,12 +194,31 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 initialCenter: mapCenter,
                 initialZoom: 15,
                 onMapReady: () => setState(() => _mapReady = true),
+                onPositionChanged: (pos, hasGesture) {
+                  if (hasGesture && _followUser) {
+                    setState(() => _followUser = false);
+                  }
+                },
               ),
               children: [
                 TileLayer(
                   urlTemplate: MapConstants.osmTileUrl,
                   userAgentPackageName: 'com.vector.driver',
                 ),
+
+                // Polyline Layer for Route
+                if (_routePoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        color: AppColors.primary,
+                        strokeWidth: 3,
+                        borderColor: AppColors.primary.withValues(alpha: 0.3),
+                        borderStrokeWidth: 1.5,
+                      ),
+                    ],
+                  ),
 
                 // Markers
                 MarkerLayer(
@@ -216,70 +279,78 @@ class _NavigationScreenState extends State<NavigationScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.border.withValues(alpha: 0.15),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_currentPosition != null) {
+                              _mapController.move(_currentPosition!, 16);
+                              setState(() => _followUser = true);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      AppColors.primary,
-                                      Color(0xFF047857),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.border.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        AppColors.primary,
+                                        Color(0xFF047857),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
+                                  child: const Icon(
+                                    Icons.near_me,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.near_me,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '${currentData['eta']}',
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        height: 1,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '${currentData['eta']}',
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w700,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          height: 1,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      '${currentData['distance']} away',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
+                                      Text(
+                                        '${currentData['distance']} away',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -692,7 +763,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -703,8 +774,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.check_circle_outline_rounded,
-              color: AppColors.success,
+              Icons.flag_outlined,
+              color: AppColors.primary,
               size: 28,
             ),
           ),
