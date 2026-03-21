@@ -1,4 +1,4 @@
-name: CI/CD – Vector Server → Render
+name: CI/CD – Vector Infrastructure
 
 on:
   push:
@@ -11,9 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  quality:
-    name: Lint & Type-check
+  quality-server:
+    name: "Server: Lint & Type-check"
     runs-on: ubuntu-latest
 
     steps:
@@ -45,10 +44,39 @@ jobs:
         working-directory: server
         run: pnpm tsc --noEmit
 
-  build:
-    name: Build
+  quality-web:
+    name: "Web: Lint & Type-check"
     runs-on: ubuntu-latest
-    needs: quality
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: web
+        run: pnpm lint
+
+      - name: Type-check
+        working-directory: web
+        run: pnpm tsc --noEmit
+
+  build-server:
+    name: "Server: Build"
+    runs-on: ubuntu-latest
+    needs: quality-server
 
     steps:
       - uses: actions/checkout@v4
@@ -77,11 +105,10 @@ jobs:
         working-directory: server
         run: pnpm build
 
-  deploy:
-    name: Trigger Render Deploy
+  build-web:
+    name: "Web: Build"
     runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality-web
 
     steps:
       - uses: actions/checkout@v4
@@ -94,25 +121,12 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: server/pnpm-lock.yaml
+          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: server
+        working-directory: web
         run: pnpm install --frozen-lockfile
 
-      - name: Run database migrations
-        working-directory: server
-        run: pnpm prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Trigger Render deploy hook
-        run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
-          echo "Render deploy hook responded with HTTP $RESPONSE"
-          if [ "$RESPONSE" != "200" ] && [ "$RESPONSE" != "201" ]; then
-            echo "Deploy hook failed with HTTP $RESPONSE"
-            exit 1
-          fi
-          echo "Render deploy triggered successfully."
+      - name: Build
+        working-directory: web
+        run: pnpm build
