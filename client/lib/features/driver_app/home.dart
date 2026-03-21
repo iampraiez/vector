@@ -876,28 +876,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             Expanded(
               child: _ActionCard(
-                icon: Icons.assignment_outlined,
-                label: 'Routes',
-                onTap: () => context.push('/assignments'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _ActionCard(
                 icon: Icons.qr_code_scanner,
                 label: 'Scan',
                 onTap: () => context.push('/proof-delivery'),
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _ActionCard(
-                icon: Icons.history,
-                label: 'History',
-                onTap: () => context.push('/history'),
-              ),
-            ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: _ActionCard(
                 icon: Icons.settings_outlined,

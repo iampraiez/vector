@@ -30,9 +30,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   ];
 
   List<Map<String, dynamic>> _completedRoutes = [];
-
-  // Static bar chart data derived from actual history (simplified: deliveries per day slot)
   final _weekBarData = [0, 0, 0, 0, 0, 0, 0];
+  final _weekFailedBarData = [0, 0, 0, 0, 0, 0, 0];
   final _weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   bool _isLoading = true;
@@ -40,7 +39,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _isOffline = false;
 
   static const _cacheKey = 'cache_history';
-  static const _cacheTtlMs = 30 * 60 * 1000; // 30 min
 
   @override
   void initState() {
@@ -60,19 +58,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       final data = await _api.getHistory(limit: 50);
       final routes = _parseRoutes(data);
+      
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_cacheKey, jsonEncode({
         'ts': DateTime.now().millisecondsSinceEpoch,
         'data': routes,
       }));
+      
       if (mounted) {
         setState(() {
           _completedRoutes = routes;
+          _updateChartData();
           _isLoading = false;
         });
       }
       return;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('History API/Parse Error: $e');
+    }
 
     // Fallback to cache
     try {
@@ -80,65 +83,147 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final raw = prefs.getString(_cacheKey);
       if (raw != null) {
         final cached = jsonDecode(raw) as Map<String, dynamic>;
-        final ts = cached['ts'] as int;
-        if (DateTime.now().millisecondsSinceEpoch - ts < _cacheTtlMs) {
-          final routes = (cached['data'] as List)
-              .cast<Map<String, dynamic>>()
-              .toList();
-          if (mounted) {
-            setState(() {
-              _completedRoutes = routes;
-              _isLoading = false;
-              _isOffline = true;
-            });
-          }
-          return;
+        // Even if expired, show it if live call failed
+        final routes = (cached['data'] as List)
+            .cast<Map<String, dynamic>>()
+            .toList();
+        if (mounted) {
+          setState(() {
+            _completedRoutes = routes;
+            _updateChartData();
+            _isLoading = false;
+            _isOffline = true;
+          });
         }
+        return;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('History Cache Error: $e');
+    }
 
-    // No cache available — show error
+    // No data available
     if (mounted) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Unable to connect. Please check your internet connection.';
+        _errorMessage = 'No history available. Please try again later.';
       });
     }
   }
 
   List<Map<String, dynamic>> _parseRoutes(Map<String, dynamic> data) {
-    return (data['data'] as List? ?? [])
-        .cast<Map<String, dynamic>>()
-        .map((r) {
-      final stops = (r['stops'] as List? ?? []);
-      final completedStops =
-          stops.where((s) => (s as Map)['status'] == 'completed').length;
-      final failedStops =
-          stops.where((s) => (s as Map)['status'] == 'failed').length;
-      return {
-        'id': r['id'] ?? '',
-        'name': r['name'] ?? 'Route',
-        'date': _formatDate(r['date'] as String? ?? r['completed_at'] as String? ?? ''),
-        'stops': stops.length,
-        'completed': completedStops,
-        'failed': failedStops,
-        'duration': '--',
-        'distance': r['total_distance_km'] != null
-            ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
-            : '--',
-        'earnings': '--',
-        'rating': 0.0,
-        'timeline': stops.take(3).map((s) {
-          final sm = s as Map<String, dynamic>;
-          return {
-            'address': sm['address'] ?? '',
-            'time': '--',
-            'customer': sm['customer_name'] ?? '',
-            'status': sm['status'] ?? 'delivered',
-          };
-        }).toList(),
-      };
-    }).toList();
+    final List<Map<String, dynamic>> results = [];
+    final List items = data['data'] as List? ?? [];
+
+    for (var i = 0; i < items.length; i++) {
+      try {
+        final r = items[i] as Map<String, dynamic>;
+        final isRoute = r['type'] == 'route';
+        final stops = (r['stops'] as List? ?? []);
+        
+        int totalStopsCount;
+        int completedStops;
+        int failedStops;
+        String name;
+
+        if (isRoute) {
+          totalStopsCount = stops.length;
+          completedStops = stops.where((s) => (s as Map)['status'] == 'completed').length;
+          failedStops = stops.where((s) => (s as Map)['status'] == 'failed').length;
+          name = r['name'] ?? 'Route';
+        } else {
+          totalStopsCount = 1;
+          completedStops = r['status'] == 'completed' ? 1 : 0;
+          failedStops = r['status'] == 'failed' ? 1 : 0;
+          name = r['customer_name'] ?? 'Order';
+        }
+
+        final dateStr = r['date'] as String? ?? r['completed_at'] as String? ?? '';
+        final rawDate = dateStr.isNotEmpty ? (DateTime.tryParse(dateStr) ?? DateTime.now()) : DateTime(0);
+        
+        final parsed = {
+          'id': r['id'] ?? 'item-$i',
+          'name': name,
+          'date': dateStr.isNotEmpty ? _formatDate(rawDate.toIso8601String()) : '--',
+          'rawDateStr': rawDate.toIso8601String(),
+          'stops': totalStopsCount,
+          'completed': completedStops,
+          'failed': failedStops,
+          'duration': '--',
+          'distance': r['total_distance_km'] != null
+              ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
+              : '--',
+          'earnings': '--',
+          'rating': (r['rating'] as num?)?.toDouble() ?? 0.0,
+          'timeline': (isRoute ? stops : [r]).map((s) {
+            final sm = s as Map<String, dynamic>;
+            final sStatus = (sm['status'] ?? '').toString().toLowerCase();
+            return {
+              'address': sm['address'] ?? '',
+              'time': sm['completed_at'] != null ? _formatTime(sm['completed_at']) : '--',
+              'customer': sm['customer_name'] ?? '',
+              'status': sStatus,
+            };
+          }).toList(),
+        };
+
+        // Calculate duration if possible
+        final timeline = (parsed['timeline'] as List).cast<Map<String, dynamic>>();
+        final times = timeline
+            .where((t) => t['time'] != '--')
+            .map((t) => t['time'] as String)
+            .toList();
+
+        if (times.isNotEmpty) {
+          parsed['duration'] = times.length == 1 ? 'Completed at ${times.first}' : 'Last stop at ${times.last}';
+        }
+
+        results.add(parsed);
+      } catch (e) {
+        // Silently skip corrupted items to show the rest
+      }
+    }
+    return results;
+  }
+
+  void _updateChartData() {
+    _weekBarData.fillRange(0, 7, 0);
+    _weekFailedBarData.fillRange(0, 7, 0);
+
+    final now = DateTime.now();
+    // Monday of this week
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final startOfMonday = DateTime(monday.year, monday.month, monday.day);
+
+    for (final r in _completedRoutes) {
+      final dtStr = r['rawDateStr'] as String?;
+      if (dtStr == null || dtStr.isEmpty) continue;
+      final dt = DateTime.tryParse(dtStr);
+      if (dt == null || dt == DateTime(0)) continue;
+
+      if (dt.isAfter(startOfMonday) || dt.isAtSameMomentAs(startOfMonday)) {
+        final dayIndex = dt.weekday - 1; // 0 for Mon, 6 for Sun
+        if (dayIndex >= 0 && dayIndex < 7) {
+          final failedCount = (r['failed'] as int? ?? 0);
+          final completedCount = (r['completed'] as int? ?? 0);
+          
+          _weekBarData[dayIndex] += completedCount;
+          _weekFailedBarData[dayIndex] += failedCount;
+        }
+      }
+    }
+  }
+
+  String _formatTime(String raw) {
+    if (raw.isEmpty) return '--';
+    try {
+      final dt = DateTime.parse(raw);
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final minute = dt.minute.toString().padLeft(2, '0');
+      final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $ampm';
+    } catch (_) {
+      return '--';
+    }
   }
 
   String _formatDate(String raw) {
@@ -165,14 +250,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final double totalEarnings = 0;
     final int totalDeliveries = _completedRoutes.fold(
       0, (sum, r) => sum + (r['completed'] as int));
+    
     final double avgRating = _completedRoutes.isEmpty
         ? 0
         : _completedRoutes.fold(0.0, (sum, r) =>
             sum + ((r['rating'] as num).toDouble())) /
             _completedRoutes.length;
-    final int maxBar = _weekBarData.isEmpty
+    
+    // Max bar for chart (sum of success + failed)
+    final List<int> combinedBarData = List.generate(7, (i) => _weekBarData[i] + _weekFailedBarData[i]);
+    final int maxBar = combinedBarData.isEmpty
         ? 1
-        : _weekBarData.reduce((a, b) => a > b ? a : b).clamp(1, 999);
+        : combinedBarData.reduce((a, b) => a > b ? a : b).clamp(1, 999);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),
@@ -375,7 +464,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: _weekBarData.asMap().entries.map((e) {
                                     int i = e.key;
-                                    int val = e.value;
+                                    int successVal = e.value;
+                                    int failedVal = _weekFailedBarData[i];
+                                    int totalVal = successVal + failedVal;
+
                                     return Expanded(
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.end,
@@ -388,14 +480,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                                 margin: const EdgeInsets.symmetric(
                                                   horizontal: 4,
                                                 ),
-                                                height: (val / maxBar) * 70, // proportional height
+                                                height: (totalVal / maxBar) * 70, // proportional height
                                                 decoration: BoxDecoration(
-                                                  color: i == 6
-                                                      ? AppColors.primary
-                                                      : AppColors.primaryLight,
                                                   borderRadius: const BorderRadius.vertical(
                                                     top: Radius.circular(4),
                                                   ),
+                                                ),
+                                                clipBehavior: Clip.antiAlias,
+                                                child: Column(
+                                                  children: [
+                                                    if (failedVal > 0)
+                                                      Expanded(
+                                                        flex: failedVal,
+                                                        child: Container(
+                                                          color: AppColors.error.withValues(alpha: 0.8),
+                                                        ),
+                                                      ),
+                                                    if (successVal > 0)
+                                                      Expanded(
+                                                        flex: successVal,
+                                                        child: Container(
+                                                          color: i == 6
+                                                              ? AppColors.primary
+                                                              : AppColors.primary.withValues(alpha: 0.5),
+                                                        ),
+                                                      ),
+                                                  ],
                                                 ),
                                               ),
                                             ),
@@ -825,47 +935,53 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 12),
-                                        ...(r['timeline'] as List).map((stop) {
-                                          bool isDelivered =
-                                              stop['status'] == 'delivered';
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              bottom: 14,
-                                            ),
-                                            child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  width: 30,
-                                                  height: 30,
-                                                  decoration: BoxDecoration(
-                                                    color: isDelivered
-                                                        ? const Color(
-                                                            0xFFECFDF5,
-                                                          )
-                                                        : const Color(
-                                                            0xFFFEF2F2,
-                                                          ),
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: isDelivered
+                                          ...(r['timeline'] as List).map((stop) {
+                                            final sStatus = (stop['status'] ?? '').toString().toLowerCase();
+                                            bool isDone = sStatus == 'completed' || sStatus == 'delivered';
+                                            bool isFailure = sStatus == 'failed' || sStatus == 'returned' || sStatus == 'cancelled';
+                                            
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 14,
+                                              ),
+                                              child: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Container(
+                                                    width: 30,
+                                                    height: 30,
+                                                    decoration: BoxDecoration(
+                                                      color: isDone
+                                                          ? const Color(0xFFECFDF5)
+                                                          : isFailure
+                                                              ? const Color(0xFFFEF2F2)
+                                                              : Colors.grey.withValues(alpha: 0.1),
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color: isDone
+                                                            ? AppColors.success
+                                                            : isFailure
+                                                                ? AppColors.error
+                                                                : AppColors.border,
+                                                        width: 2,
+                                                      ),
+                                                    ),
+                                                    alignment: Alignment.center,
+                                                    child: Icon(
+                                                      isDone
+                                                          ? Icons.check
+                                                          : isFailure 
+                                                              ? Icons.close
+                                                              : Icons.more_horiz,
+                                                      size: 14,
+                                                      color: isDone
                                                           ? AppColors.success
-                                                          : AppColors.error,
-                                                      width: 2,
+                                                          : isFailure
+                                                              ? AppColors.error
+                                                              : AppColors.textMuted,
                                                     ),
                                                   ),
-                                                  alignment: Alignment.center,
-                                                  child: Icon(
-                                                    isDelivered
-                                                        ? Icons.check
-                                                        : Icons.close,
-                                                    size: 14,
-                                                    color: isDelivered
-                                                        ? AppColors.success
-                                                        : AppColors.error,
-                                                  ),
-                                                ),
                                                 const SizedBox(width: 14),
                                                 Expanded(
                                                   child: Column(
@@ -878,15 +994,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                                             MainAxisAlignment
                                                                 .spaceBetween,
                                                         children: [
-                                                          Text(
-                                                            stop['address'],
-                                                            style: const TextStyle(
-                                                              fontSize: 13,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              color: AppColors
-                                                                  .textPrimary,
+                                                          Expanded(
+                                                            child: Text(
+                                                              stop['address'],
+                                                              style: const TextStyle(
+                                                                fontSize: 13,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: AppColors
+                                                                    .textPrimary,
+                                                              ),
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow.ellipsis,
                                                             ),
                                                           ),
                                                           Row(
@@ -922,6 +1042,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                                           color: AppColors
                                                               .textSecondary,
                                                         ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
                                                       ),
                                                     ],
                                                   ),

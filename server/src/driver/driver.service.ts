@@ -14,11 +14,14 @@ import {
   FailDeliveryDto,
   OnboardingDto,
   ExportHistoryDto,
+  OptimizeRouteDto,
+  CreateOptimizedRouteDto,
 } from './dto/driver.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { MailService } from '../mail/mail.service';
 import { Route, Stop } from '@prisma/client';
+import { MapService } from '../map/map.service';
 
 interface AdHocStopInput {
   customerName?: string;
@@ -34,6 +37,7 @@ export class DriverService {
     private prisma: PrismaService,
     private redis: RedisService,
     private mailService: MailService,
+    private mapService: MapService,
     @InjectQueue('account') private accountQueue: Queue,
   ) {}
 
@@ -122,6 +126,7 @@ export class DriverService {
   async getAssignments(userId: string) {
     const driver = await this.getDriverOrThrow(userId);
     const today = new Date().toISOString().split('T')[0];
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
 
     // 1. Fetch all routes for this driver (Active + Today + Future)
     const routes = await this.prisma.route.findMany({
@@ -144,6 +149,10 @@ export class DriverService {
           { status: 'in_progress' },
           { delivery_date: today },
           { delivery_date: { gt: today } },
+          {
+            status: { in: ['completed', 'failed', 'returned'] },
+            updated_at: { gte: todayStart },
+          },
         ],
       },
       orderBy: { created_at: 'asc' },
@@ -217,6 +226,16 @@ export class DriverService {
     if (!route) throw new NotFoundException('Route not found');
     if (route.status === 'completed')
       throw new ConflictException('Route already completed');
+
+    // Check for another active route
+    const existingActive = await this.prisma.route.findFirst({
+      where: { driver_id: driver.id, status: 'active', NOT: { id: routeId } },
+    });
+    if (existingActive) {
+      throw new ConflictException(
+        `You already have an active route: ${existingActive.name}. Please complete it first or pause it.`,
+      );
+    }
 
     await this.prisma.$transaction([
       this.prisma.route.update({
@@ -367,6 +386,9 @@ export class DriverService {
 
     if (stop.route_id) {
       await this.checkAndUpdateRouteStatus(stop.route_id);
+    } else {
+      // Standalone stop: Check if driver should go back to idle
+      await this.checkAndReturnToIdle(driver.id);
     }
 
     return { message: 'Delivery completed successfully' };
@@ -393,6 +415,9 @@ export class DriverService {
 
     if (stop.route_id) {
       await this.checkAndUpdateRouteStatus(stop.route_id);
+    } else {
+      // Standalone stop: Check if driver should go back to idle
+      await this.checkAndReturnToIdle(driver.id);
     }
 
     return { message: 'Delivery marked as failed' };
@@ -417,11 +442,100 @@ export class DriverService {
     );
 
     if (allFinished) {
-      await this.prisma.route.update({
-        where: { id: routeId },
-        data: { status: 'completed', completed_at: new Date() },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.route.update({
+          where: { id: routeId },
+          data: { status: 'completed', completed_at: new Date() },
+        });
+
+        // After finishing a route, check if driver is free
+        const driverId = route.driver_id;
+        if (driverId) {
+          const stillBusy = await tx.stop.findFirst({
+            where: {
+              driver_id: driverId,
+              status: { in: ['assigned', 'pending', 'in_progress'] },
+              route_id: null, // Any other standalone tasks
+            },
+          });
+
+          const activeRoutes = await tx.route.findFirst({
+            where: {
+              driver_id: driverId,
+              status: 'active',
+              NOT: { id: routeId },
+            },
+          });
+
+          if (!stillBusy && !activeRoutes) {
+            await tx.driver.update({
+              where: { id: driverId },
+              data: { status: 'idle' },
+            });
+          }
+        }
       });
     }
+  }
+
+  private async checkAndReturnToIdle(driverId: string) {
+    const [activeRoutes, activeStops] = await Promise.all([
+      this.prisma.route.count({
+        where: { driver_id: driverId, status: 'active' },
+      }),
+      this.prisma.stop.count({
+        where: {
+          driver_id: driverId,
+          route_id: null,
+          status: { in: ['assigned', 'pending', 'in_progress'] },
+        },
+      }),
+    ]);
+
+    if (activeRoutes === 0 && activeStops === 0) {
+      await this.prisma.driver.update({
+        where: { id: driverId },
+        data: { status: 'idle' },
+      });
+    }
+  }
+
+  async convertStopsToRoute(
+    userId: string,
+    data: { stopIds: string[]; name: string },
+  ) {
+    const driver = await this.getDriverOrThrow(userId);
+    const today = new Date().toISOString().split('T')[0];
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Create the Route
+      const route = await tx.route.create({
+        data: {
+          name: data.name,
+          company_id: driver.company_id,
+          driver_id: driver.id,
+          date: today,
+          status: 'draft',
+          total_stops: data.stopIds.length,
+        },
+      });
+
+      // 2. Update stops to link them to this route
+      await Promise.all(
+        data.stopIds.map((id, idx) =>
+          tx.stop.update({
+            where: { id, driver_id: driver.id },
+            data: {
+              route_id: route.id,
+              sequence: idx,
+              delivery_date: today,
+            },
+          }),
+        ),
+      );
+
+      return route;
+    });
   }
 
   async getHistory(userId: string, pageRaw?: string, limitRaw?: string) {
@@ -430,28 +544,73 @@ export class DriverService {
     const limit = parseInt(limitRaw || '20', 10);
     const skip = (page - 1) * limit;
 
-    const [routes, total] = await Promise.all([
-      this.prisma.route.findMany({
-        where: {
-          driver_id: driver.id,
-          status: { in: ['completed', 'cancelled'] },
-        },
-        orderBy: { date: 'desc' },
-        skip,
-        take: limit,
-        include: { stops: true },
-      }),
-      this.prisma.route.count({
-        where: {
-          driver_id: driver.id,
-          status: { in: ['completed', 'cancelled'] },
-        },
-      }),
-    ]);
+    const [routes, standaloneStops, totalRoutes, totalStops] =
+      await Promise.all([
+        this.prisma.route.findMany({
+          where: {
+            driver_id: driver.id,
+            status: { in: ['completed', 'cancelled'] },
+          },
+          orderBy: { date: 'desc' },
+          skip,
+          take: limit,
+          include: { stops: true },
+        }),
+        this.prisma.stop.findMany({
+          where: {
+            driver_id: driver.id,
+            route_id: null,
+            status: { in: ['completed', 'failed', 'returned'] },
+          },
+          orderBy: { completed_at: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.route.count({
+          where: {
+            driver_id: driver.id,
+            status: { in: ['completed', 'cancelled'] },
+          },
+        }),
+        this.prisma.stop.count({
+          where: {
+            driver_id: driver.id,
+            route_id: null,
+            status: { in: ['completed', 'failed', 'returned'] },
+          },
+        }),
+      ]);
+
+    // Combine and sort
+    type HistoryItem =
+      | (Prisma.RouteGetPayload<{ include: { stops: true } }> & {
+          type: 'route';
+        })
+      | (Prisma.StopGetPayload<object> & { type: 'stop' });
+
+    const combined: HistoryItem[] = [
+      ...routes.map((r) => ({ ...r, type: 'route' as const })),
+      ...standaloneStops.map((s) => ({ ...s, type: 'stop' as const })),
+    ].sort((a, b) => {
+      const dateA = new Date(
+        a.type === 'route' ? a.date : (a.completed_at as Date),
+      ).getTime();
+      const dateB = new Date(
+        b.type === 'route' ? b.date : (b.completed_at as Date),
+      ).getTime();
+      return dateB - dateA;
+    });
+
+    const total = totalRoutes + totalStops;
 
     return {
-      data: routes,
-      pagination: { page, limit, total, total_pages: Math.ceil(total / limit) },
+      data: combined.slice(0, limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -720,5 +879,124 @@ export class DriverService {
     });
 
     return { message: 'Successfully left the fleet' };
+  }
+
+  async optimizeAssignments(userId: string, dto: OptimizeRouteDto) {
+    const driver = await this.getDriverOrThrow(userId);
+
+    // 1. Fetch the stops to ensure they belong to this driver and are pending
+    const stops = await this.prisma.stop.findMany({
+      where: {
+        id: { in: dto.stopIds },
+        driver_id: driver.id,
+        status: 'pending',
+      },
+    });
+
+    if (stops.length !== dto.stopIds.length) {
+      throw new BadRequestException(
+        'Some orders are invalid or already assigned.',
+      );
+    }
+
+    // 2. Call MapService to get optimized sequence
+    const optimizedIds = await this.mapService.optimizeRoute(
+      { lat: dto.currentLat, lng: dto.currentLng },
+      stops.map((s) => ({
+        id: s.id,
+        lat: Number(s.lat),
+        lng: Number(s.lng),
+      })),
+    );
+
+    // 3. Map back to stop objects
+    const optimizedStops = optimizedIds.map((id) =>
+      stops.find((s) => s.id === id),
+    );
+
+    // 4. Calculate total distance and duration for the preview
+    const waypoints = [
+      { lat: dto.currentLat, lng: dto.currentLng },
+      ...optimizedStops.map((s) => ({
+        lat: Number(s!.lat),
+        lng: Number(s!.lng),
+      })),
+    ];
+
+    const directions = await this.mapService.getDirections({ waypoints });
+
+    return {
+      stops: optimizedStops,
+      distance: directions.distanceKm,
+      duration: directions.durationMin,
+      polyline: directions.polylinePoints,
+    };
+  }
+
+  async createOptimizedRoute(userId: string, dto: CreateOptimizedRouteDto) {
+    const driver = await this.getDriverOrThrow(userId);
+
+    // 1. Validate stops
+    const stops = await this.prisma.stop.findMany({
+      where: {
+        id: { in: dto.stopIds },
+        driver_id: driver.id,
+        status: 'pending',
+      },
+    });
+
+    if (stops.length !== dto.stopIds.length) {
+      throw new BadRequestException(
+        'Some orders are invalid or already assigned.',
+      );
+    }
+
+    // 2. Calculate distance/duration for the final route object
+    // We'll use the stops in their current order (which the driver confirmed)
+    const waypoints = stops.map((s) => ({
+      lat: Number(s.lat),
+      lng: Number(s.lng),
+    }));
+
+    const routeData = await this.mapService.getDirections({ waypoints });
+    const totalDistance = routeData?.distanceKm || 0;
+    const totalDuration = routeData?.durationMin || 0;
+
+    // 3. Create the Route in a transaction
+    return this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toTimeString().split(' ')[0].slice(0, 5);
+      const timestamp = `${dateStr} ${timeStr}`;
+
+      const route = await tx.route.create({
+        data: {
+          company_id: driver.company_id,
+          driver_id: driver.id,
+          name: dto.name || `Route ${timestamp}`,
+          date: dateStr,
+          status: 'scheduled',
+          total_stops: stops.length,
+          total_distance_km: totalDistance,
+          estimated_duration_min: totalDuration,
+        },
+      });
+
+      // Update stops with route_id and sequence
+      await Promise.all(
+        stops.map((s, idx) =>
+          tx.stop.update({
+            where: { id: s.id },
+            data: {
+              route_id: route.id,
+              sequence: idx + 1,
+              status: 'assigned',
+            },
+          }),
+        ),
+      );
+
+      return route;
+    });
   }
 }

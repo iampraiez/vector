@@ -43,6 +43,7 @@ export function DashboardOrders() {
     createOrder,
     updateOrder,
     importBulkOrders,
+    deleteOrders,
   } = useOrderStore();
   const { drivers, fetchDrivers } = useDriverStore();
   const navigate = useNavigate();
@@ -134,9 +135,7 @@ export function DashboardOrders() {
                         `Are you sure you want to delete ${selectedOrders.length} orders?`,
                       )
                     ) {
-                      await useOrderStore
-                        .getState()
-                        .deleteOrders(selectedOrders);
+                      await deleteOrders(selectedOrders);
                       setSelectedOrders([]);
                     }
                   }}
@@ -277,8 +276,8 @@ export function DashboardOrders() {
               filteredOrders.map((order, index) => (
                 <div
                   key={order.id}
-                  onClick={() => navigate(`/dashboard/orders/${order.id}`)}
-                  className={`bg-white border rounded-2xl p-4 shadow-sm transition-all cursor-pointer hover:border-emerald-500/50 ${
+                  // onClick={() => navigate(`/dashboard/orders/${order.id}`)}
+                  className={`bg-white border rounded-2xl p-4 shadow-sm transition-all ${
                     selectedOrders.includes(order.id)
                       ? "border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-500"
                       : "border-black/8"
@@ -505,10 +504,10 @@ export function DashboardOrders() {
                     filteredOrders.map((order, index) => (
                       <tr
                         key={order.id}
-                        onClick={() =>
+                        /* onClick={() =>
                           navigate(`/dashboard/orders/${order.id}`)
-                        }
-                        className={`transition-colors hover:bg-gray-50/50 group cursor-pointer ${
+                        } */
+                        className={`transition-colors ${
                           selectedOrders.includes(order.id)
                             ? "bg-emerald-50/30"
                             : ""
@@ -1002,18 +1001,18 @@ function EditOrderModal({
                       onClick={() =>
                         setForm({
                           ...form,
-                          assigned_to: undefined,
+                          driver_id: null,
                           status: "unassigned",
                         })
                       }
                       className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
-                        !form.assigned_to
+                        !form.driver_id
                           ? "bg-emerald-50 text-emerald-600 font-bold"
                           : "text-gray-500 hover:bg-white"
                       }`}
                     >
                       Unassigned
-                      {!form.assigned_to && (
+                      {!form.driver_id && (
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                       )}
                     </button>

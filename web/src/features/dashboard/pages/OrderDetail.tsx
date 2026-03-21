@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router";
-import { useOrderStore } from "../../../store/orderStore";
+import { useOrderStore, OrderStatus } from "../../../store/orderStore";
 import {
   ArrowLeftIcon,
   UserIcon,
@@ -54,7 +54,7 @@ export function DashboardOrderDetail() {
 
   const order = selectedOrder;
 
-  const statusColors = {
+  const statusColors: Record<OrderStatus, string> = {
     unassigned: "bg-gray-100 text-gray-600",
     assigned: "bg-blue-50 text-blue-600",
     in_progress: "bg-amber-50 text-amber-600",
@@ -62,7 +62,10 @@ export function DashboardOrderDetail() {
     failed: "bg-red-50 text-red-600",
   };
 
-  const statusIcons = {
+  const statusIcons: Record<
+    OrderStatus,
+    React.ForwardRefExoticComponent<React.ComponentProps<"svg">>
+  > = {
     unassigned: ClockIcon,
     assigned: UserIcon,
     in_progress: TruckIcon,

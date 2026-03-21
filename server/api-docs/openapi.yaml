@@ -836,8 +836,22 @@ paths:
       responses:
         "200":
           description: ""
-      tags:
+      tags: &a10
         - Assignments
+  /driver/assignments/optimize:
+    post:
+      operationId: AssignmentsController_optimizeAssignments
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptimizeRouteDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a10
   /driver/routes/{route_id}/preview:
     get:
       operationId: RoutesController_getRoutePreview
@@ -850,7 +864,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a10
+      tags: &a11
         - Routes
   /driver/routes/{route_id}/start:
     post:
@@ -864,7 +878,21 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a10
+      tags: *a11
+  /driver/routes/create-optimized:
+    post:
+      operationId: RoutesController_createOptimizedRoute
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOptimizedRouteDto"
+      responses:
+        "201":
+          description: ""
+      tags: *a11
   /driver/routes:
     post:
       operationId: RoutesController_createRoute
@@ -876,7 +904,7 @@ paths:
             application/json:
               schema:
                 type: object
-      tags: *a10
+      tags: *a11
   /driver/navigation/stops/{stop_id}:
     get:
       operationId: NavigationController_getStop
@@ -889,7 +917,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a11
+      tags: &a12
         - Navigation
   /driver/navigation/stops/{stop_id}/arrive:
     patch:
@@ -903,7 +931,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a12
   /driver/navigation/stops/{stop_id}/skip:
     patch:
       operationId: NavigationController_skipStop
@@ -916,7 +944,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a11
+      tags: *a12
   /driver/delivery/{stop_id}/start:
     post:
       operationId: DeliveryController_startStop
@@ -929,7 +957,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: &a12
+      tags: &a13
         - Delivery
   /driver/delivery/{stop_id}/complete:
     post:
@@ -949,7 +977,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a12
+      tags: *a13
   /driver/delivery/{stop_id}/fail:
     post:
       operationId: DeliveryController_failDelivery
@@ -968,7 +996,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a12
+      tags: *a13
   /driver/history:
     get:
       operationId: HistoryController_getHistory
@@ -986,7 +1014,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a13
+      tags: &a14
         - History
   /driver/history/export:
     post:
@@ -1001,7 +1029,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a13
+      tags: *a14
   /driver/profile:
     get:
       operationId: ProfileController_getProfile
@@ -1009,7 +1037,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a14
+      tags: &a15
         - Profile
     patch:
       operationId: ProfileController_updateProfile
@@ -1017,7 +1045,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a14
+      tags: *a15
   /driver/profile/avatar:
     post:
       operationId: ProfileController_uploadAvatar
@@ -1025,7 +1053,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a14
+      tags: *a15
   /driver/profile/leave:
     post:
       operationId: ProfileController_leaveCompany
@@ -1033,7 +1061,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a14
+      tags: *a15
   /driver/settings:
     get:
       operationId: SettingsController_getSettings
@@ -1041,7 +1069,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a15
+      tags: &a16
         - Settings
     patch:
       operationId: SettingsController_updateSettings
@@ -1049,7 +1077,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a15
+      tags: *a16
   /driver/settings/otp/request:
     post:
       operationId: SettingsController_requestOtp
@@ -1057,7 +1085,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a15
+      tags: *a16
   /driver/settings/otp/verify:
     post:
       operationId: SettingsController_verifyOtp
@@ -1065,7 +1093,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a15
+      tags: *a16
   /driver/notifications:
     get:
       operationId: DriverNotificationsController_getNotifications
@@ -1083,7 +1111,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a16
+      tags: &a17
         - DriverNotifications
   /driver/notifications/{notification_id}/read:
     patch:
@@ -1097,7 +1125,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a16
+      tags: *a17
   /driver/notifications/read-all:
     post:
       operationId: DriverNotificationsController_markAllRead
@@ -1105,7 +1133,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a16
+      tags: *a17
   /driver/onboarding:
     post:
       operationId: OnboardingController_completeOnboarding
@@ -1134,7 +1162,7 @@ paths:
                 type: array
                 items:
                   type: object
-      tags: &a17
+      tags: &a18
         - Routes
     post:
       operationId: RoutesController_createRoute
@@ -1148,7 +1176,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a17
+      tags: *a18
   /routes/{route_id}:
     get:
       operationId: RoutesController_getRoute
@@ -1161,7 +1189,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a17
+      tags: *a18
     patch:
       operationId: RoutesController_updateRoute
       parameters:
@@ -1179,7 +1207,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: *a17
+      tags: *a18
     delete:
       operationId: RoutesController_deleteRoute
       parameters:
@@ -1191,7 +1219,7 @@ paths:
       responses:
         "204":
           description: ""
-      tags: *a17
+      tags: *a18
   /routes/{route_id}/optimize:
     post:
       operationId: RoutesController_optimizeRoute
@@ -1204,7 +1232,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a17
+      tags: *a18
   /routes/{route_id}/assign:
     post:
       operationId: RoutesController_assignRoute
@@ -1223,7 +1251,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a17
+      tags: *a18
   /track:
     get:
       operationId: TrackingController_getTrackingData
@@ -1236,7 +1264,7 @@ paths:
       responses:
         "200":
           description: ""
-      tags: &a18
+      tags: &a19
         - Tracking
   /track/rate:
     post:
@@ -1250,7 +1278,7 @@ paths:
       responses:
         "201":
           description: ""
-      tags: *a18
+      tags: *a19
 info:
   title: Vector API
   description: Full API specification for the Vector fleet management platform
@@ -1660,6 +1688,32 @@ components:
       required:
         - lat
         - lng
+    OptimizeRouteDto:
+      type: object
+      properties:
+        stopIds:
+          type: array
+          items:
+            type: string
+        currentLat:
+          type: number
+        currentLng:
+          type: number
+      required:
+        - stopIds
+        - currentLat
+        - currentLng
+    CreateOptimizedRouteDto:
+      type: object
+      properties:
+        stopIds:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+      required:
+        - stopIds
     CompleteDeliveryDto:
       type: object
       properties:

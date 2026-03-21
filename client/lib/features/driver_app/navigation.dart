@@ -402,9 +402,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                           const Divider(),
                           const SizedBox(height: 24),
                           if (remainingData.isNotEmpty)
-                            _buildUpcomingStops(remainingData)
-                          else
-                            _buildNoMoreStops(),
+                            _buildUpcomingStops(remainingData),
                         ],
                       ),
                     ),
@@ -562,17 +560,15 @@ class _NavigationScreenState extends State<NavigationScreen> {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.25),
+              color: AppColors.primary.withValues(alpha: 0.15),
               offset: const Offset(0, 4),
-              blurRadius: 12,
+              blurRadius: 10,
             ),
           ],
         ),
@@ -582,50 +578,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
             Text(
               'Mark as Arrived',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
-                letterSpacing: 0.3,
               ),
             ),
-            SizedBox(width: 10),
-            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
+            SizedBox(width: 8),
+            Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNoMoreStops() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryLight),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.flag_circle_rounded, color: AppColors.primary, size: 48),
-          SizedBox(height: 12),
-          Text(
-            'Final Stop',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'This is the last delivery on your current route.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildUpcomingStops(List<Map<String, dynamic>> remainingStops) {
     return Column(

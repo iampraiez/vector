@@ -14,6 +14,20 @@ export interface DirectionsResult {
   durationMin: number;
 }
 
+interface GeoapifyOptimizationAction {
+  type: 'pickup' | 'delivery' | 'start' | 'end';
+  shipment_id?: string;
+  location_index: number;
+}
+
+interface GeoapifyOptimizationResponse {
+  features: Array<{
+    properties: {
+      actions: GeoapifyOptimizationAction[];
+    };
+  }>;
+}
+
 @Injectable()
 export class MapService {
   private readonly logger = new Logger(MapService.name);
@@ -22,6 +36,8 @@ export class MapService {
   private readonly reverseGeocodeBase =
     'https://api.geoapify.com/v1/geocode/reverse';
   private readonly routingBase = 'https://api.geoapify.com/v1/routing';
+  private readonly optimizationBase =
+    'https://api.geoapify.com/v1/routeoptimization';
 
   constructor(private config: ConfigService) {
     this.apiKey = this.config.get<string>('GEOAPIFY_API_KEY') ?? '';
@@ -150,5 +166,58 @@ export class MapService {
       distanceKm: Math.round((distance / 1000) * 10) / 10,
       durationMin: Math.ceil(time / 60),
     };
+  }
+
+  async optimizeRoute(
+    agentLocation: { lat: number; lng: number },
+    stops: Array<{ id: string; lat: number; lng: number }>,
+  ): Promise<string[]> {
+    this.requireKey();
+
+    if (stops.length === 0) return [];
+    if (stops.length === 1) return [stops[0].id];
+
+    const body = {
+      mode: 'drive',
+      agents: [
+        {
+          start_location: [agentLocation.lng, agentLocation.lat],
+          id: 'agent_1',
+        },
+      ],
+      shipments: stops.map((s) => ({
+        id: s.id,
+        pickup: {
+          location: [s.lng, s.lat],
+        },
+        delivery: {
+          location: [s.lng, s.lat],
+        },
+      })),
+    };
+
+    const url = `${this.optimizationBase}?apiKey=${this.apiKey}`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = (await res.json()) as GeoapifyOptimizationResponse;
+      if (!data.features || data.features.length === 0) {
+        throw new BadRequestException('Route optimization failed.');
+      }
+
+      const actions = data.features[0].properties.actions;
+      const sequence = actions
+        .filter((a) => a.type === 'pickup' && a.shipment_id)
+        .map((a) => a.shipment_id as string);
+
+      return sequence;
+    } catch (err) {
+      this.logger.error('Optimization network error', err);
+      throw new BadRequestException('Optimization request failed.');
+    }
   }
 }

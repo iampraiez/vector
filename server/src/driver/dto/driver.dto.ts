@@ -63,3 +63,25 @@ export class ExportHistoryDto {
   @IsOptional()
   endDate?: string;
 }
+
+export class OptimizeRouteDto {
+  @IsArray()
+  @IsString({ each: true })
+  stopIds!: string[];
+
+  @IsNumber()
+  currentLat!: number;
+
+  @IsNumber()
+  currentLng!: number;
+}
+
+export class CreateOptimizedRouteDto {
+  @IsArray()
+  @IsString({ each: true })
+  stopIds!: string[];
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+}

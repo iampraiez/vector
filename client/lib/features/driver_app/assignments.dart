@@ -38,6 +38,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   // Track which routes are being started (spinner per card)
   final Set<String> _startingRoutes = {};
 
+  // AI Route Optimization Selection
+  bool _isSelectionMode = false;
+  final Set<String> _selectedStopIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -176,6 +180,36 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     }
   }
 
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedStopIds.contains(id)) {
+        _selectedStopIds.remove(id);
+        if (_selectedStopIds.isEmpty) _isSelectionMode = false;
+      } else {
+        _selectedStopIds.add(id);
+        _isSelectionMode = true;
+      }
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedStopIds.clear();
+      _isSelectionMode = false;
+    });
+  }
+
+  Future<void> _optimizeSelection(BuildContext context) async {
+    if (_selectedStopIds.isEmpty) return;
+    
+    // Navigate to Route Preview in "Draft" mode
+    // We pass the selected stop IDs and a flag
+    context.push('/route-preview', extra: {
+      'isDraft': true,
+      'stopIds': _selectedStopIds.toList(),
+    });
+  }
+
   Widget _buildError() {
     return Center(
       child: Padding(
@@ -207,7 +241,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ... rest of the build method (lines 114 to end)
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),
       bottomNavigationBar: const AppBottomNav(),
@@ -258,27 +291,44 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                   ],
                 ),
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Assignments',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
-                        color: AppColors.textPrimary,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Assignments',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.6,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Your delivery schedule and orders',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Your delivery schedule and orders',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w500,
+                    if (_isSelectionMode)
+                      TextButton(
+                        onPressed: _clearSelection,
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -344,6 +394,22 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           ),
         ),
       ),
+      floatingActionButton: (_activeTab == 1 && _selectedStopIds.isNotEmpty)
+          ? FloatingActionButton.extended(
+              onPressed: () => _optimizeSelection(context),
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.route_outlined, color: Colors.white),
+              elevation: 4,
+              label: Text(
+                'Sequence ${_selectedStopIds.length} Orders',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -403,7 +469,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             name: item['name'] ?? 'Route',
             status: item['status'] ?? 'assigned',
             totalStops: stops.length,
-            completedStops: stops.where((s) => (s as Map)['status'] == 'completed').length,
+            completedStops:
+                stops.where((s) => (s as Map)['status'] == 'completed').length,
             date: item['date'] ?? '',
             isStarting: _startingRoutes.contains(item['id']),
             onStart: () => _startRoute(context, item),
@@ -412,6 +479,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
               context.push('/navigation');
             },
             isUpcoming: _activeTab == 1,
+            isSelected: _selectedStopIds.contains(item['id']),
+            isSelectionMode: _isSelectionMode,
+            onLongPress: () => _toggleSelection(item['id'] as String),
+            onSelectionToggle: () => _toggleSelection(item['id'] as String),
           );
         } else {
           // Standalone Stop
@@ -430,11 +501,17 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             },
             isUpcoming: _activeTab == 1,
             isStandalone: true,
+            isSelected: _selectedStopIds.contains(item['id']),
+            isSelectionMode: _isSelectionMode,
+            onLongPress: () => _toggleSelection(item['id'] as String),
+            onSelectionToggle: () => _toggleSelection(item['id'] as String),
           );
         }
       },
     );
-  }  Widget _buildCompletedCard(Map<String, dynamic> item) {
+  }
+
+  Widget _buildCompletedCard(Map<String, dynamic> item) {
     final status = (item['status'] ?? '').toString().toLowerCase();
     final isFailed = status == 'failed';
     
@@ -613,6 +690,10 @@ class _RouteCard extends StatelessWidget {
   final VoidCallback onContinue;
   final bool isUpcoming;
   final bool isStandalone;
+  final bool isSelected;
+  final bool isSelectionMode;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSelectionToggle;
 
   const _RouteCard({
     required this.routeId,
@@ -626,6 +707,10 @@ class _RouteCard extends StatelessWidget {
     required this.onContinue,
     this.isUpcoming = false,
     this.isStandalone = false,
+    this.isSelected = false,
+    this.isSelectionMode = false,
+    this.onLongPress,
+    this.onSelectionToggle,
   });
 
   @override
@@ -633,222 +718,254 @@ class _RouteCard extends StatelessWidget {
     final isActive = status == 'active' || status == 'in_progress';
     final progress = totalStops > 0 ? completedStops / totalStops : 0.0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(AppSpacing.p4),
-      decoration: BoxDecoration(
-        color: AppColors.white,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onLongPress: onLongPress,
+        onTap: isSelectionMode
+            ? onSelectionToggle
+            : isStarting
+                ? null
+                : isUpcoming
+                  ? () => context.push(
+                        '/route-preview',
+                        extra: {
+                          'id': routeId,
+                          'name': name,
+                          'status': status,
+                          'date': date,
+                          'stops': [], 
+                        },
+                      )
+                  : isActive
+                      ? onContinue
+                      : onStart,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isActive
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : AppColors.border,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isActive
-                ? AppColors.primary.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.successLight : AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  isStandalone
-                      ? Icons.inventory_2_outlined
-                      : Icons.local_shipping_outlined,
-                  size: 22,
-                  color: isActive ? AppColors.primary : AppColors.textMuted,
-                ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.p4),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.05)
+                : AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary
+                  : isActive
+                      ? AppColors.primary.withValues(alpha: 0.3)
+                      : isUpcoming
+                          ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                          : AppColors.border,
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.08)
+                    : isActive
+                        ? AppColors.primary.withValues(alpha: 0.08)
+                        : isUpcoming
+                            ? const Color(0xFF3B82F6).withValues(alpha: 0.06)
+                            : Colors.black.withValues(alpha: 0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 12),
+            ],
+          ),
+          child: Row(
+            children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: AppColors.textPrimary,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.white
+                                : isActive
+                                    ? AppColors.successLight
+                                    : isUpcoming
+                                        ? const Color(0xFFEFF6FF)
+                                        : AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            isStandalone
+                                ? Icons.inventory_2_outlined
+                                : Icons.local_shipping_outlined,
+                            size: 22,
+                            color: isSelected || isActive
+                                ? AppColors.primary
+                                : isUpcoming
+                                    ? const Color(0xFF2563EB)
+                                    : AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isStandalone
+                                    ? 'Standalone Order · $date'
+                                    : '$totalStops stops · $date',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isUpcoming
+                                    ? const Color(0xFFEFF6FF)
+                                    : isActive
+                                        ? AppColors.primaryLight
+                                        : AppColors.surface,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                isUpcoming
+                                    ? 'Upcoming'
+                                    : (isActive ? 'Active' : 'Assigned'),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: isUpcoming
+                                      ? const Color(0xFF2563EB)
+                                      : isActive
+                                          ? AppColors.primary
+                                          : AppColors.textMuted,
+                                ),
+                              ),
+                            ),
+                            if (!isSelectionMode) ...[
+                              const SizedBox(height: 8),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: isUpcoming
+                                    ? const Color(0xFF2563EB)
+                                    : isActive
+                                        ? AppColors.primary
+                                        : AppColors.textMuted.withValues(alpha: 0.5),
+                                size: 24,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isStandalone
-                          ? 'Standalone Order · $date'
-                          : '$totalStops stops · $date',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                    if (isActive && totalStops > 0) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '$completedStops / $totalStops stops',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            '${(progress * 100).round()}%',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      Stack(
+                        children: [
+                          Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: progress,
+                            child: Container(
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (isStarting) ...[
+                      const SizedBox(height: 12),
+                      const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (isUpcoming && date == DateTime.now().toString().split(' ')[0]) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isStarting ? null : onStart,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                          ),
+                          child: const Text(
+                            'Start Early',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isUpcoming
-                      ? const Color(0xFFEFF6FF)
-                      : isActive
-                          ? AppColors.primaryLight
-                          : AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  isUpcoming ? 'Upcoming' : (isActive ? 'Active' : 'Assigned'),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isUpcoming
-                        ? const Color(0xFF2563EB)
-                        : isActive
-                            ? AppColors.primary
-                            : AppColors.textMuted,
-                  ),
                 ),
               ),
             ],
           ),
-          if (isActive && totalStops > 0) ...[
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '$completedStops / $totalStops stops',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  '${(progress * 100).round()}%',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Stack(
-              children: [
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-                FractionallySizedBox(
-                  widthFactor: progress,
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (isStarting || isUpcoming)
-                  ? null
-                  : isActive
-                      ? onContinue
-                      : onStart,
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isUpcoming ? AppColors.surface : AppColors.primary,
-                foregroundColor:
-                    isUpcoming ? AppColors.textMuted : Colors.white,
-                disabledBackgroundColor: isUpcoming
-                    ? AppColors.surface
-                    : AppColors.primary.withValues(alpha: 0.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: isUpcoming ? 0 : 2,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: isStarting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : Text(
-                      isUpcoming
-                          ? 'Upcoming'
-                          : (isActive ? 'Continue Route' : 'Start Route'),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: isUpcoming ? AppColors.textMuted : Colors.white,
-                      ),
-                    ),
-            ),
-          ),
-          if (!isUpcoming && !isActive) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => context.push(
-                  '/route-preview',
-                  extra: {
-                    'id': routeId,
-                    'name': name,
-                    'status': status,
-                    'date': date,
-                    'stops': [], // Stops are typically part of the item from API
-                  },
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'View Route',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

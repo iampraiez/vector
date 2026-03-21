@@ -46,6 +46,22 @@ class DriverApiService {
     }
   }
 
+  Future<Map<String, dynamic>> optimizeAssignments({
+    required List<String> stopIds,
+    required double lat,
+    required double lng,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/driver/assignments/optimize',
+        data: {'stopIds': stopIds, 'currentLat': lat, 'currentLng': lng},
+      );
+      return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── Routes ────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getRoutePreview(String routeId) async {
@@ -60,6 +76,24 @@ class DriverApiService {
   Future<void> startRoute(String routeId) async {
     try {
       await _dio.post('/driver/routes/$routeId/start');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createOptimizedRoute({
+    required List<String> stopIds,
+    String? name,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/driver/routes/create-optimized',
+        data: {
+          'stopIds': stopIds,
+          ... (name != null ? {'name': name} : {}),
+        },
+      );
+      return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -146,7 +180,11 @@ class DriverApiService {
     try {
       final res = await _dio.post(
         '/driver/history/export',
-        data: {'range': range, 'startDate': ?startDate, 'endDate': ?endDate},
+        data: {
+          'range': range,
+          ... (startDate != null ? {'startDate': startDate} : {}),
+          ... (endDate != null ? {'endDate': endDate} : {}),
+        },
       );
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {

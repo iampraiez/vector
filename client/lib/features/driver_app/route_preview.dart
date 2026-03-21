@@ -9,6 +9,7 @@ import '../../core/services/map_service.dart';
 import '../../shared/widgets/buttons.dart';
 import '../../main.dart' show RouteProgressScope;
 import '../../core/services/driver_api_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class RoutePreviewScreen extends StatefulWidget {
   final Map<String, dynamic>? routeData;
@@ -42,6 +43,9 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
   String get _routeName => widget.routeData?['name'] as String? ?? 'Delivery Route';
   String? get _routeId => widget.routeData?['id'] as String?;
 
+  bool get _isDraft => widget.routeData?['isDraft'] == true;
+  List<String> get _stopIds => (widget.routeData?['stopIds'] as List? ?? []).cast<String>();
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +53,44 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
   }
 
   Future<void> _initData() async {
-    if (_stops.isEmpty && _routeId != null) {
+    if (_isDraft && _stopIds.isNotEmpty) {
+      setState(() => _fetchingFullRoute = true);
+      try {
+        // 1. Get current location
+        Position position = await Geolocator.getCurrentPosition();
+        
+        // 2. Call AI optimization
+        final data = await DriverApiService.instance.optimizeAssignments(
+          stopIds: _stopIds,
+          lat: position.latitude,
+          lng: position.longitude,
+        );
+        
+        if (mounted) {
+          setState(() {
+            _dynamicStops = (data['stops'] as List? ?? []).cast<Map<String, dynamic>>();
+            _distanceKm = (data['totalDistance'] as num? ?? 0).toDouble();
+            _durationMin = (data['totalDuration'] as num? ?? 0).toInt();
+            _fetchingFullRoute = false;
+          });
+          if (_dynamicStops.isNotEmpty) {
+            _geocodeStopsAndDrawRoute();
+          } else {
+            setState(() => _loading = false);
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _fetchingFullRoute = false;
+            _loading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Optimization failed: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    } else if (_stops.isEmpty && _routeId != null) {
       setState(() => _fetchingFullRoute = true);
       try {
         final data = await DriverApiService.instance.getRoutePreview(_routeId!);
@@ -122,6 +163,27 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
     return '${h}h ${m}m';
   }
 
+  Future<void> _createOptimizedRoute() async {
+    setState(() => _fetchingFullRoute = true);
+    try {
+      final res = await DriverApiService.instance.createOptimizedRoute(
+        stopIds: _stops.map((s) => s['id'] as String).toList(),
+      );
+      if (mounted) {
+        // Load the newly created route stops
+        RouteProgressScope.of(context).loadStops((res['stops'] as List).cast<Map<String, dynamic>>());
+        context.pushReplacement('/navigation');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _fetchingFullRoute = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create route: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -158,7 +220,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_routeName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        Text(_routeName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
                         Text(dateStr, style: TextStyle(fontSize: 13, color: AppColors.textPrimary.withValues(alpha: 0.5), fontWeight: FontWeight.w500)),
                       ],
                     ),
@@ -309,11 +371,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('DELIVERY SEQUENCE', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 0.5)),
-                              TextButton(
-                                onPressed: () {},
-                                child: Text('Reorder', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
-                              ),
+                               Text('DELIVERY SEQUENCE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 0.3)),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -337,11 +395,14 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), offset: const Offset(0, -4), blurRadius: 12)],
         ),
         child: AppButton(
-          label: 'Start navigation',
-          icon: const Icon(Icons.near_me, size: 16),
+          label: _isDraft ? 'Confirm Optimized Route' : 'Start Navigation',
+          icon: Icon(_isDraft ? Icons.check_circle_outline : Icons.near_me, size: 18),
           isFullWidth: true,
+          isLoading: _fetchingFullRoute,
           onPressed: () {
-            if (_stops.isNotEmpty) {
+            if (_isDraft) {
+              _createOptimizedRoute();
+            } else if (_stops.isNotEmpty) {
               RouteProgressScope.of(context).loadStops(_stops);
               context.push('/navigation');
             } else {
