@@ -211,6 +211,7 @@ model Stop {
   customer_rated_at       DateTime?
   location_confirmed      Boolean      @default(false)
   tracking_token          String       @unique @default(uuid())
+  assigned_at             DateTime?
   created_at              DateTime     @default(now())
   updated_at              DateTime     @updatedAt
 

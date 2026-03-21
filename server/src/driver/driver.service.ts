@@ -7,6 +7,7 @@ import {
 import { Prisma, DriverStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { settingsOtpTemplate } from '../common/template';
 import {
   UpdateStatusDto,
   UpdateLocationDto,
@@ -789,19 +790,10 @@ export class DriverService {
     await this.redis.set(redisKey, otp, 300);
 
     const email = driver.user.email;
-    const content = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Security Verification Code</h2>
-        <p>You requested to ${action.replace('_', ' ')}. Please use this code to confirm your request.</p>
-        <h1 style="background: #f0fdf4; padding: 20px; text-align: center; color: #065f46; letter-spacing: 5px;">${otp}</h1>
-        <p>This code expires in 5 minutes.</p>
-      </div>
-    `;
-
     await this.mailService.sendMail(
       email,
       'Vector Settings Verification Code',
-      content,
+      settingsOtpTemplate(action, otp),
       `Your code is ${otp}`,
     );
 

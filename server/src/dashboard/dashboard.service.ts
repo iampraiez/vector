@@ -30,6 +30,7 @@ import { Queue } from 'bullmq';
 import { generateReportCsv } from './utils/report.util';
 import { MailService } from '../mail/mail.service';
 import { MapService } from '../map/map.service';
+import { settingsOtpTemplate } from '../common/template';
 
 @Injectable()
 export class DashboardService {
@@ -377,6 +378,10 @@ export class DashboardService {
           // Ignore geocode failure on update, stick with existing or null
         }
       }
+    }
+
+    if (dto.status === 'assigned') {
+      data.assigned_at = new Date();
     }
 
     return this.prisma.stop.update({
@@ -1091,19 +1096,10 @@ export class DashboardService {
     await this.redis.set(redisKey, otp, 300);
 
     const email = admin.email;
-    const content = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Workspace Verification Code</h2>
-        <p>You requested to ${action.replace(/_/g, ' ')}. Please use this code to confirm your request.</p>
-        <h1 style="background: #fef2f2; padding: 20px; text-align: center; color: #991b1b; letter-spacing: 5px;">${otp}</h1>
-        <p>This code expires in 5 minutes.</p>
-      </div>
-    `;
-
     await this.mailService.sendMail(
       email,
       'Vector Workspace Settings Verification',
-      content,
+      settingsOtpTemplate(action, otp, true),
       `Your code is ${otp}`,
     );
 

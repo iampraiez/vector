@@ -17,7 +17,7 @@ export class RoutesService {
   ) {}
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getRoutes(_companyId: string, _query: any) {
+  getRoutes(_companyId: string, _query: unknown) {
     return this.prisma.route.findMany({
       where: { company_id: _companyId },
       include: { driver: { include: { user: true } } },
@@ -42,7 +42,11 @@ export class RoutesService {
         for (const stop of dto.stops) {
           await tx.stop.update({
             where: { id: stop.stop_id, company_id: companyId },
-            data: { route_id: route.id, status: 'assigned' },
+            data: {
+              route_id: route.id,
+              status: 'assigned',
+              assigned_at: new Date(),
+            },
           });
         }
       }
@@ -92,7 +96,11 @@ export class RoutesService {
         for (const stop of dto.stops) {
           await tx.stop.update({
             where: { id: stop.stop_id, company_id: companyId },
-            data: { route_id: routeId, status: 'assigned' },
+            data: {
+              route_id: routeId,
+              status: 'assigned',
+              assigned_at: new Date(),
+            },
           });
         }
       }
@@ -143,6 +151,7 @@ export class RoutesService {
       data: {
         driver_id: dto.driver_id,
         status: RouteStatus.scheduled,
+        assigned_at: new Date(),
       },
       include: {
         driver: { include: { user: true } },

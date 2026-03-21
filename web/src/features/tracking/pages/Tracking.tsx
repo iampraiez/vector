@@ -91,6 +91,8 @@ export function CustomerTracking() {
     followed_instructions: false,
   });
   const [submitted, setSubmitted] = useState(false);
+  const [showQr, setShowQr] = useState(true);
+  const [confirmedRecently, setConfirmedRecently] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,16 +131,18 @@ export function CustomerTracking() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
+          console.log(
+            `[Tracking] Confirming location: ${position.coords.latitude}, ${position.coords.longitude}`,
+          );
           await api.post(`/track/confirm?token=${token}`, {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
-          // Refresh data
           const res = await api.get(`/track?token=${token}`);
           setDelivery(res.data);
-          alert(
-            "Your location has been confirmed! Our driver is heading to your precise spot.",
-          );
+
+          setConfirmedRecently(true);
+          setTimeout(() => setConfirmedRecently(false), 5000);
         } catch (err: unknown) {
           const error = err as AxiosError<{ message: string }>;
           alert(error.response?.data?.message || "Failed to confirm location.");
@@ -174,14 +178,17 @@ export function CustomerTracking() {
     return (
       <div className="min-h-screen bg-gray-100 font-sans">
         {/* Top Brand Bar Skeleton */}
-        <div className="bg-white border-b border-black/8 px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Skeleton className="w-7 h-7 rounded-md" />
-            <Skeleton className="w-20 h-5" />
+        <div className="bg-white border-b border-black/5 px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-8 h-8 rounded-xl" />
+            <Skeleton className="w-24 h-6 rounded-md" />
           </div>
           <div className="text-right">
-            <Skeleton className="w-24 h-4 mb-1 mx-auto ml-auto" />
-            <Skeleton className="w-32 h-3 ml-auto" />
+            <Skeleton className="w-28 h-4 mb-1.5 ml-auto" />
+            <div className="flex gap-2 justify-end">
+              <Skeleton className="w-20 h-3" />
+              <Skeleton className="w-16 h-3" />
+            </div>
           </div>
         </div>
 
@@ -333,48 +340,98 @@ export function CustomerTracking() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
       {/* Top Brand Bar */}
-      <div className="bg-white border-b border-black/8 px-5 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-linear-to-br from-emerald-600 to-emerald-800">
-            <LocalShippingIcon size={16} className="text-white" />
+      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-black/5 px-5 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-700 shadow-sm shadow-emerald-500/20">
+            <LocalShippingIcon size={18} className="text-white" />
           </div>
-          <span className="text-[18px] font-bold tracking-tight text-[#121212]">
+          <span className="text-lg font-black tracking-[-0.03em] text-gray-900 uppercase">
             Vector
           </span>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500 font-bold tracking-tight">
+          <p className="text-[14px] font-extrabold text-[#111827] leading-tight">
             {delivery.company.name}
           </p>
-          <div className="flex items-center gap-3 mt-0.5">
-            <p className="text-[10px] text-gray-400 font-medium">
-              {delivery.company.email}
-            </p>
-            <p className="text-[10px] text-gray-400 font-medium">
-              {delivery.company.phone}
-            </p>
+          <div className="flex items-center justify-end gap-2.5 mt-1">
+            {delivery.company.email && (
+              <a
+                href={`mailto:${delivery.company.email}`}
+                className="text-[10px] bg-gray-50 text-gray-400 font-bold px-1.5 py-0.5 rounded border border-black/5 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+              >
+                {delivery.company.email}
+              </a>
+            )}
+            {delivery.company.phone && (
+              <a
+                href={`tel:${delivery.company.phone}`}
+                className="text-[10px] bg-gray-50 text-gray-400 font-bold px-1.5 py-0.5 rounded border border-black/5 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+              >
+                {delivery.company.phone}
+              </a>
+            )}
           </div>
         </div>
       </div>
 
       <div className="max-w-120 mx-auto p-4">
+        {/* Success Notification (Fixed Toast) */}
+        {confirmedRecently && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm bg-emerald-600 text-white p-3 rounded-2xl flex items-center gap-3 shadow-2xl shadow-emerald-900/40 animate-in fade-in slide-in-from-top-4 active:scale-95 transition-transform">
+            <CheckCircleIcon className="w-5 h-5 text-emerald-100 shrink-0" />
+            <p className="text-[13px] font-bold leading-tight">
+              Location confirmed! Driver is heading your way.
+            </p>
+          </div>
+        )}
+
         {/* Verification QR (Persistent if out for delivery) */}
         {status === "out_for_delivery" && (
-          <div className="bg-white rounded-2xl border border-black/8 p-6 mb-3 shadow-sm text-center">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">
-              Verification Code
-            </p>
-            <div className="inline-block p-4 bg-gray-50 rounded-2xl border border-black/5 mb-4">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${delivery.trackingToken}`}
-                alt="Delivery QR"
-                className="w-32 h-32 mix-blend-multiply"
-              />
-            </div>
-            <p className="text-xs text-gray-500 px-4 leading-relaxed font-medium">
-              Please present this QR code to the driver upon arrival to confirm
-              your delivery.
-            </p>
+          <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm overflow-hidden">
+            <button
+              onClick={() => setShowQr(!showQr)}
+              className="w-full flex items-center justify-between"
+            >
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                Delivery QR Scan
+              </p>
+              <div
+                className={`transition-transform duration-300 ${showQr ? "rotate-180" : ""}`}
+              >
+                <Skeleton className="w-5 h-5 rounded-full" />{" "}
+                {/* Using a placeholder or icon here */}
+                {/* Let's use a real icon from heroicons later if needed, but for now a simple arrow or chevron */}
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </button>
+
+            {showQr && (
+              <div className="pt-5 text-center animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="inline-block p-4 bg-gray-50 rounded-2xl border border-black/5 mb-4">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${delivery.trackingToken}`}
+                    alt="Delivery QR"
+                    className="w-32 h-32 mix-blend-multiply"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 px-4 leading-relaxed font-medium">
+                  Please present this QR code to the driver upon arrival to
+                  confirm your delivery.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -410,26 +467,45 @@ export function CustomerTracking() {
           )}
 
           {/* Precision Button */}
-          {!delivery.locationConfirmed &&
-            (status === "out_for_delivery" || status === "assigned") && (
-              <button
-                onClick={handleConfirmLocation}
-                disabled={isConfirming}
-                className="w-full mb-4 group relative flex items-center justify-center gap-2 p-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-70 overflow-hidden"
-              >
-                {isConfirming ? (
-                  <ArrowPathIcon className="w-4 h-4 animate-spin text-emerald-400" />
-                ) : (
-                  <MapPinIcon className="w-4 h-4 text-emerald-400" />
-                )}
-                {isConfirming ? "Confirming..." : "Verify My Precise Position"}
-                {isConfirming && (
-                  <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-500/20">
-                    <div className="h-full bg-emerald-500 animate-[shimmer_2s_infinite] w-1/3" />
-                  </div>
-                )}
-              </button>
-            )}
+          {(status === "out_for_delivery" || status === "assigned") && (
+            <button
+              onClick={handleConfirmLocation}
+              disabled={isConfirming}
+              className={`w-full mb-4 group relative flex items-center justify-center gap-2.5 p-3.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-70 overflow-hidden shadow-lg shadow-emerald-500/10 ${
+                delivery.locationConfirmed
+                  ? "bg-white border-2 border-emerald-600/20 text-emerald-600 hover:bg-emerald-50/50"
+                  : "bg-linear-to-br from-emerald-600 to-emerald-800 text-white"
+              }`}
+            >
+              {isConfirming ? (
+                <>
+                  <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  <span>Updating Location...</span>
+                </>
+              ) : (
+                <>
+                  {delivery.locationConfirmed ? (
+                    <MapPinIcon className="w-4 h-4" />
+                  ) : (
+                    <div className="relative">
+                      <MapPinIcon className="w-4 h-4 animate-pulse" />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full border-2 border-emerald-600 animate-ping" />
+                    </div>
+                  )}
+                  <span>
+                    {delivery.locationConfirmed
+                      ? "Update Precise Position"
+                      : "Confirm My Precise Position"}
+                  </span>
+                </>
+              )}
+              {isConfirming && (
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-500/20">
+                  <div className="h-full bg-white animate-[shimmer_2s_infinite] w-1/3" />
+                </div>
+              )}
+            </button>
+          )}
 
           {delivery.locationConfirmed && (
             <div className="flex items-center gap-2 p-3 bg-emerald-50/50 border border-emerald-600/10 rounded-xl mb-4">
@@ -451,14 +527,6 @@ export function CustomerTracking() {
                 {delivery.address}
               </p>
             </div>
-            {!delivery.locationConfirmed && (
-              <button
-                onClick={handleConfirmLocation}
-                className="text-[11px] font-bold text-emerald-600 underline"
-              >
-                Redo
-              </button>
-            )}
           </div>
 
           {/* Grouped Stops */}

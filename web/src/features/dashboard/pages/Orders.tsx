@@ -32,6 +32,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../../components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../../components/ui/alert-dialog";
 import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardOrders() {
@@ -55,6 +65,8 @@ export function DashboardOrders() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [copyingOrder, setCopyingOrder] = useState<Order | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [ineligibleOrders, setIneligibleOrders] = useState<string[]>([]);
 
   useEffect(() => {
     fetchOrders({ limit: 100 });
@@ -129,24 +141,21 @@ export function DashboardOrders() {
             {selectedOrders.length > 0 && (
               <div className="flex gap-2">
                 <button
-                  onClick={async () => {
-                    if (
-                      confirm(
-                        `Are you sure you want to delete ${selectedOrders.length} orders?`,
+                  onClick={() => {
+                    const ineligible = (orders || [])
+                      .filter(
+                        (o) =>
+                          selectedOrders.includes(o.id) &&
+                          (o.status === "in_progress" || o.status === "failed"),
                       )
-                    ) {
-                      try {
-                        await deleteOrders(selectedOrders);
-                        setSelectedOrders([]);
-                        toast.success("Orders deleted successfully");
-                      } catch (err: unknown) {
-                        const error = err as AxiosError<{ message?: string }>;
-                        const message =
-                          error.response?.data?.message ||
-                          "Failed to delete orders";
-                        toast.error(message);
-                      }
+                      .map((o) => o.external_id || o.id);
+
+                    if (ineligible.length > 0) {
+                      setIneligibleOrders(ineligible);
+                    } else {
+                      setIneligibleOrders([]);
                     }
+                    setShowDeleteDialog(true);
                   }}
                   disabled={isMutating}
                   className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] font-bold shadow-sm transition-all hover:bg-red-100 hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -799,6 +808,66 @@ export function DashboardOrders() {
         }}
         drivers={driverNames}
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-white border-none shadow-2xl rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold text-gray-900">
+              {ineligibleOrders.length > 0
+                ? "Cannot Delete Some Orders"
+                : `Delete ${selectedOrders.length} Orders?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] text-gray-500 leading-relaxed">
+              {ineligibleOrders.length > 0 ? (
+                <>
+                  The following orders cannot be deleted because they are
+                  already <span className="font-bold">In Progress</span> or have{" "}
+                  <span className="font-bold text-red-500">Failed</span>:
+                  <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-black/5 max-h-40 overflow-y-auto">
+                    <ul className="list-disc list-inside space-y-1">
+                      {ineligibleOrders.map((id) => (
+                        <li key={id} className="font-mono text-[11px]">
+                          {id}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <p className="mt-4">
+                    Please deselect these orders and try again.
+                  </p>
+                </>
+              ) : (
+                "Are you sure you want to delete these orders? This action cannot be undone and will permanently remove them from the system."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-black/8 text-[13px] font-bold text-gray-500 hover:bg-gray-50 transition-all">
+              {ineligibleOrders.length > 0 ? "Got it" : "Cancel"}
+            </AlertDialogCancel>
+            {ineligibleOrders.length === 0 && (
+              <AlertDialogAction
+                onClick={async () => {
+                  try {
+                    await deleteOrders(selectedOrders);
+                    setSelectedOrders([]);
+                    toast.success("Orders deleted successfully");
+                  } catch (err: unknown) {
+                    const error = err as AxiosError<{ message?: string }>;
+                    toast.error(
+                      error.response?.data?.message ||
+                        "Failed to delete orders",
+                    );
+                  }
+                }}
+                className="w-full sm:w-auto px-8 py-2.5 bg-red-600 text-white rounded-xl text-[13px] font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+              >
+                Delete Orders
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -4,6 +4,11 @@ import { Job } from 'bullmq';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateReportCsv } from '../dashboard/utils/report.util';
+import {
+  dataClearedTemplate,
+  historyExportTemplate,
+  historyEmptyTemplate,
+} from '../common/template';
 
 @Processor('account')
 export class AccountProcessor {
@@ -31,16 +36,10 @@ export class AccountProcessor {
       // If targetRole is driver, we could filter by driverId, but for now just send the workspace report
       const csvContent = await generateReportCsv(this.prisma, companyId, {});
 
-      const content = `
-        <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Data Cleared</h2>
-        <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">A ${targetRole} has initiated a permanent data clearance. As per policy, we have attached the final data report before fully dropping the records.</p>
-        <p style="color: #475569; font-size: 14px;">The report is attached to this email in CSV format.</p>
-      `;
-
       await this.mailService.sendMail(
         email,
         'Vector Data Clearance Report',
-        this.generateBaseTemplate(content, 'Data Clearance'),
+        dataClearedTemplate(targetRole),
         'Attached is the final data report before permanent clearance.',
         [
           {
@@ -132,13 +131,7 @@ export class AccountProcessor {
         await this.mailService.sendMail(
           email,
           'Vector History Export',
-          this.generateBaseTemplate(
-            `
-            <h2 style="color: #0f172a;">History Export</h2>
-            <p>You requested a history export for <b>${range}</b>, but we couldn't find any completed routes in that period.</p>
-          `,
-            'History Export',
-          ),
+          historyEmptyTemplate(range),
           'No history found for the requested period.',
         );
         return;
@@ -150,16 +143,10 @@ export class AccountProcessor {
         csv += `${r.date},"${r.name.replace(/"/g, '""')}",${r.stops.length},${r.total_distance_km || 0},${r.completed_at?.toISOString() || ''}\n`;
       });
 
-      const content = `
-        <h2 style="color: #0f172a;">History Export</h2>
-        <p>Your delivery history report for <b>${range}</b> is ready. We found ${routes.length} completed routes.</p>
-        <p>Please find the attached CSV file for full details.</p>
-      `;
-
       await this.mailService.sendMail(
         email,
         'Vector History Export',
-        this.generateBaseTemplate(content, 'History Export'),
+        historyExportTemplate(range, routes.length),
         `Your history report for ${range} is attached.`,
         [
           {
@@ -205,23 +192,5 @@ export class AccountProcessor {
       );
       throw err;
     }
-  }
-
-  private generateBaseTemplate(content: string, title: string) {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title}</title>
-      </head>
-      <body style="font-family: -apple-system, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f4f7f5; margin: 0; padding: 40px 20px;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; padding: 40px; border: 1px solid #e5e7eb;">
-          ${content}
-        </div>
-      </body>
-      </html>
-    `;
   }
 }

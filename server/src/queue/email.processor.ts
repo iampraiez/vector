@@ -5,6 +5,12 @@ import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateReportCsv } from '../dashboard/utils/report.util';
 import { ReportQueryDto } from '../dashboard/dto/dashboard.dto';
+import {
+  reportReadyTemplate,
+  verificationEmailTemplate,
+  passwordResetTemplate,
+  trackingLinkTemplate,
+} from '../common/template';
 
 @Processor('email')
 export class EmailProcessor {
@@ -15,55 +21,6 @@ export class EmailProcessor {
     private readonly prisma: PrismaService,
   ) {}
 
-  private generateBaseTemplate(content: string, title: string) {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title}</title>
-      </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f4f7f5; margin: 0; padding: 0;">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f7f5; padding: 40px 20px;">
-          <tr>
-            <td align="center">
-              <table width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02); border: 1px solid #e5e7eb;">
-                <tr>
-                  <td style="padding: 40px 40px 20px 40px; text-align: left;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <div style="width: 40px; height: 40px; background-color: #10b981; border-radius: 12px; display: inline-block; text-align: center; vertical-align: middle;">
-                        <span style="color: white; font-size: 24px; font-weight: 900; line-height: 40px;">V</span>
-                      </div>
-                      <span style="font-size: 22px; font-weight: 900; color: #0f172a; margin-left: 10px; letter-spacing: -1px; vertical-align: middle;">VECTOR</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 20px 40px 40px 40px;">
-                    ${content}
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #f3f4f6; text-align: center;">
-                    <p style="margin: 0; font-size: 13px; color: #94a3b8; font-weight: 500;">
-                      &copy; ${new Date().getFullYear()} Vector Fleet Technologies.
-                    </p>
-                    <div style="margin-top: 12px;">
-                      <a href="#" style="color: #64748b; font-size: 12px; text-decoration: none; margin: 0 8px;">Help Center</a>
-                      <a href="#" style="color: #64748b; font-size: 12px; text-decoration: none; margin: 0 8px;">Privacy Policy</a>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
-  }
-
   @Process('sendVerification')
   async handleSendVerification(job: Job<{ email: string; token: string }>) {
     const { email, token } = job.data;
@@ -71,21 +28,10 @@ export class EmailProcessor {
 
     const text = `Vector: Your verification code is ${token}. Please enter it in the app. Code expires in 1 hour.`;
 
-    const content = `
-      <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Verify your email</h2>
-      <p style="color: #475569; font-size: 16px; margin-bottom: 32px;">Welcome to Vector. Please use the verification code below to complete your registration:</p>
-      
-      <div style="background-color: #f0fdf4; padding: 32px; text-align: center; border-radius: 20px; margin: 32px 0; border: 2px dashed #10b981;">
-        <span style="font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #065f46; font-family: 'Courier New', Courier, monospace;">${token}</span>
-      </div>
-      
-      <p style="font-size: 14px; color: #64748b; margin-top: 32px; font-weight: 500;">This security code will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-    `;
-
     await this.mailService.sendMail(
       email,
       'Verify Your Vector Account',
-      this.generateBaseTemplate(content, 'Verify Your Account'),
+      verificationEmailTemplate(token),
       text,
     );
   }
@@ -99,23 +45,10 @@ export class EmailProcessor {
 
     const text = `Reset your Vector password: ${resetLink}. This link expires in 30 minutes.`;
 
-    const content = `
-      <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Password Reset</h2>
-      <p style="color: #475569; font-size: 16px; margin-bottom: 32px;">We've received a request to reset your Vector workspace password. Click the button below to continue:</p>
-      
-      <div style="text-align: center; margin: 40px 0;">
-        <a href="${resetLink}" style="background-color: #0f172a; color: #ffffff; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">Reset Password</a>
-      </div>
-      
-      <p style="font-size: 14px; color: #64748b; margin-top: 32px; font-weight: 500;">This link is valid for 30 minutes. If you didn't request a reset, your account is still secure.</p>
-      <div style="height: 1px; background-color: #f3f4f6; margin: 32px 0;"></div>
-      <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">You're receiving this because a password reset was requested for your Vector account. If this wasn't you, please disregard.</p>
-    `;
-
     await this.mailService.sendMail(
       email,
       'Reset Your Vector Password',
-      this.generateBaseTemplate(content, 'Password Reset'),
+      passwordResetTemplate(resetLink),
       text,
     );
   }
@@ -133,30 +66,10 @@ export class EmailProcessor {
       const startDateLabel = query.start_date || 'All time';
       const endDateLabel = query.end_date || 'Now';
 
-      const content = `
-        <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Your Fleet Report is Ready</h2>
-        <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">As requested, we've generated a performance report for your fleet based on the selected criteria.</p>
-        
-        <div style="background-color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 32px;">
-          <table width="100%" cellspacing="0" cellpadding="0">
-            <tr>
-              <td style="color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; padding-bottom: 8px;">Parameters</td>
-            </tr>
-            <tr>
-              <td style="color: #0f172a; font-size: 14px; font-weight: 500;">
-                Range: ${startDateLabel} &rarr; ${endDateLabel}
-              </td>
-            </tr>
-          </table>
-        </div>
-
-        <p style="color: #475569; font-size: 14px;">The report is attached to this email in CSV format. You can open it with Excel, Google Sheets, or any text editor.</p>
-      `;
-
       await this.mailService.sendMail(
         email,
         'Your Vector Fleet Report',
-        this.generateBaseTemplate(content, 'Fleet Report'),
+        reportReadyTemplate(startDateLabel, endDateLabel),
         `Your Vector report is ready and attached. Range: ${startDateLabel} to ${endDateLabel}.`,
         [
           {
@@ -185,8 +98,7 @@ export class EmailProcessor {
       driverName?: string;
     }>,
   ) {
-    const { email, customerName, trackingLink, orderId, status, driverName } =
-      job.data;
+    const { email, trackingLink, orderId, status, driverName } = job.data;
     this.logger.log(`Processing tracking link email for ${email}`);
 
     const isScheduled = status === 'scheduled' || status === 'assigned';
@@ -200,38 +112,10 @@ export class EmailProcessor {
 
     const text = `${title}: ${statusText} Track here: ${trackingLink}`;
 
-    const content = `
-      <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">${title}</h2>
-      <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Hi ${customerName},</p>
-      <p style="color: #475569; font-size: 16px; margin-bottom: 32px;">${statusText}</p>
-      
-      ${
-        driverName
-          ? `
-      <div style="background-color: #f8fafc; padding: 24px; border-radius: 20px; margin: 32px 0; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 16px;">
-        <div style="width: 48px; height: 48px; background-color: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #64748b;">
-          ${driverName.charAt(0)}
-        </div>
-        <div>
-          <p style="margin: 0; font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase;">Your Driver</p>
-          <p style="margin: 0; font-size: 16px; color: #0f172a; font-weight: 700;">${driverName}</p>
-        </div>
-      </div>
-      `
-          : ''
-      }
-
-      <div style="text-align: center; margin: 40px 0;">
-        <a href="${trackingLink}" style="background-color: #10b981; color: #ffffff; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);">Track Your Delivery</a>
-      </div>
-      
-      <p style="font-size: 14px; color: #64748b; margin-top: 32px; font-weight: 500;">You can use this link to see live updates, confirm your precise location, and view the driver's estimated time of arrival.</p>
-    `;
-
     await this.mailService.sendMail(
       email,
       title,
-      this.generateBaseTemplate(content, title),
+      trackingLinkTemplate(title, statusText, trackingLink, driverName),
       text,
     );
   }

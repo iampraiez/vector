@@ -22,6 +22,7 @@
   --color-sidebar-border: var(--color-border-subtle);
   --color-sidebar-ring: var(--color-primary);
 
+  --color-white: #ffffff;
   --color-background: var(--color-white);
   --color-card: var(--color-white);
 }

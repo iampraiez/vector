@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Stop } from '@prisma/client';
+import { MapService } from '../map/map.service';
 
 type StopWithRelations = Prisma.StopGetPayload<{
   include: {
@@ -18,7 +19,12 @@ type StopWithRelations = Prisma.StopGetPayload<{
 
 @Injectable()
 export class TrackingService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(TrackingService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private mapService: MapService,
+  ) {}
 
   async getTrackingData(token: string) {
     if (!token) throw new NotFoundException('Tracking token is required');
@@ -69,9 +75,22 @@ export class TrackingService {
         current_lng: number | null;
       } | null;
       company: { name: string; contact_email: string; phone: string };
-      route: { id: string; assigned_at: Date; started_at: Date } | null;
+      route: {
+        id: string;
+        assigned_at: Date | null;
+        started_at: Date | null;
+      } | null;
       tracking_token: string;
       location_confirmed: boolean;
+      assigned_at: Date | null;
+      status: string;
+      customer_name: string;
+      address: string;
+      time_window_start: string | null;
+      time_window_end: string | null;
+      arrived_at: Date | null;
+      completed_at: Date | null;
+      created_at: Date;
     };
 
     return {
@@ -95,8 +114,8 @@ export class TrackingService {
       completedAt: stopData.completed_at,
       company: {
         name: stopData.company.name,
-        email: stopData.company.contact_email || 'support@vector.com',
-        phone: stopData.company.phone || '+2348000000000',
+        email: stopData.company.contact_email,
+        phone: stopData.company.phone,
       },
       driver: stopData.driver
         ? {
@@ -118,7 +137,8 @@ export class TrackingService {
         : null,
       timeline: {
         created_at: stopData.created_at,
-        assigned_at: stopData.route?.assigned_at || null,
+        assigned_at:
+          stopData.assigned_at || stopData.route?.assigned_at || null,
         started_at: stopData.started_at || stopData.route?.started_at || null,
         arrived_at: stopData.arrived_at,
         completed_at: stopData.completed_at,
@@ -133,19 +153,57 @@ export class TrackingService {
 
     if (!stop) throw new NotFoundException('Tracking token not found');
 
-    await this.prisma.stop.updateMany({
-      where: {
-        route_id: stop.route_id,
-        customer_email: stop.customer_email,
-      },
+    let formattedAddress = stop.address;
+    try {
+      const geoResult = await this.mapService.reverseGeocode({ lat, lng });
+      formattedAddress = geoResult.formattedAddress;
+      this.logger.log(
+        `Reverse geocoded ${lat}, ${lng} to: ${formattedAddress}`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Failed to reverse geocode ${lat}, ${lng}, keeping original address.`,
+        err,
+      );
+    }
+
+    // Update the specific stop first to ensure it's saved correctly
+    await this.prisma.stop.update({
+      where: { id: stop.id },
       data: {
-        lat,
-        lng,
+        lat: Number(lat),
+        lng: Number(lng),
+        address: formattedAddress,
         location_confirmed: true,
       },
     });
 
-    return { message: 'Location confirmed successfully', lat, lng };
+    // Update related stops on the same route for the same customer (e.g., grouped orders)
+    if (stop.route_id && stop.customer_email) {
+      await this.prisma.stop.updateMany({
+        where: {
+          route_id: stop.route_id,
+          customer_email: stop.customer_email,
+          id: { not: stop.id },
+        },
+        data: {
+          lat: Number(lat),
+          lng: Number(lng),
+          address: formattedAddress,
+          location_confirmed: true,
+        },
+      });
+    }
+
+    this.logger.log(
+      `[Tracking] Location confirmed for stop ${stop.id}: ${lat}, ${lng} -> ${formattedAddress}`,
+    );
+    return {
+      message: 'Location confirmed successfully',
+      lat,
+      lng,
+      address: formattedAddress,
+    };
   }
 
   async rateDelivery(token: string, dto: { rating: number; comment?: string }) {

@@ -159,15 +159,25 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   deleteOrders: async (ids: string[]) => {
-    set({ isMutating: true, error: null });
+    const previousOrders = get().orders;
+    const previousStats = get().stats;
+
+    // Optimistically update UI
+    set({
+      orders: previousOrders.filter((o) => !ids.includes(o.id)),
+      isMutating: true,
+      error: null,
+    });
+
     try {
-      // Assuming backend supports bulk delete or we iterate
       await Promise.all(ids.map((id) => api.delete(`/dashboard/orders/${id}`)));
-      await get().fetchOrders();
       set({ isMutating: false });
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
+      // Rollback on error
       set({
+        orders: previousOrders,
+        stats: previousStats,
         error: error.response?.data?.message || "Failed to delete orders",
         isMutating: false,
       });
