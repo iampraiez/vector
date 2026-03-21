@@ -10,6 +10,8 @@ class StopModel {
   final String distance;
   final int packages;
   final String? notes;
+  final double? lat;
+  final double? lng;
   bool isCompleted;
   String? photoPath;
   String? photoUrl;
@@ -24,6 +26,8 @@ class StopModel {
     required this.distance,
     required this.packages,
     this.notes,
+    this.lat,
+    this.lng,
     this.isCompleted = false,
     this.photoPath,
     this.photoUrl,
@@ -41,6 +45,8 @@ class StopModel {
       distance: json['distance'] as String? ?? '--',
       packages: (json['packages'] as num?)?.toInt() ?? 1,
       notes: json['notes'] as String?,
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
     );
   }
 }

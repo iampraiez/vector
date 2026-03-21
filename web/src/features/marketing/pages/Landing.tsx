@@ -201,7 +201,7 @@ export function WebLanding() {
               <LocalShippingIcon size={20} className="text-white" />
             </div>
             <span className="text-[18px] font-bold tracking-tight text-[#121212]">
-              Vector
+              VECTOR
             </span>
           </div>
 

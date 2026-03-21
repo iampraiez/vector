@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore, Driver } from "../../../store/driverStore";
 import { api } from "../../../lib/api";
@@ -46,7 +45,6 @@ export function DashboardOrders() {
     deleteOrders,
   } = useOrderStore();
   const { drivers, fetchDrivers } = useDriverStore();
-  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | OrderStatus>("all");
@@ -1152,7 +1150,7 @@ function UploadCSVModal({
       <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-150 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
         <DialogHeader className="p-6 border-b border-gray-100 bg-white shrink-0">
           <div className="flex flex-col items-center text-center px-8">
-            <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">
+            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
               {file ? "Review & Edit Orders" : "Upload CSV"}
             </DialogTitle>
             <p className="text-[12px] text-gray-500 mt-1">

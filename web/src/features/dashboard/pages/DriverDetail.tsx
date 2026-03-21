@@ -12,6 +12,7 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 interface DeliveryHistory {
   id: string;
@@ -40,8 +41,67 @@ export function DashboardDriverDetail() {
 
   if (isLoading && !selectedDriver) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      <div className="p-4 md:p-8 max-w-300 mx-auto">
+        {/* Back Button Skeleton */}
+        <Skeleton className="w-32 h-4 mb-8" />
+
+        {/* Driver Profile Skeleton */}
+        <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
+          <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8">
+            <Skeleton className="w-20 h-20 rounded-2xl shrink-0" />
+            <div className="flex-1 min-w-0 w-full">
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+                <div>
+                  <Skeleton className="w-48 h-10 mb-2" />
+                  <Skeleton className="w-24 h-6 rounded-lg" />
+                </div>
+                <Skeleton className="w-20 h-8 rounded-xl" />
+              </div>
+              <div className="flex flex-wrap gap-2.5 mb-8">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="w-40 h-8 rounded-xl" />
+                ))}
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-8 border-t border-gray-100">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i}>
+                    <Skeleton className="w-24 h-3 mb-1.5" />
+                    <Skeleton className="w-32 h-5" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <Skeleton className="w-11 h-11 rounded-xl" />
+                <Skeleton className="w-16 h-8" />
+              </div>
+              <Skeleton className="w-24 h-4" />
+            </div>
+          ))}
+        </div>
+
+        {/* Delivery History Table Skeleton */}
+        <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-5 md:p-6 border-b border-gray-100 flex items-center justify-between">
+            <Skeleton className="w-40 h-6" />
+            <Skeleton className="w-48 h-10 rounded-xl" />
+          </div>
+          <div className="p-6 space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="w-full h-12" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

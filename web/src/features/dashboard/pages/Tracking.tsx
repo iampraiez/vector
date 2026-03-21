@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Driver } from "../../../store/driverStore";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardTracking() {
   const { drivers, isLoading, fetchDrivers } = useDriverStore();
@@ -140,41 +141,69 @@ export function DashboardTracking() {
         </div>
       </div>
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          label="Active Drivers"
+          value={activeDrivers.length}
+          total={drivers.length}
+          color="emerald"
+          isLoading={isLoading && drivers.length === 0}
+        />
+        <StatCard
+          label="Total Deliveries Today"
+          value={totalDeliveriesToday}
+          color="emerald"
+          isLoading={isLoading && drivers.length === 0}
+        />
+        <StatCard
+          label="Remaining Stops"
+          value={remainingStops}
+          color="amber"
+          isLoading={isLoading && drivers.length === 0}
+        />
+        <StatCard
+          label="Avg Completion Rate"
+          value={
+            drivers.length > 0
+              ? `${Math.round((activeDrivers.length / drivers.length) * 100)}%`
+              : "—"
+          }
+          color="emerald"
+          isLoading={isLoading && drivers.length === 0}
+        />
+      </div>
+
       {isLoading && drivers.length === 0 ? (
-        <div className="flex h-32 items-center justify-center">
-          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : (
         <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard
-              label="Active Drivers"
-              value={activeDrivers.length}
-              total={drivers.length}
-              color="emerald"
-            />
-            <StatCard
-              label="Total Deliveries Today"
-              value={totalDeliveriesToday}
-              color="emerald"
-            />
-            <StatCard
-              label="Remaining Stops"
-              value={remainingStops}
-              color="amber"
-            />
-            <StatCard
-              label="Avg Completion Rate"
-              value={
-                drivers.length > 0
-                  ? `${Math.round((activeDrivers.length / drivers.length) * 100)}%`
-                  : "—"
-              }
-              color="emerald"
-            />
+          <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm h-150 lg:h-180 mb-12">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <Skeleton className="w-32 h-5" />
+              <Skeleton className="w-24 h-8" />
+            </div>
+            <div className="flex-1 p-8">
+              <Skeleton className="w-full h-full rounded-xl" />
+            </div>
           </div>
 
+          <div className="space-y-6">
+            <Skeleton className="w-48 h-6" />
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-black/8 rounded-2xl p-5 shadow-sm"
+                >
+                  <Skeleton className="w-10 h-10 rounded-xl mb-4" />
+                  <Skeleton className="w-32 h-4 mb-2" />
+                  <Skeleton className="w-16 h-3" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
           {/* Map + Detail Section */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
             {/* Map Area */}
@@ -483,11 +512,13 @@ function StatCard({
   value,
   total,
   color,
+  isLoading,
 }: {
   label: string;
   value: number | string;
   total?: number;
   color: "emerald" | "amber";
+  isLoading?: boolean;
 }) {
   const colorClasses = {
     emerald: "text-emerald-600 border-emerald-100 shadow-emerald-600/5",
@@ -501,14 +532,18 @@ function StatCard({
       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
         {label}
       </p>
-      <div className="flex items-baseline gap-1.5">
-        <p className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-          {value}
-        </p>
-        {total && (
-          <p className="text-[14px] font-bold text-gray-300">/ {total}</p>
-        )}
-      </div>
+      {isLoading ? (
+        <Skeleton className="w-20 h-8" />
+      ) : (
+        <div className="flex items-baseline gap-1.5">
+          <p className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+            {value}
+          </p>
+          {total && (
+            <p className="text-[14px] font-bold text-gray-300">/ {total}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

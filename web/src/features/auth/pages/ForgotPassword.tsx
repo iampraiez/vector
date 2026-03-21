@@ -52,7 +52,7 @@ export function ForgotPassword() {
             <LocalShippingIcon size={18} className="text-white" />
           </div>
           <span className="text-[18px] font-bold tracking-tight text-gray-900">
-            Vector
+            VECTOR
           </span>
         </div>
 

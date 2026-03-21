@@ -15,6 +15,7 @@ import {
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 import { AxiosError } from "axios";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 type DeliveryStatus =
   | "pending"
@@ -124,10 +125,58 @@ export function CustomerTracking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Fetching tracking data...</p>
+      <div className="min-h-screen bg-gray-100 font-sans">
+        {/* Top Brand Bar Skeleton */}
+        <div className="bg-white border-b border-black/8 px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="w-7 h-7 rounded-md" />
+            <Skeleton className="w-20 h-5" />
+          </div>
+          <div className="text-right">
+            <Skeleton className="w-24 h-4 mb-1 mx-auto ml-auto" />
+            <Skeleton className="w-32 h-3 ml-auto" />
+          </div>
+        </div>
+
+        <div className="max-w-120 mx-auto p-4">
+          {/* Status Card Skeleton */}
+          <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">
+            <Skeleton className="w-24 h-8 rounded-full mb-4" />
+            <Skeleton className="w-48 h-7 mb-2" />
+            <Skeleton className="w-64 h-4 mb-6" />
+
+            <div className="bg-emerald-50/50 rounded-xl p-3 px-4 flex items-center gap-2.5 mb-4 border border-emerald-600/10">
+              <Skeleton className="w-5 h-5 rounded-full" />
+              <div className="space-y-1.5">
+                <Skeleton className="w-20 h-3" />
+                <Skeleton className="w-32 h-4" />
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 px-3.5 bg-gray-50/50 rounded-xl border border-black/5">
+              <Skeleton className="w-4 h-4 rounded-full mt-0.5" />
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="w-16 h-2" />
+                <Skeleton className="w-full h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline Skeleton */}
+          <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">
+            <Skeleton className="w-32 h-4 mb-6" />
+            <div className="space-y-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex gap-4 items-center">
+                  <Skeleton className="w-6 h-6 rounded-full" />
+                  <div className="flex-1 flex justify-between">
+                    <Skeleton className="w-32 h-4" />
+                    <Skeleton className="w-12 h-3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

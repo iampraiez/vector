@@ -11,7 +11,9 @@ import {
   DocumentTextIcon,
   CalendarIcon,
   TruckIcon,
+  PhoneIcon,
 } from "@heroicons/react/24/outline";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardOrderDetail() {
   const navigate = useNavigate();
@@ -26,8 +28,56 @@ export function DashboardOrderDetail() {
 
   if (isLoading && !selectedOrder) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      <div className="p-4 md:p-8 max-w-5xl mx-auto">
+        <Skeleton className="w-32 h-4 mb-8" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 shadow-sm">
+              <Skeleton className="w-48 h-10 mb-2" />
+              <Skeleton className="w-32 h-4 mb-8" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-8 border-t border-gray-100">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i}>
+                    <Skeleton className="w-16 h-3 mb-2" />
+                    <Skeleton className="w-24 h-5" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 shadow-sm">
+              <Skeleton className="w-32 h-6 mb-8" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="w-12 h-12 rounded-xl" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="w-16 h-2" />
+                      <Skeleton className="w-full h-4" />
+                      <Skeleton className="w-3/4 h-3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-8">
+            <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm">
+              <Skeleton className="w-24 h-6 mb-6" />
+              <div className="flex items-center gap-4 mb-6">
+                <Skeleton className="w-14 h-14 rounded-2xl" />
+                <div className="space-y-2">
+                  <Skeleton className="w-32 h-4" />
+                  <Skeleton className="w-20 h-3" />
+                </div>
+              </div>
+              <div className="space-y-4 pt-6 border-t border-gray-100">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="w-full h-5" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -346,24 +396,5 @@ function AssignmentDetail({
       </span>
       <span className="text-[13px] text-gray-700 font-bold">{value}</span>
     </div>
-  );
-}
-
-function PhoneIcon(props: React.ComponentProps<"svg">) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      {...props}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
-      />
-    </svg>
   );
 }

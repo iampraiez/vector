@@ -157,18 +157,28 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   userAgentPackageName: 'com.vector.driver',
                 ),
 
-                // Current position marker
-                if (_currentPosition != null)
-                  MarkerLayer(
-                    markers: [
+                // Markers
+                MarkerLayer(
+                  markers: [
+                    // Current position marker
+                    if (_currentPosition != null)
                       Marker(
                         point: _currentPosition!,
                         width: 52,
                         height: 52,
                         child: _PulsingLocationDot(),
                       ),
-                    ],
-                  ),
+                    
+                    // Destination marker (Current Stop)
+                    if (currentStop.lat != null && currentStop.lng != null)
+                      Marker(
+                        point: LatLng(currentStop.lat!, currentStop.lng!),
+                        width: 52,
+                        height: 52,
+                        child: _DestinationMarker(stopId: currentStop.id),
+                      ),
+                  ],
+                ),
 
                 // OSM attribution
                 RichAttributionWidget(
@@ -401,8 +411,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
                           const SizedBox(height: 24),
                           const Divider(),
                           const SizedBox(height: 24),
-                          if (remainingData.isNotEmpty)
+                          if (remainingData.isNotEmpty) ...[
                             _buildUpcomingStops(remainingData),
+                          ] else ...[
+                            _buildNoMoreStops(),
+                          ],
                         ],
                       ),
                     ),
@@ -666,6 +679,94 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNoMoreStops() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_outline_rounded,
+              color: AppColors.success,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Final stop of this route',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Complete this delivery to finish the route.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DestinationMarker extends StatelessWidget {
+  final String stopId;
+  const _DestinationMarker({required this.stopId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary.withValues(alpha: 0.15),
+          ),
+        ),
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+            border: Border.all(color: Colors.white, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.location_on_rounded,
+            color: Colors.white,
+            size: 18,
           ),
         ),
       ],
