@@ -13,7 +13,6 @@ import {
   PencilIcon,
   UserIcon,
   ClockIcon,
-  DocumentTextIcon,
   ArchiveBoxIcon,
   TrashIcon,
   CheckIcon,
@@ -1253,7 +1252,7 @@ function UploadCSVModal({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-150 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
+      <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-150 md:max-w-4xl lg:max-w-5xl xl:max-w-6xl p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
         <DialogHeader className="p-6 border-b border-gray-100 bg-white shrink-0">
           <div className="flex flex-col items-center text-center px-8">
             <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
@@ -1308,31 +1307,45 @@ function UploadCSVModal({
                     e.target.files?.[0] && handleFile(e.target.files[0])
                   }
                 />
+                <p className="text-[11px] text-gray-400 mt-6 border-t border-gray-100 pt-4 max-w-sm mx-auto leading-relaxed">
+                  For best results, use our{" "}
+                  <a
+                    href="/template_orders.csv"
+                    download
+                    className="text-emerald-600 font-bold hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    CSV template
+                  </a>
+                  . Make sure your dates are in YYYY-MM-DD format.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {/* File Info & Batch Counter */}
-                <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/10">
-                      <DocumentTextIcon className="w-5 h-5 text-white" />
-                    </div>
+              <div className="space-y-6">
+                {/* Statistics & Batch Actions */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gray-50/50 p-4 rounded-2xl border border-black/5">
+                  <div className="flex items-center gap-6 divide-x divide-black/10">
                     <div>
-                      <p className="text-[13px] font-bold text-gray-900 truncate max-w-40">
-                        {file.name}
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+                        Total Orders
                       </p>
-                      <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">
-                        {importOrders.length} orders detected
+                      <p className="text-lg font-black text-gray-900">
+                        {importOrders.length}
+                      </p>
+                    </div>
+                    <div className="pl-6">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+                        Selected
+                      </p>
+                      <p className="text-lg font-black text-emerald-600">
+                        {selectedRows.size}
                       </p>
                     </div>
                   </div>
 
                   {selectedRows.size > 0 && (
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 animate-in fade-in slide-in-from-right-2 border-t sm:border-t-0 pt-3 sm:pt-0 border-emerald-100/50 sm:border-none">
-                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/50 px-2.5 py-1 rounded-lg whitespace-nowrap">
-                        {selectedRows.size} selected
-                      </span>
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex bg-white rounded-lg border border-black/5 p-1">
                         <button
                           onClick={handleDeleteSelected}
                           className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -1364,7 +1377,7 @@ function UploadCSVModal({
                 {/* Editable Table */}
                 <div className="border border-black/8 rounded-2xl overflow-hidden shadow-sm bg-white">
                   <div className="overflow-x-auto max-h-100 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
-                    <table className="w-full text-[12px] text-left border-collapse">
+                    <table className="w-full text-[12px] text-left border-collapse min-w-250">
                       <thead className="sticky top-0 z-20 bg-gray-50 border-b border-black/5">
                         <tr>
                           <th className="p-4 w-10">
