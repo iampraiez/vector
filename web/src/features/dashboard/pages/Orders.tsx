@@ -1192,17 +1192,18 @@ function UploadCSVModal({
 
       // Skip header row and convert to objects
       const parsedOrders: Partial<Order>[] = rows.slice(1).map((row) => ({
-        customer_name: row[0] || "Unknown",
-        address: row[1] || "Unknown Address",
-        city: row[2] || "",
-        packages: parseInt(row[3]) || 1,
+        external_id: row[0] || "",
+        customer_name: row[1] || "Unknown",
+        customer_email: row[2] || "",
+        customer_phone: row[3] || "",
+        address: row[4] || "Unknown Address",
+        city: row[5] || "",
+        packages: parseInt(row[6]) || 1,
         priority: "normal",
-        delivery_date: row[4] || new Date().toISOString().split("T")[0],
-        time_window_start: row[5] || "09:00",
-        time_window_end: row[6] || "17:00",
-        notes: row[7] || "",
-        customer_email: row[8] || "",
-        customer_phone: row[9] || "",
+        delivery_date: row[7] || new Date().toISOString().split("T")[0],
+        time_window_start: row[8] || "09:00",
+        time_window_end: row[9] || "17:00",
+        notes: row[10] || "",
       }));
       setImportOrders(parsedOrders);
     };
@@ -1378,7 +1379,13 @@ function UploadCSVModal({
                             />
                           </th>
                           <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
+                            Order ID
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
                             Customer
+                          </th>
+                          <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
+                            Contact Details
                           </th>
                           <th className="px-4 py-3 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
                             Address
@@ -1417,6 +1424,20 @@ function UploadCSVModal({
                             </td>
                             <td className="px-4 py-2">
                               <input
+                                value={order.external_id || ""}
+                                onChange={(e) =>
+                                  handleUpdateRow(
+                                    i,
+                                    "external_id",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="ORD-XXXX"
+                                className="w-full bg-transparent border-none focus:ring-0 text-gray-500 font-mono text-[11px] p-0 hover:bg-black/5 rounded px-1 -mx-1"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
                                 value={order.customer_name}
                                 onChange={(e) =>
                                   handleUpdateRow(
@@ -1427,6 +1448,34 @@ function UploadCSVModal({
                                 }
                                 className="w-full bg-transparent border-none focus:ring-0 font-bold text-gray-900 p-0 hover:bg-black/5 rounded px-1 -mx-1"
                               />
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="flex flex-col gap-1">
+                                <input
+                                  value={order.customer_email || ""}
+                                  onChange={(e) =>
+                                    handleUpdateRow(
+                                      i,
+                                      "customer_email",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="Email"
+                                  className="w-full bg-transparent border-none focus:ring-0 text-gray-500 text-[11px] p-0 hover:bg-black/5 rounded px-1 -mx-1"
+                                />
+                                <input
+                                  value={order.customer_phone || ""}
+                                  onChange={(e) =>
+                                    handleUpdateRow(
+                                      i,
+                                      "customer_phone",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="Phone"
+                                  className="w-full bg-transparent border-none focus:ring-0 text-gray-400 text-[10px] p-0 hover:bg-black/5 rounded px-1 -mx-1"
+                                />
+                              </div>
                             </td>
                             <td className="px-4 py-2">
                               <input
