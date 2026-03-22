@@ -14,8 +14,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        redis:
-          configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
+        redis: configService.getOrThrow<string>('REDIS_URL'),
         settings: {
           maxStalledCount: 0,
         },

@@ -1,6 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { RouteStatus, Prisma } from '@prisma/client';
+import { MapService } from '../map/map.service';
 import {
   CreateRouteDto,
   UpdateRouteDto,
@@ -8,11 +14,14 @@ import {
 } from './dto/routes.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
+import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 
 @Injectable()
 export class RoutesService {
   constructor(
     private prisma: PrismaService,
+    private readonly mapService: MapService,
+    private readonly configService: ConfigService,
     @InjectQueue('email') private readonly emailQueue: Queue,
   ) {}
 
@@ -117,31 +126,106 @@ export class RoutesService {
   async optimizeRoute(companyId: string, routeId: string) {
     const route = await this.prisma.route.findUnique({
       where: { id: routeId, company_id: companyId },
-      include: { stops: true },
+      include: { stops: { orderBy: { sequence: 'asc' } } },
     });
 
     if (!route) throw new NotFoundException('Route not found');
 
-    // Basic mock optimization: sort stops by their ID for a deterministic order
-    // In production, integrate open-source TSP or Google OR-Tools
-    const sortedStops = [...route.stops].sort((a, b) =>
-      a.id.localeCompare(b.id),
+    const stops = route.stops;
+    if (stops.length === 0) {
+      const unchanged = await this.prisma.route.findUnique({
+        where: { id: routeId, company_id: companyId },
+        include: {
+          stops: { orderBy: { sequence: 'asc' } },
+          driver: { include: { user: true } },
+        },
+      });
+      return {
+        message: 'No stops on this route.',
+        route: unchanged!,
+      };
+    }
+
+    const missingCoords = stops.filter((s) => s.lat == null || s.lng == null);
+    if (missingCoords.length > 0) {
+      throw new BadRequestException(
+        'All stops must have coordinates before optimization. Update addresses or geocode first.',
+      );
+    }
+
+    const latSum = stops.reduce((acc, s) => acc + Number(s.lat), 0);
+    const lngSum = stops.reduce((acc, s) => acc + Number(s.lng), 0);
+    const agentWaypoint = {
+      lat: latSum / stops.length,
+      lng: lngSum / stops.length,
+    };
+
+    const optimizedIds = await this.mapService.optimizeRoute(
+      agentWaypoint,
+      stops.map((s) => ({
+        id: s.id,
+        lat: Number(s.lat),
+        lng: Number(s.lng),
+      })),
     );
 
-    // Update DB
-    await Promise.all(
-      sortedStops.map((stop, index) =>
-        this.prisma.stop.update({
-          where: { id: stop.id },
-          data: { sequence: index + 1 }, // ensure sequence exists if schema supports it, otherwise generic update
-        }),
-      ),
-    );
+    const stopById = new Map(stops.map((s) => [s.id, s]));
+    const seen = new Set<string>();
+    const orderedIds: string[] = [];
+    for (const id of optimizedIds) {
+      if (stopById.has(id) && !seen.has(id)) {
+        orderedIds.push(id);
+        seen.add(id);
+      }
+    }
+    for (const s of stops) {
+      if (!seen.has(s.id)) orderedIds.push(s.id);
+    }
+
+    const pathWaypoints = [
+      agentWaypoint,
+      ...orderedIds.map((id) => {
+        const s = stopById.get(id)!;
+        return { lat: Number(s.lat), lng: Number(s.lng) };
+      }),
+    ];
+
+    const directions = await this.mapService.getDirections({
+      waypoints: pathWaypoints,
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await Promise.all(
+        orderedIds.map((stopId, index) =>
+          tx.stop.update({
+            where: { id: stopId, route_id: routeId },
+            data: { sequence: index + 1 },
+          }),
+        ),
+      );
+      await tx.route.update({
+        where: { id: routeId },
+        data: {
+          total_distance_km: directions.distanceKm,
+          estimated_duration_min: directions.durationMin,
+        },
+      });
+    });
+
+    const updated = await this.prisma.route.findUnique({
+      where: { id: routeId, company_id: companyId },
+      include: {
+        stops: { orderBy: { sequence: 'asc' } },
+        driver: { include: { user: true } },
+      },
+    });
 
     return {
       message: 'Route optimization complete',
-      optimized_order: sortedStops.map((s) => s.id),
-      estimated_savings_km: 12.5,
+      route: updated!,
+      optimized_order: orderedIds,
+      total_distance_km: directions.distanceKm,
+      estimated_duration_min: directions.durationMin,
     };
   }
 
@@ -159,19 +243,23 @@ export class RoutesService {
       },
     });
 
-    const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
+    const appUrl = this.configService.getOrThrow<string>('APP_URL');
 
     // Queue "scheduled" tracking emails; stamp stops so startRoute does not duplicate.
     for (const stop of route.stops) {
       if (stop.customer_email) {
-        await this.emailQueue.add('sendTrackingLink', {
-          email: stop.customer_email,
-          customerName: stop.customer_name,
-          trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
-          orderId: stop.external_id,
-          status: 'scheduled',
-          driverName: route.driver?.user.full_name,
-        });
+        await this.emailQueue.add(
+          'sendTrackingLink',
+          {
+            email: stop.customer_email,
+            customerName: stop.customer_name,
+            trackingLink: `${appUrl}/track?token=${stop.tracking_token}`,
+            orderId: stop.external_id,
+            status: 'scheduled',
+            driverName: route.driver?.user.full_name,
+          },
+          STANDARD_QUEUE_OPTIONS,
+        );
         await this.prisma.stop.update({
           where: { id: stop.id },
           data: { tracking_email_sent_at: new Date() },

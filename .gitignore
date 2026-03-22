@@ -52,6 +52,8 @@ dist
 
 .env
 
+.cursor
+
 .vscode
 
 build

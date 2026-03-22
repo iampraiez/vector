@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, DriverStatus, StopPriority } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -25,6 +26,7 @@ import { Queue } from 'bullmq';
 import { MailService } from '../mail/mail.service';
 import { Route, Stop } from '@prisma/client';
 import { MapService } from '../map/map.service';
+import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 
 /** Stops returned to the driver app (includes `tracking_token` for customer QR verification). */
 const DRIVER_STOP_LIST_SELECT = {
@@ -81,6 +83,7 @@ export class DriverService {
     private redis: RedisService,
     private mailService: MailService,
     private mapService: MapService,
+    private readonly configService: ConfigService,
     @InjectQueue('account') private readonly accountQueue: Queue,
     @InjectQueue('email') private readonly emailQueue: Queue,
   ) {}
@@ -374,20 +377,24 @@ export class DriverService {
       include: { company: true },
     });
 
-    const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
+    const appUrl = this.configService.getOrThrow<string>('APP_URL');
 
     for (const stop of stops) {
       if (!stop.customer_email) continue;
       if (stop.tracking_email_sent_at != null) continue;
 
-      await this.emailQueue.add('sendTrackingLink', {
-        email: stop.customer_email,
-        customerName: stop.customer_name,
-        trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
-        orderId: stop.external_id,
-        status: 'active',
-        driverName: driver.user.full_name,
-      });
+      await this.emailQueue.add(
+        'sendTrackingLink',
+        {
+          email: stop.customer_email,
+          customerName: stop.customer_name,
+          trackingLink: `${appUrl}/track?token=${stop.tracking_token}`,
+          orderId: stop.external_id,
+          status: 'active',
+          driverName: driver.user.full_name,
+        },
+        STANDARD_QUEUE_OPTIONS,
+      );
       await this.prisma.stop.update({
         where: { id: stop.id },
         data: { tracking_email_sent_at: new Date() },
@@ -960,12 +967,16 @@ export class DriverService {
     });
 
     if (action === 'clear_data') {
-      await this.accountQueue.add('clearDataReport', {
-        companyId: driver.company_id,
-        email: company?.contact_email || 'admin@example.com',
-        targetRole: 'driver',
-        targetId: driver.id,
-      });
+      await this.accountQueue.add(
+        'clearDataReport',
+        {
+          companyId: driver.company_id,
+          email: company?.contact_email || 'admin@example.com',
+          targetRole: 'driver',
+          targetId: driver.id,
+        },
+        STANDARD_QUEUE_OPTIONS,
+      );
       return {
         message:
           'Data clearance scheduled and report will be sent to your fleet manager',
@@ -986,7 +997,7 @@ export class DriverService {
       await this.accountQueue.add(
         'deleteAccount',
         { userId },
-        { delay: tenDaysMs },
+        { ...STANDARD_QUEUE_OPTIONS, delay: tenDaysMs },
       );
 
       return { message: 'Account scheduled for deletion in 10 days' };
@@ -995,14 +1006,18 @@ export class DriverService {
 
   async exportHistory(userId: string, dto: ExportHistoryDto) {
     const driver = await this.getDriverOrThrow(userId);
-    await this.accountQueue.add('exportHistory', {
-      userId,
-      driverId: driver.id,
-      email: driver.user.email,
-      range: dto.range,
-      startDate: dto.startDate,
-      endDate: dto.endDate,
-    });
+    await this.accountQueue.add(
+      'exportHistory',
+      {
+        userId,
+        driverId: driver.id,
+        email: driver.user.email,
+        range: dto.range,
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+      },
+      STANDARD_QUEUE_OPTIONS,
+    );
 
     return {
       message:

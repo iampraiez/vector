@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router";
 import {
   CheckCircleIcon,
@@ -8,6 +8,8 @@ import {
   StarIcon,
   XMarkIcon,
   ArrowPathIcon,
+  ChevronDownIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import {
   StarIcon as StarSolid,
@@ -17,6 +19,7 @@ import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 import { AxiosError } from "axios";
 import { Skeleton } from "../../../components/ui/skeleton";
+import { QRCodeCanvas } from "qrcode.react";
 
 type DeliveryStatus =
   | "pending"
@@ -93,6 +96,20 @@ export function CustomerTracking() {
   const [submitted, setSubmitted] = useState(false);
   const [showQr, setShowQr] = useState(true);
   const [confirmedRecently, setConfirmedRecently] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleDownloadQr = useCallback(() => {
+    const canvas = qrCanvasRef.current;
+    if (!canvas || !delivery?.trackingToken) return;
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vector-delivery-qr-${delivery.trackingToken.slice(0, 8)}.png`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [delivery?.trackingToken]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -385,55 +402,53 @@ export function CustomerTracking() {
           </div>
         )}
 
-        {/* Verification QR (Persistent if out for delivery) */}
-        {status === "out_for_delivery" && (
-          <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm overflow-hidden">
-            <button
-              onClick={() => setShowQr(!showQr)}
-              className="w-full flex items-center justify-between"
-            >
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                Delivery QR Scan
-              </p>
-              <div
-                className={`transition-transform duration-300 ${showQr ? "rotate-180" : ""}`}
+        {/* Customer QR — same value the driver app verifies (tracking_token) */}
+        {(status === "out_for_delivery" || status === "assigned") &&
+          delivery.trackingToken && (
+            <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowQr(!showQr)}
+                className="w-full flex items-center justify-between"
               >
-                <Skeleton className="w-5 h-5 rounded-full" />{" "}
-                {/* Using a placeholder or icon here */}
-                {/* Let's use a real icon from heroicons later if needed, but for now a simple arrow or chevron */}
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </button>
-
-            {showQr && (
-              <div className="pt-5 text-center animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="inline-block p-4 bg-gray-50 rounded-2xl border border-black/5 mb-4">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${delivery.trackingToken}`}
-                    alt="Delivery QR"
-                    className="w-32 h-32 mix-blend-multiply"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 px-4 leading-relaxed font-medium">
-                  Please present this QR code to the driver upon arrival to
-                  confirm your delivery.
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                  Your delivery QR code
                 </p>
-              </div>
-            )}
-          </div>
-        )}
+                <ChevronDownIcon
+                  className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showQr ? "rotate-180" : ""}`}
+                  aria-hidden
+                />
+              </button>
+
+              {showQr && (
+                <div className="pt-5 text-center animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="inline-block p-4 bg-white rounded-2xl border border-black/8 mb-4 shadow-sm">
+                    <QRCodeCanvas
+                      ref={qrCanvasRef}
+                      value={delivery.trackingToken}
+                      size={180}
+                      level="M"
+                      marginSize={2}
+                      title="Delivery verification QR code"
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 px-4 leading-relaxed font-medium mb-4">
+                    Show this code to your driver when they arrive so they can
+                    confirm delivery.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleDownloadQr}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-600/20 hover:bg-emerald-100 transition-colors"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Save QR code
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Status Card */}
         <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">

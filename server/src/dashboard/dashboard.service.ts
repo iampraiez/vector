@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, DriverStatus, StopStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -31,6 +32,7 @@ import { generateReportCsv } from './utils/report.util';
 import { MailService } from '../mail/mail.service';
 import { MapService } from '../map/map.service';
 import { settingsOtpTemplate } from '../common/template';
+import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 
 @Injectable()
 export class DashboardService {
@@ -39,6 +41,7 @@ export class DashboardService {
     private readonly redis: RedisService,
     private readonly mailService: MailService,
     private readonly mapService: MapService,
+    private readonly configService: ConfigService,
     @InjectQueue('email') private readonly emailQueue: Queue,
     @InjectQueue('account') private readonly accountQueue: Queue,
   ) {}
@@ -48,11 +51,15 @@ export class DashboardService {
     companyId: string,
     query: ReportQueryDto,
   ) {
-    await this.emailQueue.add('sendReport', {
-      email,
-      companyId,
-      query,
-    });
+    await this.emailQueue.add(
+      'sendReport',
+      {
+        email,
+        companyId,
+        query,
+      },
+      STANDARD_QUEUE_OPTIONS,
+    );
   }
 
   async getMetrics(companyId: string) {
@@ -210,14 +217,18 @@ export class DashboardService {
 
     // Queue "Order Received" notification
     if (stop.customer_email) {
-      const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
-      await this.emailQueue.add('sendTrackingLink', {
-        email: stop.customer_email,
-        customerName: stop.customer_name,
-        trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
-        orderId: stop.external_id,
-        status: 'assigned', // Processor handles this as "Scheduled/Received"
-      });
+      const appUrl = this.configService.getOrThrow<string>('APP_URL');
+      await this.emailQueue.add(
+        'sendTrackingLink',
+        {
+          email: stop.customer_email,
+          customerName: stop.customer_name,
+          trackingLink: `${appUrl}/track?token=${stop.tracking_token}`,
+          orderId: stop.external_id,
+          status: 'assigned', // Processor handles this as "Scheduled/Received"
+        },
+        STANDARD_QUEUE_OPTIONS,
+      );
     }
 
     return stop;
@@ -1128,12 +1139,16 @@ export class DashboardService {
     await this.redis.del(redisKey);
 
     if (action === 'clear_workspace_data') {
-      await this.accountQueue.add('clearDataReport', {
-        companyId,
-        email: company?.contact_email || admin.email,
-        targetRole: 'workspace',
-        targetId: companyId,
-      });
+      await this.accountQueue.add(
+        'clearDataReport',
+        {
+          companyId,
+          email: company?.contact_email || admin.email,
+          targetRole: 'workspace',
+          targetId: companyId,
+        },
+        STANDARD_QUEUE_OPTIONS,
+      );
       return {
         message:
           'Workspace data clearance scheduled. A full report will be emailed to you.',
@@ -1150,7 +1165,7 @@ export class DashboardService {
       await this.accountQueue.add(
         'deleteAccount',
         { userId },
-        { delay: tenDaysMs },
+        { ...STANDARD_QUEUE_OPTIONS, delay: tenDaysMs },
       );
 
       return {

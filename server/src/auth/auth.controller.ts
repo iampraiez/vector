@@ -10,6 +10,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -35,6 +36,8 @@ interface RequestWithUser extends ExpressRequest {
 }
 
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -79,6 +82,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -93,6 +97,7 @@ export class AuthController {
   }
 
   @Public()
+  @SkipThrottle()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: RefreshTokenDto) {
@@ -100,6 +105,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Patch('driver/profile')
   updateDriverProfile(
     @Request() req: RequestWithUser,
@@ -109,6 +115,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Post('sign-out')
   @HttpCode(HttpStatus.NO_CONTENT)
   async signOut(@Request() req: RequestWithUser) {
@@ -119,6 +126,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Post('complete-onboarding')
   @HttpCode(HttpStatus.OK)
   completeOnboarding(@Request() req: RequestWithUser) {
@@ -126,6 +134,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Post('join-company')
   @HttpCode(HttpStatus.OK)
   joinCompany(@Request() req: RequestWithUser, @Body() dto: JoinCompanyDto) {

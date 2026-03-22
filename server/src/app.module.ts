@@ -2,6 +2,7 @@ import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { envValidationSchema } from './common/config/env.validation';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -27,11 +28,13 @@ import { MapModule } from './map/map.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validationSchema: envValidationSchema,
+      validationOptions: { abortEarly: true },
     }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 100, // 100 requests per minute global default
+        limit: 10,
       },
     ]),
     PrismaModule,

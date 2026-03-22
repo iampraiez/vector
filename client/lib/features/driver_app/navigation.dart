@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +14,7 @@ import '../../core/constants/map_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/map_service.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/navigation_foreground_task_handler.dart';
 import '../../main.dart' show RouteProgressScope;
 
 class NavigationScreen extends StatefulWidget {
@@ -20,6 +25,8 @@ class NavigationScreen extends StatefulWidget {
 }
 
 class _NavigationScreenState extends State<NavigationScreen> {
+  static bool _foregroundTaskSdkInited = false;
+
   final MapController _mapController = MapController();
 
   LatLng? _currentPosition;
@@ -39,16 +46,102 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   void initState() {
     super.initState();
+    FlutterForegroundTask.addTaskDataCallback(_onForegroundLocationFromTask);
     _initLocationTracking();
   }
 
   @override
   void dispose() {
+    FlutterForegroundTask.removeTaskDataCallback(_onForegroundLocationFromTask);
     _positionStream?.cancel();
     _locationSyncTimer?.cancel();
     _routeUpdateTimer?.cancel();
+    unawaited(_stopForegroundLocationService());
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _onForegroundLocationFromTask(Object data) {
+    if (!mounted || data is! Map) return;
+    final map = Map<String, dynamic>.from(data);
+    final lat = map['lat'];
+    final lng = map['lng'];
+    if (lat is num && lng is num) {
+      setState(() {
+        _currentPosition = LatLng(lat.toDouble(), lng.toDouble());
+      });
+      _fetchDirections();
+      if (_mapReady && _followUser) {
+        _mapController.move(_currentPosition!, _mapController.camera.zoom);
+      }
+    }
+  }
+
+  void _startPeriodicLocationServerSync() {
+    _locationSyncTimer?.cancel();
+    _locationSyncTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (_currentPosition != null) {
+        await MapService.instance.updateDriverLocation(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+        );
+      }
+    });
+  }
+
+  Future<void> _startAndroidForegroundLocationService() async {
+    if (!Platform.isAndroid) return;
+
+    if (!_foregroundTaskSdkInited) {
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: 'vector_delivery_navigation',
+          channelName: 'Live delivery tracking',
+          channelDescription:
+              'Keeps GPS active so your fleet can see your position during a route.',
+          onlyAlertOnce: true,
+        ),
+        iosNotificationOptions: const IOSNotificationOptions(
+          showNotification: false,
+          playSound: false,
+        ),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.repeat(5000),
+          autoRunOnBoot: false,
+          autoRunOnMyPackageReplaced: false,
+          allowWakeLock: true,
+          allowWifiLock: true,
+        ),
+      );
+      _foregroundTaskSdkInited = true;
+    }
+
+    if (await FlutterForegroundTask.isRunningService) {
+      return;
+    }
+
+    final result = await FlutterForegroundTask.startService(
+      serviceId: 88801,
+      serviceTypes: const [ForegroundServiceTypes.location],
+      notificationTitle: 'Vector Delivery',
+      notificationText: 'Sharing your location with the fleet',
+      callback: navigationForegroundTaskStartCallback,
+    );
+
+    if (result is ServiceRequestFailure) {
+      if (kDebugMode) {
+        debugPrint(
+          '[Navigation] Foreground service failed, using in-app timer: ${result.error}',
+        );
+      }
+      _startPeriodicLocationServerSync();
+    }
+  }
+
+  Future<void> _stopForegroundLocationService() async {
+    if (!Platform.isAndroid) return;
+    if (!await FlutterForegroundTask.isRunningService) return;
+    await FlutterForegroundTask.stopService();
   }
 
   Future<void> _initLocationTracking() async {
@@ -102,15 +195,13 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _fetchDirections();
     });
 
-    // Push location to backend every 5 seconds
-    _locationSyncTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      if (_currentPosition != null) {
-        await MapService.instance.updateDriverLocation(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-        );
-      }
-    });
+    // Android: foreground service keeps GPS + server sync when the screen locks.
+    // iOS / fallback: same 5s timer as before.
+    if (Platform.isAndroid) {
+      await _startAndroidForegroundLocationService();
+    } else {
+      _startPeriodicLocationServerSync();
+    }
   }
 
   Future<void> _fetchDirections() async {
@@ -142,6 +233,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     _locationSyncTimer?.cancel();
     _positionStream = null;
     _locationSyncTimer = null;
+    unawaited(_stopForegroundLocationService());
   }
 
   @override

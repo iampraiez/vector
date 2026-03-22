@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { NotificationType, Prisma } from '@prisma/client';
 
 export interface CreateNotificationPayload {
@@ -39,10 +40,14 @@ export class NotificationsService {
       },
     });
 
-    await this.notificationQueue.add('deliver', {
-      notificationId: notification.id,
-      userId: payload.userId,
-    });
+    await this.notificationQueue.add(
+      'deliver',
+      {
+        notificationId: notification.id,
+        userId: payload.userId,
+      },
+      STANDARD_QUEUE_OPTIONS,
+    );
 
     this.logger.log(
       `Notification ${notification.id} created for user ${payload.userId}`,

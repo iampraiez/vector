@@ -54,6 +54,9 @@ Work through it in **Priority Order** (found at the bottom of the file):
 
 For each item:
 
+**Step 0 — Check Status**
+Look at the item's heading in `complete.md`. If it contains an `[x]` (e.g., `### 1.1 [x]`), the task is already completed. Skip it and move to the next item in the priority list. Do not attempt to re-solve an already completed task.
+
 **Step 1 — Announce**
 Before writing any code, state in one sentence: which item you are solving and what the core problem is. Example: *"Solving 1.1 — `optimizeAssignments` always fails because it filters stops by `status: 'pending'` but stops are created with `status: 'assigned'`."*
 
@@ -66,9 +69,9 @@ Implement the fix exactly as described in the "Fix logic" block under that item.
 **Step 4 — Verify**
 Run the appropriate check depending on what was changed:
 - Prisma schema → `npx prisma migrate dev --name <descriptive_name>` then `npx prisma generate`
-- Server code → `npm run build` inside `server/`
+- Server code → `pnpm run build` inside `server/`
 - Flutter code → `flutter analyze` inside `client/`
-- Web code → `npm run build` inside `web/`
+- Web code → `pnpm run build` inside `web/`
 
 If verification fails, fix the error before proceeding.
 
@@ -106,6 +109,7 @@ Then wait. Do not continue until the user says yes (or similar confirmation).
 - Never hardcode values that belong in environment variables.
 - Never leave a `TODO` comment in code you touch — either implement it or remove it.
 - Read the file before editing it. Never assume the current state.
+- **Always use `pnpm`** (e.g., `pnpm install`, `pnpm add`) in the `server/` and `web/` directories. NEVER use `npm` or `yarn`.
 - Do not create new files for logic that already exists — extend or correct what is there.
 - If a fix references a dependency (e.g., "implement after 1.2", "requires item 1.9"), say so in your announcement and implement the dependency first.
 - Never do more than one item per session, even if the item seems small.

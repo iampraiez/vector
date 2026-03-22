@@ -47,6 +47,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   file_picker: ^10.3.10
   csv: ^8.0.0
+  flutter_foreground_task: ^9.2.1
 
 dev_dependencies:
   flutter_test:

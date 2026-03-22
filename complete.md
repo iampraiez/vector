@@ -62,7 +62,7 @@ Both functions query stops with `status: 'pending'`. But driver-created routes (
 
 ---
 
-### 1.3 `routes.service.ts:optimizeRoute` is still a mock — different from the real one
+### 1.3 [x] `routes.service.ts:optimizeRoute` is still a mock — different from the real one
 
 **File:** `routes.service.ts:117-146`
 
@@ -225,7 +225,7 @@ The schema defines `NotificationType` with `new_assignment`, `route_started`, `d
 
 ---
 
-### 2.3 No seat limit enforcement
+### 2.3 [x] No seat limit enforcement
 
 `BillingRecord.seats_included` is set on signup (2 free / 5 starter / 20 growth), but `signUpDriver` never checks it. Any number of drivers can join any company regardless of plan.
 
@@ -531,7 +531,7 @@ Both the import and route for `/dashboard/orders/:id` are commented out. The com
 
 ---
 
-### 5.2 Customer QR code is never displayed on the tracking page
+### 5.2 [x] Customer QR code is never displayed on the tracking page
 
 The proof-of-delivery flow requires the driver to scan the customer's QR code. The customer never sees a QR code to show.
 
@@ -692,7 +692,7 @@ The "Mark as Arrived" button directly pushes to the proof delivery screen withou
 
 ---
 
-### 6.4 Background location tracking stops when phone is locked
+### 6.4 [x] Background location tracking stops when phone is locked
 
 **File:** `navigation.dart:82-112`
 
@@ -1003,8 +1003,8 @@ This is the same as item 6.5 — already covered with the full Hive offline queu
 | 🟠 P1 | 1.3 — manager-side route optimization still mock |
 | 🟠 P1 | 2.3 — no driver seat limit |
 | 🟠 P1 | 5.2 — customer QR code missing on tracking page |
-| 🟠 P1 | 4 infra — env validation, retry policy, rate limiting |
-| 🟠 P1 | 6.4 — background location tracking |
+| 🟠 P1 | 4 infra [x] — Joi env validation, Bull retries, auth throttle + stricter forgot-password, Redis reconnect tuning, APP_URL required (no fallback) |
+| 🟠 P1 | 6.4 [x] — background location tracking |
 | 🟡 P2 | 2.2 — in-app notifications |
 | 🟡 P2 | 1.10 — duplicate client-side geocoding |
 | 🟡 P2 | 1.11 + 3 — cosmetic toggle, any-type violations |

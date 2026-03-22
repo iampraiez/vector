@@ -12,14 +12,13 @@ const redisLogger = new Logger('RedisClient');
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {
-        const redisUrl =
-          configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+        const redisUrl = configService.getOrThrow<string>('REDIS_URL');
         const client = new Redis(redisUrl, {
           lazyConnect: true,
-          maxRetriesPerRequest: null,
-          retryStrategy: (times: number) =>
-            // Retry up to 3 times with backoff, then give up
-            times <= 3 ? Math.min(times * 500, 2000) : null,
+          maxRetriesPerRequest: 3,
+          enableReadyCheck: false,
+          retryStrategy: (times: number) => Math.min(times * 100, 3000),
+          reconnectOnError: (err: Error) => err.message.includes('READONLY'),
         });
         client.on('error', (err: Error) => {
           // Log but don't crash the application if Redis is unavailable

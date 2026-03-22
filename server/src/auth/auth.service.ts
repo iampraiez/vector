@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -25,6 +26,7 @@ import {
   JoinCompanyDto,
 } from './dto/auth.dto';
 import { JwtPayload } from './interfaces/auth.interface';
+import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 
 @Injectable()
 export class AuthService {
@@ -133,10 +135,14 @@ export class AuthService {
       // Generate a new OTP and queue email since the old one might have expired
       const token = Math.floor(100000 + Math.random() * 900000).toString();
       await this.redis.set(`verify:${user.email}`, token, 3600);
-      await this.emailQueue.add('sendVerification', {
-        email: user.email,
-        token,
-      });
+      await this.emailQueue.add(
+        'sendVerification',
+        {
+          email: user.email,
+          token,
+        },
+        STANDARD_QUEUE_OPTIONS,
+      );
 
       throw new UnauthorizedException({
         statusCode: 403,
@@ -171,6 +177,22 @@ export class AuthService {
       throw new NotFoundException('No company found with that code');
     }
 
+    const billing = await this.prisma.billingRecord.findFirst({
+      where: { company_id: company.id },
+    });
+    const driverCount = await this.prisma.driver.count({
+      where: { company_id: company.id },
+    });
+    if (
+      billing &&
+      billing.seats_included > 0 &&
+      driverCount >= billing.seats_included
+    ) {
+      throw new ForbiddenException(
+        'This company has reached its driver seat limit. Ask your manager to upgrade the plan.',
+      );
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -202,7 +224,11 @@ export class AuthService {
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     await this.redis.set(`verify:${user.email}`, token, 3600);
 
-    await this.emailQueue.add('sendVerification', { email: user.email, token });
+    await this.emailQueue.add(
+      'sendVerification',
+      { email: user.email, token },
+      STANDARD_QUEUE_OPTIONS,
+    );
 
     return {
       message: 'Account created. Please verify your email.',
@@ -266,10 +292,14 @@ export class AuthService {
 
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     await this.redis.set(`verify:${result.user.email}`, token, 3600);
-    await this.emailQueue.add('sendVerification', {
-      email: result.user.email,
-      token,
-    });
+    await this.emailQueue.add(
+      'sendVerification',
+      {
+        email: result.user.email,
+        token,
+      },
+      STANDARD_QUEUE_OPTIONS,
+    );
 
     return {
       message: 'Company and account created. Please verify your email.',
@@ -333,7 +363,11 @@ export class AuthService {
 
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     await this.redis.set(`verify:${user.email}`, token, 3600);
-    await this.emailQueue.add('sendVerification', { email: user.email, token });
+    await this.emailQueue.add(
+      'sendVerification',
+      { email: user.email, token },
+      STANDARD_QUEUE_OPTIONS,
+    );
 
     return { message: 'A new verification code has been sent to your inbox.' };
   }
@@ -395,15 +429,16 @@ export class AuthService {
 
       await this.redis.set(`reset:${token}`, user.id, 1800);
 
-      const frontendUrl = this.configService.get<string>(
-        'FRONTEND_URL',
-        'http://localhost:3000',
+      const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+      await this.emailQueue.add(
+        'sendPasswordReset',
+        {
+          email: user.email,
+          token,
+          resetLink: `${frontendUrl}/reset-password?token=${token}`,
+        },
+        STANDARD_QUEUE_OPTIONS,
       );
-      await this.emailQueue.add('sendPasswordReset', {
-        email: user.email,
-        token,
-        resetLink: `${frontendUrl}/reset-password?token=${token}`,
-      });
     }
 
     return { message: 'If that email exists, a reset link has been sent.' };
