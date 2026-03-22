@@ -13,12 +13,14 @@ import { DriverNotificationsController } from './notifications.controller';
 import { OnboardingController } from './onboarding.controller';
 import { MailModule } from '../mail/mail.module';
 import { MapModule } from '../map/map.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
     MailModule,
     MapModule,
+    NotificationsModule,
     BullModule.registerQueue({ name: 'account' }),
   ],
   controllers: [

@@ -125,9 +125,25 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
     super.dispose();
   }
 
+  /// Uses stored coordinates when present; geocodes only as a fallback (saves Geoapify calls).
+  Future<LatLng?> _resolveStopCoordinate(Map<String, dynamic> stop) async {
+    final lat = stop['lat'] != null
+        ? double.tryParse(stop['lat'].toString())
+        : null;
+    final lng = stop['lng'] != null
+        ? double.tryParse(stop['lng'].toString())
+        : null;
+    if (lat != null && lng != null) {
+      return LatLng(lat, lng);
+    }
+    final address = stop['address'];
+    if (address is! String || address.isEmpty) return null;
+    return MapService.instance.geocodeAddress(address);
+  }
+
   Future<void> _geocodeStopsAndDrawRoute() async {
     final coords = await Future.wait(
-      _stops.map((s) => MapService.instance.geocodeAddress(s['address'] as String)),
+      _stops.map(_resolveStopCoordinate),
     );
 
     final validCoords = coords.whereType<LatLng>().toList();

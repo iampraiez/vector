@@ -163,11 +163,11 @@ The `User` model doesn't have `is_onboarded` in Prisma's generated type, so a `d
 
 ---
 
-### 1.10 `route_preview.dart` re-geocodes addresses that the server already geocoded
+### 1.10 [x] `route_preview.dart` re-geocodes addresses that the server already geocoded
 
-**File:** `route_preview.dart:128-160` — `_geocodeStopsAndDrawRoute`
+**File:** `route_preview.dart` — `_geocodeStopsAndDrawRoute` / `_resolveStopCoordinate`
 
-When the preview screen loads it calls `MapService.instance.geocodeAddress(stop['address'])` for every stop. But the server already geocodes addresses on order creation and stores `lat`/`lng` on each stop.
+**Resolved:** Preview builds `LatLng` from `stop['lat']` / `stop['lng']` when both parse; `geocodeAddress` runs only when coordinates are missing (legacy stops).
 
 **Fix logic:**
 1. In `_geocodeStopsAndDrawRoute`, before calling `geocodeAddress`, check:
@@ -209,9 +209,9 @@ When a manager assigns a route (`assignRoute`), tracking emails are queued for a
 
 ---
 
-### 2.2 In-app notifications (`Notification` table) are never written to
+### 2.2 [x] In-app notifications (`Notification` table) are never written to
 
-The schema defines `NotificationType` with `new_assignment`, `route_started`, `delivery_failed`, `rating_received`, `system_alert`. No code in the server writes to the `Notification` table. The driver's notifications screen calls `getNotifications` which always returns `[]`.
+The schema defines `NotificationType` with `new_assignment`, `route_started`, `delivery_failed`, `rating_received`, `system_alert`. **Resolved:** `assignRoute`, `startRoute`, `failDelivery`, `refreshOrderStatuses` (auto-expire), and `rateDelivery` now call `NotificationsService.create`; the driver app’s `getNotifications` returns persisted rows.
 
 **Fix logic:**
 1. Inject `NotificationsService` into `RoutesService` and `DriverService` (register it in the respective modules).
@@ -220,7 +220,7 @@ The schema defines `NotificationType` with `new_assignment`, `route_started`, `d
    - In `startRoute` (DriverService): call `create({ ...type: 'route_started', body: 'Your route "${route.name}" has started.' })`.
    - In `failDelivery` (DriverService): call `create({ userId: managerUser.id, ..., type: 'delivery_failed', body: 'A delivery on route "${route.name}" has failed.' })`.
    - In `refreshOrderStatuses` (DashboardService): when a stop is auto-failed, call `create({ userId: stop.driver?.user_id ?? companyAdminId, ..., type: 'delivery_failed', body: 'Order for "${stop.recipient_name}" has expired.' })`.
-   - In `completeDelivery` (DriverService), if a rating exists call `create({ type: 'rating_received', body: 'You received a ${rating}/5 rating.' })`.
+   - When a customer submits a rating (`TrackingService.rateDelivery`), call `create({ type: 'rating_received', body: 'You received a ${rating}/5 rating.' })` for the assigned driver (ratings are not sent on `completeDelivery`; they arrive later via the tracking page).
 3. The `NotificationsService.create` already writes to the DB and enqueues a `deliver` job — those steps are already done. The only missing piece is calling it.
 
 ---
@@ -1005,7 +1005,7 @@ This is the same as item 6.5 — already covered with the full Hive offline queu
 | 🟠 P1 | 5.2 — customer QR code missing on tracking page |
 | 🟠 P1 | 4 infra [x] — Joi env validation, Bull retries, auth throttle + stricter forgot-password, Redis reconnect tuning, APP_URL required (no fallback) |
 | 🟠 P1 | 6.4 [x] — background location tracking |
-| 🟡 P2 | 2.2 — in-app notifications |
-| 🟡 P2 | 1.10 — duplicate client-side geocoding |
+| 🟡 P2 | 2.2 [x] — in-app notifications |
+| 🟡 P2 | 1.10 [x] — duplicate client-side geocoding |
 | 🟡 P2 | 1.11 + 3 — cosmetic toggle, any-type violations |
 | 🟡 P2 | 5 web gaps, 8 testing |

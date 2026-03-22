@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Stop } from '@prisma/client';
 import { MapService } from '../map/map.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type StopWithRelations = Prisma.StopGetPayload<{
   include: {
@@ -24,6 +25,7 @@ export class TrackingService {
   constructor(
     private prisma: PrismaService,
     private mapService: MapService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getTrackingData(token: string) {
@@ -220,6 +222,9 @@ export class TrackingService {
   async rateDelivery(token: string, dto: { rating: number; comment?: string }) {
     const stop = await this.prisma.stop.findUnique({
       where: { tracking_token: token, status: 'completed' },
+      include: {
+        driver: { select: { user_id: true } },
+      },
     });
 
     if (!stop) {
@@ -234,6 +239,16 @@ export class TrackingService {
         customer_rated_at: new Date(),
       },
     });
+
+    if (stop.driver?.user_id) {
+      await this.notificationsService.create({
+        userId: stop.driver.user_id,
+        companyId: stop.company_id,
+        type: 'rating_received',
+        title: 'New rating',
+        body: `You received a ${dto.rating}/5 rating.`,
+      });
+    }
 
     return { message: 'Thank you for your feedback!' };
   }

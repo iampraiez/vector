@@ -33,6 +33,7 @@ import { MailService } from '../mail/mail.service';
 import { MapService } from '../map/map.service';
 import { settingsOtpTemplate } from '../common/template';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class DashboardService {
@@ -44,6 +45,7 @@ export class DashboardService {
     private readonly configService: ConfigService,
     @InjectQueue('email') private readonly emailQueue: Queue,
     @InjectQueue('account') private readonly accountQueue: Queue,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async queueReportEmail(
@@ -1180,10 +1182,21 @@ export class DashboardService {
     const currentM = now.getMinutes();
     const currentTotalMinutes = currentH * 60 + currentM;
 
+    const companyAdmin = await this.prisma.user.findFirst({
+      where: {
+        company_id: companyId,
+        role: { in: ['manager', 'admin'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
     const activeOrders = await this.prisma.stop.findMany({
       where: {
         company_id: companyId,
         status: { in: ['unassigned', 'assigned', 'in_progress'] },
+      },
+      include: {
+        driver: { select: { user_id: true } },
       },
     });
 
@@ -1223,6 +1236,20 @@ export class DashboardService {
               newStatus === 'failed' ? 'Time window expired' : undefined,
           },
         });
+
+        if (newStatus === 'failed') {
+          const targetUserId =
+            order.driver?.user_id ?? companyAdmin?.id ?? null;
+          if (targetUserId) {
+            await this.notificationsService.create({
+              userId: targetUserId,
+              companyId,
+              type: 'delivery_failed',
+              title: 'Order expired',
+              body: `Order for "${order.customer_name}" has expired.`,
+            });
+          }
+        }
       }
     }
   }

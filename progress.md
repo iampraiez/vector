@@ -13,12 +13,14 @@
 | 5.2 | Customer tracking page: `qrcode.react` canvas encodes `trackingToken`; Save QR downloads PNG | ✅ Done |
 | P1 infra (partial §4) | Joi startup validation (+ `APP_URL`); `STANDARD_QUEUE_OPTIONS` on all email/account/notification jobs; `ThrottlerGuard` on auth (10/min, forgot 3/min, `SkipThrottle` on JWT routes + refresh); Redis client + Bull use `getOrThrow('REDIS_URL')`; no `APP_URL` fallbacks | ✅ Done |
 | 6.4 | Android: `flutter_foreground_task` + manifest FGS/location; isolate PATCHes `/driver/status/location`; UI map updates via `sendDataToMain`; stop on dispose / route end; iOS keeps periodic `MapService` sync | ✅ Done |
+| 2.2 | `NotificationsService.create` from `assignRoute`, `startRoute`, `failDelivery` (manager), `refreshOrderStatuses` auto-fail (driver or company admin), `rateDelivery` (driver); Prisma enum `rating_received` + migration | ✅ Done |
+| 1.10 | `route_preview`: use server `lat`/`lng` when present; Geoapify geocode only as fallback | ✅ Done |
 
 ## Currently Working On
 
 | Item | Description |
 |---|---|
-| _(none — say “yes do” for next)_ | Per `complete.md` priority table, next is **2.2** (in-app notifications, P2) unless you prefer another unchecked item |
+| _(none — say “yes do” for next)_ | Per `complete.md` priority table, next P2 item is **1.11 + 3** (cosmetic toggle / any-type) unless you prefer another unchecked item |
 
 ## §4 not done yet (same section)
 

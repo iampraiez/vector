@@ -49,6 +49,7 @@ enum NotificationType {
   delivery_failed
   new_assignment
   route_started
+  rating_received
   system_alert
 }
 

@@ -27,6 +27,7 @@ import { MailService } from '../mail/mail.service';
 import { Route, Stop } from '@prisma/client';
 import { MapService } from '../map/map.service';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** Stops returned to the driver app (includes `tracking_token` for customer QR verification). */
 const DRIVER_STOP_LIST_SELECT = {
@@ -86,6 +87,7 @@ export class DriverService {
     private readonly configService: ConfigService,
     @InjectQueue('account') private readonly accountQueue: Queue,
     @InjectQueue('email') private readonly emailQueue: Queue,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async getDriverOrThrow(userId: string) {
@@ -401,6 +403,14 @@ export class DriverService {
       });
     }
 
+    await this.notificationsService.create({
+      userId: driver.user.id,
+      companyId: route.company_id,
+      type: 'route_started',
+      title: 'Route started',
+      body: `Your route "${route.name}" has started.`,
+    });
+
     return { message: 'Route started successfully' };
   }
 
@@ -565,6 +575,7 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const stop = await this.prisma.stop.findUnique({
       where: { id: stopId, driver_id: driver.id },
+      include: { route: true },
     });
     if (!stop) throw new NotFoundException('Stop not found');
     if (stop.status === 'completed')
@@ -579,6 +590,24 @@ export class DriverService {
         failure_notes: dto.notes || null,
       },
     });
+
+    const manager = await this.prisma.user.findFirst({
+      where: {
+        company_id: stop.company_id,
+        role: { in: ['manager', 'admin'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+    if (manager) {
+      const routeLabel = stop.route?.name ?? 'your route';
+      await this.notificationsService.create({
+        userId: manager.id,
+        companyId: stop.company_id,
+        type: 'delivery_failed',
+        title: 'Delivery failed',
+        body: `A delivery on route "${routeLabel}" has failed.`,
+      });
+    }
 
     if (stop.route_id) {
       await this.checkAndUpdateRouteStatus(stop.route_id);

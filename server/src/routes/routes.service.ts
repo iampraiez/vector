@@ -15,6 +15,7 @@ import {
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class RoutesService {
@@ -23,6 +24,7 @@ export class RoutesService {
     private readonly mapService: MapService,
     private readonly configService: ConfigService,
     @InjectQueue('email') private readonly emailQueue: Queue,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -265,6 +267,16 @@ export class RoutesService {
           data: { tracking_email_sent_at: new Date() },
         });
       }
+    }
+
+    if (route.driver?.user_id) {
+      await this.notificationsService.create({
+        userId: route.driver.user_id,
+        companyId: route.company_id,
+        type: 'new_assignment',
+        title: 'New Route Assigned',
+        body: `Route "${route.name}" has been assigned to you.`,
+      });
     }
 
     return route;
