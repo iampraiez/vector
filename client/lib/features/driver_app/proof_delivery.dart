@@ -465,6 +465,23 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                         if (!_qrScanned)
                           InkWell(
                             onTap: () {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final expectedToken = RouteProgressScope.of(context)
+                                  .currentStop
+                                  ?.trackingToken
+                                  ?.trim();
+                              if (expectedToken == null || expectedToken.isEmpty) {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Delivery code unavailable. Refresh assignments, then open this stop again.',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
@@ -481,9 +498,32 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                                       children: [
                                         MobileScanner(
                                           onDetect: (capture) {
-                                            if (capture.barcodes.isNotEmpty) {
-                                              if (ctx.mounted) ctx.pop();
-                                              if (mounted) setState(() => _qrScanned = true);
+                                            if (capture.barcodes.isEmpty) return;
+                                            final raw =
+                                                capture.barcodes.first.rawValue;
+                                            if (raw == null) return;
+                                            final scanned = raw.trim();
+                                            if (scanned.isEmpty) return;
+
+                                            if (scanned != expectedToken) {
+                                              messenger.showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Wrong QR code. Please scan the customer\'s code.',
+                                                  ),
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                ),
+                                              );
+                                              return;
+                                            }
+
+                                            if (ctx.mounted) ctx.pop();
+                                            if (mounted) {
+                                              setState(() {
+                                                _qrScanned = true;
+                                                _scannedQrCode = scanned;
+                                              });
                                             }
                                           },
                                         ),

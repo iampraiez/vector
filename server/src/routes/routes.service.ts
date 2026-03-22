@@ -161,7 +161,7 @@ export class RoutesService {
 
     const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
 
-    // Queue notifications for all stops
+    // Queue "scheduled" tracking emails; stamp stops so startRoute does not duplicate.
     for (const stop of route.stops) {
       if (stop.customer_email) {
         await this.emailQueue.add('sendTrackingLink', {
@@ -171,6 +171,10 @@ export class RoutesService {
           orderId: stop.external_id,
           status: 'scheduled',
           driverName: route.driver?.user.full_name,
+        });
+        await this.prisma.stop.update({
+          where: { id: stop.id },
+          data: { tracking_email_sent_at: new Date() },
         });
       }
     }

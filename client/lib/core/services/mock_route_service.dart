@@ -27,6 +27,7 @@ class MockRouteService {
         distance: '2.3 km',
         packages: 2,
         notes: 'Ring doorbell twice',
+        trackingToken: 'mock-tracking-STOP-001',
       ),
       StopModel(
         id: 'STOP-002',
@@ -36,6 +37,7 @@ class MockRouteService {
         eta: '18 min',
         distance: '5.7 km',
         packages: 1,
+        trackingToken: 'mock-tracking-STOP-002',
       ),
       StopModel(
         id: 'STOP-003',
@@ -46,6 +48,7 @@ class MockRouteService {
         distance: '12.4 km',
         packages: 3,
         notes: 'Leave at back porch if no answer',
+        trackingToken: 'mock-tracking-STOP-003',
       ),
       StopModel(
         id: 'STOP-004',
@@ -55,6 +58,7 @@ class MockRouteService {
         eta: '45 min',
         distance: '18.9 km',
         packages: 1,
+        trackingToken: 'mock-tracking-STOP-004',
       ),
       StopModel(
         id: 'STOP-005',
@@ -65,6 +69,7 @@ class MockRouteService {
         distance: '23.1 km',
         packages: 2,
         notes: 'Fragile — handle with care',
+        trackingToken: 'mock-tracking-STOP-005',
       ),
     ];
   }

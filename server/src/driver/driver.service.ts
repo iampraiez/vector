@@ -26,6 +26,50 @@ import { MailService } from '../mail/mail.service';
 import { Route, Stop } from '@prisma/client';
 import { MapService } from '../map/map.service';
 
+/** Stops returned to the driver app (includes `tracking_token` for customer QR verification). */
+const DRIVER_STOP_LIST_SELECT = {
+  id: true,
+  route_id: true,
+  company_id: true,
+  driver_id: true,
+  external_id: true,
+  customer_name: true,
+  customer_email: true,
+  customer_phone: true,
+  address: true,
+  city: true,
+  state: true,
+  postal_code: true,
+  country: true,
+  lat: true,
+  lng: true,
+  sequence: true,
+  packages: true,
+  priority: true,
+  time_window_start: true,
+  time_window_end: true,
+  notes: true,
+  status: true,
+  delivery_date: true,
+  arrived_at: true,
+  started_at: true,
+  completed_at: true,
+  failure_reason: true,
+  failure_notes: true,
+  signature_url: true,
+  photo_url: true,
+  signature_name: true,
+  customer_rating: true,
+  customer_rating_comment: true,
+  customer_rated_at: true,
+  location_confirmed: true,
+  tracking_token: true,
+  tracking_email_sent_at: true,
+  assigned_at: true,
+  created_at: true,
+  updated_at: true,
+} satisfies Prisma.StopSelect;
+
 type AssignmentItem = (Route & { type: 'route' }) | (Stop & { type: 'stop' });
 
 @Injectable()
@@ -198,7 +242,10 @@ export class DriverService {
         ],
       },
       include: {
-        stops: { orderBy: { sequence: 'asc' } },
+        stops: {
+          orderBy: { sequence: 'asc' },
+          select: DRIVER_STOP_LIST_SELECT,
+        },
       },
       orderBy: { date: 'asc' },
     });
@@ -219,6 +266,7 @@ export class DriverService {
         ],
       },
       orderBy: { created_at: 'asc' },
+      select: DRIVER_STOP_LIST_SELECT,
     });
 
     // 3. Categorize
@@ -266,7 +314,12 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const route = await this.prisma.route.findUnique({
       where: { id: routeId, driver_id: driver.id },
-      include: { stops: { orderBy: { sequence: 'asc' } } },
+      include: {
+        stops: {
+          orderBy: { sequence: 'asc' },
+          select: DRIVER_STOP_LIST_SELECT,
+        },
+      },
     });
 
     if (!route) throw new NotFoundException('Route not found');
@@ -324,16 +377,21 @@ export class DriverService {
     const APP_URL = process.env.APP_URL || 'https://vector-logistics.com';
 
     for (const stop of stops) {
-      if (stop.customer_email) {
-        await this.emailQueue.add('sendTrackingLink', {
-          email: stop.customer_email,
-          customerName: stop.customer_name,
-          trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
-          orderId: stop.external_id,
-          status: 'active',
-          driverName: driver.user.full_name,
-        });
-      }
+      if (!stop.customer_email) continue;
+      if (stop.tracking_email_sent_at != null) continue;
+
+      await this.emailQueue.add('sendTrackingLink', {
+        email: stop.customer_email,
+        customerName: stop.customer_name,
+        trackingLink: `${APP_URL}/track?token=${stop.tracking_token}`,
+        orderId: stop.external_id,
+        status: 'active',
+        driverName: driver.user.full_name,
+      });
+      await this.prisma.stop.update({
+        where: { id: stop.id },
+        data: { tracking_email_sent_at: new Date() },
+      });
     }
 
     return { message: 'Route started successfully' };

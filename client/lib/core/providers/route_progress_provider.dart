@@ -12,6 +12,8 @@ class StopModel {
   final String? notes;
   final double? lat;
   final double? lng;
+  /// Matches the customer's tracking QR (`tracking_token` on the server).
+  final String? trackingToken;
   bool isCompleted;
   String? photoPath;
   String? photoUrl;
@@ -28,6 +30,7 @@ class StopModel {
     this.notes,
     this.lat,
     this.lng,
+    this.trackingToken,
     this.isCompleted = false,
     this.photoPath,
     this.photoUrl,
@@ -47,6 +50,7 @@ class StopModel {
       notes: json['notes'] as String?,
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
+      trackingToken: json['tracking_token'] as String?,
     );
   }
 }

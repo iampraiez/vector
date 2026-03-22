@@ -87,6 +87,11 @@ export class EmailProcessor {
     }
   }
 
+  /**
+   * Customer tracking emails — two variants (same HTML helper, different copy):
+   * - `status: 'scheduled' | 'assigned'` → “Your Delivery is Scheduled” (manager assignRoute).
+   * - `status: 'active'` (else) → “Your Delivery is Out for Delivery” (driver startRoute when no prior send).
+   */
   @Process('sendTrackingLink')
   async handleSendTrackingLink(
     job: Job<{

@@ -195,7 +195,7 @@ The "Auto-optimize route · AI will calculate the best order" card has no state 
 
 ## 2. SERVER — Missing Business Logic
 
-### 2.1 Tracking email is sent twice per stop on route assignment
+### 2.1 [x] Tracking email is sent twice per stop on route assignment
 
 **File:** `routes.service.ts:165-176` and `driver.service.ts:326-337`
 
@@ -644,7 +644,7 @@ The "Mark as Arrived" button directly pushes to the proof delivery screen withou
 
 ---
 
-### 6.2 QR scan accepts any barcode — no validation against the stop token
+### 6.2 [x] QR scan accepts any barcode — no validation against the stop token
 
 **File:** `proof_delivery.dart:444-451`
 
