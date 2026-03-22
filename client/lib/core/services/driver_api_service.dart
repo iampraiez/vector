@@ -111,7 +111,7 @@ class DriverApiService {
 
   Future<void> arriveAtStop(String stopId) async {
     try {
-      await _dio.post('/driver/stops/$stopId/arrive');
+      await _dio.patch('/driver/navigation/stops/$stopId/arrive');
     } on DioException catch (e) {
       throw _handleError(e);
     }

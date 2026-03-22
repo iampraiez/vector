@@ -9,6 +9,7 @@ import '../../core/theme/colors.dart';
 import '../../core/constants/map_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/map_service.dart';
+import '../../core/services/driver_api_service.dart';
 import '../../main.dart' show RouteProgressScope;
 
 class NavigationScreen extends StatefulWidget {
@@ -33,6 +34,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   String _etaLabel = '-- mins';
   Timer? _routeUpdateTimer;
   bool _followUser = true; // Added followUser toggle
+  bool _isArriving = false;
 
   @override
   void initState() {
@@ -478,7 +480,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                           const SizedBox(height: 20),
                           _buildActionButtons(currentData),
                           const SizedBox(height: 20),
-                          _buildArriveButton(context),
+                          _buildArriveButton(context, currentStop.id),
                           const SizedBox(height: 24),
                           const Divider(),
                           const SizedBox(height: 24),
@@ -643,12 +645,31 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
   }
 
-  Widget _buildArriveButton(BuildContext context) {
+  Widget _buildArriveButton(BuildContext context, String stopId) {
+    final canTap = !_isArriving && stopId.isNotEmpty;
     return InkWell(
-      onTap: () {
-        _stopLocationTracking();
-        context.push('/proof-delivery?fromNav=true');
-      },
+      onTap: canTap
+          ? () async {
+              setState(() => _isArriving = true);
+              try {
+                await DriverApiService.instance.arriveAtStop(stopId);
+                if (!mounted) return;
+                _stopLocationTracking();
+                setState(() => _isArriving = false);
+                if (!context.mounted) return;
+                context.push('/proof-delivery?fromNav=true');
+              } catch (_) {
+                if (!mounted) return;
+                setState(() => _isArriving = false);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to mark arrival. Please try again.'),
+                  ),
+                );
+              }
+            }
+          : null,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
@@ -664,10 +685,21 @@ class _NavigationScreenState extends State<NavigationScreen> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            if (_isArriving) ...[
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            const Text(
               'Mark as Arrived',
               style: TextStyle(
                 fontSize: 16,
@@ -675,8 +707,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 color: Colors.white,
               ),
             ),
-            SizedBox(width: 8),
-            Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+            if (!_isArriving) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
           ],
         ),
       ),

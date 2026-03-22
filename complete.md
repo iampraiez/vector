@@ -45,7 +45,7 @@ Both functions query stops with `status: 'pending'`. But driver-created routes (
 
 ---
 
-### 1.2 Geofencing auto-arrive checks `'pending'` status — which stops are already beyond
+### 1.2 [x] Geofencing auto-arrive checks `'pending'` status — which stops are already beyond
 
 **File:** `driver.service.ts:130-156` and `navigation.dart:646-650`
 
@@ -626,7 +626,7 @@ Managers must manually find and copy the tracking URL.
 
 ## 6. FLUTTER (Mobile) — Broken or Missing
 
-### 6.1 "Mark as Arrived" never calls `arriveAtStop` API
+### 6.1 [x] "Mark as Arrived" never calls `arriveAtStop` API
 
 *(Same root cause as item 1.2 — this entry is the Flutter-side fix)*
 
@@ -658,7 +658,7 @@ The "Mark as Arrived" button directly pushes to the proof delivery screen withou
 
 ---
 
-### 6.3 Photo proof is a local file path, not a Cloudinary URL
+### 6.3 [x] Photo proof is a local file path, not a Cloudinary URL
 
 **File:** `proof_delivery.dart:50-57`
 

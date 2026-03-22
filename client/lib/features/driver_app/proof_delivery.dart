@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/theme/colors.dart';
 import '../../core/providers/route_progress_provider.dart';
+import '../../core/config/env.dart';
+import '../../core/services/cloudinary_service.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
 import '../../main.dart' show RouteProgressScope;
@@ -26,6 +28,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
   String? _scannedQrCode;
   final TextEditingController _notesController = TextEditingController();
   bool _submitting = false;
+  bool _uploadingPhoto = false;
 
   Future<void> _handleSubmit() async {
     if (!_photo || !_qrScanned) return;
@@ -35,21 +38,47 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
     if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
     if (!mounted) return;
 
-    setState(() => _submitting = true);
-
-    final progress = RouteProgressScope.of(context);
-    final stop = progress.currentStop;
-
-    if (stop == null) {
-      setState(() => _submitting = false);
+    if (!Env.isCloudinaryConfigured) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Photo upload is not configured. Build with CLOUDINARY_CLOUD_NAME '
+            'and CLOUDINARY_UPLOAD_PRESET (dart-define).',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
+    setState(() {
+      _submitting = true;
+      _uploadingPhoto = true;
+    });
+
+    final progress = RouteProgressScope.of(context);
+    final stop = progress.currentStop;
+    final localPath = _capturedPhotoPath;
+
+    if (stop == null || localPath == null) {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _uploadingPhoto = false;
+        });
+      }
+      return;
+    }
+
+    String? cloudPhotoUrl;
     try {
-      // Call real API to record the delivery
+      cloudPhotoUrl = await CloudinaryService.upload(filePath: localPath);
+      if (!mounted) return;
+      setState(() => _uploadingPhoto = false);
+
       await _api.completeDelivery(
         stop.id,
-        photoUrl: _capturedPhotoPath,
+        photoUrl: cloudPhotoUrl,
         qrCode: _scannedQrCode,
         notes: _notesController.text.trim().isEmpty
             ? null
@@ -66,7 +95,10 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
           margin: const EdgeInsets.all(16),
         ),
       );
-      setState(() => _submitting = false);
+      setState(() {
+        _submitting = false;
+        _uploadingPhoto = false;
+      });
       return;
     }
 
@@ -74,7 +106,8 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
 
     // Mark current stop complete in local provider and advance index
     final routeComplete = progress.completeCurrentStop(
-      photoPath: _capturedPhotoPath,
+      photoPath: localPath,
+      photoUrl: cloudPhotoUrl,
       qrCode: _scannedQrCode ?? '',
       deliveryNotes: _notesController.text,
     );
@@ -113,7 +146,12 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
       context.pop();
     }
 
-    if (mounted) setState(() => _submitting = false);
+    if (mounted) {
+      setState(() {
+        _submitting = false;
+        _uploadingPhoto = false;
+      });
+    }
   }
 
   @override
@@ -663,13 +701,29 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
               disabledForegroundColor: const Color(0xFF9E9E9E),
             ),
             child: _submitting
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 3,
-                    ),
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _uploadingPhoto
+                            ? 'Uploading photo…'
+                            : 'Completing delivery…',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
