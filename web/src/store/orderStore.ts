@@ -32,6 +32,8 @@ export interface Order {
   assigned_to?: string;
   notes?: string;
   route_name?: string;
+  /** Present when loaded from GET /dashboard/orders/:id (Prisma include). */
+  route?: { name?: string | null };
   created_at?: string;
   driver?: {
     id: string;
@@ -218,16 +220,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   fetchOrderDetail: async (id: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, selectedOrder: null });
     try {
       const res = await api.get(`/dashboard/orders/${id}`);
+      const raw = res.data as Order & { route?: { name?: string | null } };
       set({
-        selectedOrder: res.data,
+        selectedOrder: {
+          ...raw,
+          route_name: raw.route_name ?? raw.route?.name ?? undefined,
+        },
         isLoading: false,
       });
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       set({
+        selectedOrder: null,
         error: error.response?.data?.message || "Failed to fetch order details",
         isLoading: false,
       });

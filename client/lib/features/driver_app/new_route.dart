@@ -10,6 +10,7 @@ import '../../core/theme/spacing.dart';
 import '../../shared/widgets/inputs.dart';
 import '../../shared/widgets/buttons.dart';
 import '../../core/services/driver_api_service.dart';
+import '../../core/services/location_service.dart';
 
 class NewRouteScreen extends StatefulWidget {
   final bool isManualTab;
@@ -36,6 +37,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
     }
   ];
   bool _creating = false;
+  bool _autoOptimize = false;
   String? _importedFileName;
 
   Future<void> _pickAndParseCSV() async {
@@ -152,7 +154,37 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
           'delivery_date': (s['date'] as DateTime).toIso8601String(),
         }).toList(),
       );
-      
+
+      if (_autoOptimize) {
+        final rawStops = route['stops'];
+        if (rawStops is List && rawStops.isNotEmpty) {
+          final ids = rawStops
+              .map((s) => s is Map<String, dynamic> ? s['id'] as String? : null)
+              .whereType<String>()
+              .toList();
+          if (ids.length == rawStops.length) {
+            try {
+              final pos = await LocationService.instance.getCurrentPosition();
+              await DriverApiService.instance.optimizeAssignments(
+                stopIds: ids,
+                lat: pos?.latitude ?? 6.5244,
+                lng: pos?.longitude ?? 3.3792,
+                persist: true,
+              );
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Route created, but optimization failed: $e'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+            }
+          }
+        }
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -300,28 +332,57 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     
                     const SizedBox(height: AppSpacing.p4),
 
-                    // Optimize toggle
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.p4),
-                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(16)),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 36, height: 36,
-                            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
-                            child: const Icon(Icons.autorenew, color: AppColors.white, size: 18),
-                          ),
-                          const SizedBox(width: AppSpacing.p3),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Auto-optimize route', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                                Text('AI will calculate the best order', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500)),
-                              ],
+                    // Auto-optimize: runs optimize + persists stop order after create
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => setState(() => _autoOptimize = !_autoOptimize),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.p4),
+                          decoration: BoxDecoration(
+                            color: _autoOptimize ? AppColors.primaryLight : AppColors.primaryLight.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _autoOptimize ? AppColors.primary : Colors.transparent,
+                              width: 1.5,
                             ),
-                          )
-                        ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.autorenew, color: AppColors.white, size: 18),
+                              ),
+                              const SizedBox(width: AppSpacing.p3),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Auto-optimize route',
+                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                    ),
+                                    Text(
+                                      'AI will calculate the best order',
+                                      style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: _autoOptimize,
+                                onChanged: (v) => setState(() => _autoOptimize = v),
+                                activeThumbColor: AppColors.primary,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
 

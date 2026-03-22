@@ -36,6 +36,17 @@ const formatTime = (dateStr: string | null) => {
   });
 };
 
+function formatLastUpdatedAgo(updatedAt: Date): string {
+  const sec = Math.max(0, Math.floor((Date.now() - updatedAt.getTime()) / 1000));
+  if (sec < 60) return `${sec} second${sec === 1 ? "" : "s"} ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} minute${min === 1 ? "" : "s"} ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+}
+
 interface TrackingData {
   trackingToken: string;
   status: DeliveryStatus;
@@ -96,6 +107,9 @@ export function CustomerTracking() {
   const [submitted, setSubmitted] = useState(false);
   const [showQr, setShowQr] = useState(true);
   const [confirmedRecently, setConfirmedRecently] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  /** Bumps every second so "Xs ago" stays fresh between polls. */
+  const [, setLastUpdatedTick] = useState(0);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleDownloadQr = useCallback(() => {
@@ -111,32 +125,63 @@ export function CustomerTracking() {
     document.body.removeChild(a);
   }, [delivery?.trackingToken]);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchTrackingData = useCallback(
+    async (opts?: { silent?: boolean }) => {
       if (!token) {
-        setError(
-          "No tracking token provided. Please check your tracking link.",
-        );
-        setLoading(false);
+        if (!opts?.silent) {
+          setError(
+            "No tracking token provided. Please check your tracking link.",
+          );
+          setLoading(false);
+        }
         return;
+      }
+
+      if (!opts?.silent) {
+        setLoading(true);
+        setError(null);
       }
 
       try {
         const res = await api.get(`/track?token=${token}`);
         setDelivery(res.data);
+        setLastUpdatedAt(new Date());
+        if (!opts?.silent) setError(null);
       } catch (err: unknown) {
         const error = err as AxiosError<{ message: string }>;
-        setError(
-          error.response?.data?.message ||
-            "Unable to find this delivery. Please verify your tracking ID.",
-        );
+        if (!opts?.silent) {
+          setError(
+            error.response?.data?.message ||
+              "Unable to find this delivery. Please verify your tracking ID.",
+          );
+          setDelivery(null);
+        }
       } finally {
-        setLoading(false);
+        if (!opts?.silent) setLoading(false);
       }
-    };
+    },
+    [token],
+  );
 
-    fetchData();
-  }, [token]);
+  useEffect(() => {
+    void fetchTrackingData();
+  }, [fetchTrackingData]);
+
+  useEffect(() => {
+    if (!token) return;
+    const interval = window.setInterval(() => {
+      void fetchTrackingData({ silent: true });
+    }, 30_000);
+    return () => window.clearInterval(interval);
+  }, [token, fetchTrackingData]);
+
+  useEffect(() => {
+    if (!lastUpdatedAt) return;
+    const id = window.setInterval(() => {
+      setLastUpdatedTick((t) => t + 1);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [lastUpdatedAt]);
 
   const handleConfirmLocation = () => {
     if (!navigator.geolocation) {
@@ -155,8 +200,7 @@ export function CustomerTracking() {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
-          const res = await api.get(`/track?token=${token}`);
-          setDelivery(res.data);
+          await fetchTrackingData({ silent: true });
 
           setConfirmedRecently(true);
           setTimeout(() => setConfirmedRecently(false), 5000);
@@ -370,6 +414,14 @@ export function CustomerTracking() {
           <p className="text-[14px] font-extrabold text-[#111827] leading-tight">
             {delivery.company.name}
           </p>
+          {lastUpdatedAt && (
+            <p
+              className="text-[10px] text-gray-400 font-medium mt-0.5 tabular-nums"
+              title="Tracking data refreshes automatically every 30 seconds"
+            >
+              Last updated {formatLastUpdatedAgo(lastUpdatedAt)}
+            </p>
+          )}
           <div className="flex items-center justify-end gap-2.5 mt-1">
             {delivery.company.email && (
               <a
@@ -465,6 +517,19 @@ export function CustomerTracking() {
             Hey {delivery.customerName.split(" ")[0]}! 👋
           </h1>
           <p className="text-sm text-gray-500 mb-4">{sc.desc}</p>
+
+          {delivery.liveLocation &&
+            (status === "out_for_delivery" || status === "assigned") && (
+              <a
+                href={`https://www.google.com/maps?q=${delivery.liveLocation.lat},${delivery.liveLocation.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-sky-50 border border-sky-600/15 text-sky-800 text-[13px] font-semibold hover:bg-sky-100/80 transition-colors"
+              >
+                <MapPinIcon className="w-4 h-4 shrink-0" />
+                <span>View driver&apos;s last position on map</span>
+              </a>
+            )}
 
           {/* ETA */}
           {(status === "out_for_delivery" || status === "assigned") && (

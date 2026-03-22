@@ -15,12 +15,15 @@
 | 6.4 | Android: `flutter_foreground_task` + manifest FGS/location; isolate PATCHes `/driver/status/location`; UI map updates via `sendDataToMain`; stop on dispose / route end; iOS keeps periodic `MapService` sync | ✅ Done |
 | 2.2 | `NotificationsService.create` from `assignRoute`, `startRoute`, `failDelivery` (manager), `refreshOrderStatuses` auto-fail (driver or company admin), `rateDelivery` (driver); Prisma enum `rating_received` + migration | ✅ Done |
 | 1.10 | `route_preview`: use server `lat`/`lng` when present; Geoapify geocode only as fallback | ✅ Done |
+| 1.11 + §3 | `new_route` auto-optimize + `persist` on optimize API; DTOs for profile/avatar/settings; JWT expiresIn typed without `any` | ✅ Done |
+| 5.1 | Web: `orders/:id` route + eye buttons; `fetchOrderDetail` clears stale state + `route_name` from `route.name` | ✅ Done |
+| 5.3 | Customer tracking: 30s `GET /track` poll, last-updated label, map link when `liveLocation` set | ✅ Done |
 
 ## Currently Working On
 
 | Item | Description |
 |---|---|
-| _(none — say “yes do” for next)_ | Per `complete.md` priority table, next P2 item is **1.11 + 3** (cosmetic toggle / any-type) unless you prefer another unchecked item |
+| _(none — say “yes do” for next)_ | Next §5: **5.4** billing / invoices, **5.5** empty states, **5.6** fleet map, **5.7** copy tracking link — or **§8** tests |
 
 ## §4 not done yet (same section)
 

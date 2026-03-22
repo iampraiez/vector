@@ -5,7 +5,7 @@ import { DashboardOverview as Overview } from "./features/dashboard/pages/Overvi
 import { DashboardDrivers as Drivers } from "./features/dashboard/pages/Drivers";
 import { DashboardDriverDetail as DriverDetail } from "./features/dashboard/pages/DriverDetail";
 import { DashboardOrders as Orders } from "./features/dashboard/pages/Orders";
-// import { DashboardOrderDetail as OrderDetail } from "./features/dashboard/pages/OrderDetail";
+import { DashboardOrderDetail as OrderDetail } from "./features/dashboard/pages/OrderDetail";
 import { DashboardTracking as Tracking } from "./features/dashboard/pages/Tracking";
 import { DashboardBilling as Billing } from "./features/dashboard/pages/Billing";
 import { DashboardSettings as Settings } from "./features/dashboard/pages/Settings";
@@ -89,7 +89,7 @@ export const router = createBrowserRouter([
           { path: "drivers", Component: Drivers },
           { path: "driver-detail/:id", Component: DriverDetail },
           { path: "orders", Component: Orders },
-          // { path: "orders/:id", Component: OrderDetail },
+          { path: "orders/:id", Component: OrderDetail },
           { path: "tracking", Component: Tracking },
           { path: "billing", Component: Billing },
           { path: "settings", Component: Settings },

@@ -20,6 +20,9 @@ import {
   FailDeliveryDto,
   UpdateStatusDto,
   UpdateLocationDto,
+  UpdateDriverProfileDto,
+  UploadAvatarDto,
+  UpdateDriverSettingsDto,
 } from './dto/driver.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
@@ -833,25 +836,16 @@ export class DriverService {
     };
   }
 
-  async updateProfile(userId: string, dto: any) {
+  async updateProfile(userId: string, dto: UpdateDriverProfileDto) {
     const driver = await this.getDriverOrThrow(userId);
 
-    const updateDto = dto as {
-      full_name?: string;
-      phone?: string;
-      vehicle_type?: string;
-      vehicle_plate?: string;
-    };
-
     const userUpdates: Prisma.UserUpdateInput = {};
-    if (updateDto.full_name) userUpdates.full_name = updateDto.full_name;
-    if (updateDto.phone) userUpdates.phone = updateDto.phone;
+    if (dto.full_name) userUpdates.full_name = dto.full_name;
+    if (dto.phone) userUpdates.phone = dto.phone;
 
     const driverUpdates: Prisma.DriverUpdateInput = {};
-    if (updateDto.vehicle_type)
-      driverUpdates.vehicle_type = updateDto.vehicle_type;
-    if (updateDto.vehicle_plate)
-      driverUpdates.vehicle_plate = updateDto.vehicle_plate;
+    if (dto.vehicle_type) driverUpdates.vehicle_type = dto.vehicle_type;
+    if (dto.vehicle_plate) driverUpdates.vehicle_plate = dto.vehicle_plate;
 
     if (Object.keys(userUpdates).length > 0) {
       await this.prisma.user.update({
@@ -870,16 +864,12 @@ export class DriverService {
     return this.getProfile(userId);
   }
 
-  async uploadAvatar(userId: string, dto: any) {
-    // cloudinary upload happens on frontend
-    const updateDto = dto as { file_url?: string };
-    const url =
-      updateDto.file_url || 'https://cloudinary.com/vector/new-avatar.jpg';
+  async uploadAvatar(userId: string, dto: UploadAvatarDto) {
     await this.prisma.user.update({
       where: { id: userId },
-      data: { avatar_url: url },
+      data: { avatar_url: dto.file_url },
     });
-    return { avatar_url: url };
+    return { avatar_url: dto.file_url };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -892,10 +882,10 @@ export class DriverService {
     };
   }
 
-  updateSettings(_userId: string, dto: any) {
+  updateSettings(_userId: string, dto: UpdateDriverSettingsDto) {
     return {
       message: 'Settings successfully updated',
-      settings: dto as unknown,
+      settings: dto,
     };
   }
 
@@ -1119,6 +1109,30 @@ export class DriverService {
     ];
 
     const directions = await this.mapService.getDirections({ waypoints });
+
+    if (dto.persist) {
+      const routeId = stops[0].route_id;
+      if (!routeId || stops.some((s) => s.route_id !== routeId)) {
+        throw new BadRequestException(
+          'Persisted optimization requires all stops on the same route.',
+        );
+      }
+      await this.prisma.$transaction([
+        ...optimizedIds.map((id, idx) =>
+          this.prisma.stop.update({
+            where: { id },
+            data: { sequence: idx },
+          }),
+        ),
+        this.prisma.route.update({
+          where: { id: routeId },
+          data: {
+            total_distance_km: directions.distanceKm,
+            estimated_duration_min: directions.durationMin,
+          },
+        }),
+      ]);
+    }
 
     return {
       stops: optimizedStops,

@@ -1,5 +1,6 @@
 import { Controller, Get, Patch, Post, Body, UseGuards } from '@nestjs/common';
 import { DriverService } from './driver.service';
+import { UpdateDriverSettingsDto } from './dto/driver.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -17,7 +18,10 @@ export class SettingsController {
   }
 
   @Patch()
-  updateSettings(@CurrentUser('id') userId: string, @Body() dto: any) {
+  updateSettings(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateDriverSettingsDto,
+  ) {
     return this.driverService.updateSettings(userId, dto);
   }
 

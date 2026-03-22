@@ -1,5 +1,6 @@
 import { Controller, Get, Patch, Post, Body, UseGuards } from '@nestjs/common';
 import { DriverService } from './driver.service';
+import { UpdateDriverProfileDto, UploadAvatarDto } from './dto/driver.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -17,12 +18,18 @@ export class ProfileController {
   }
 
   @Patch()
-  updateProfile(@CurrentUser('id') userId: string, @Body() dto: any) {
+  updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateDriverProfileDto,
+  ) {
     return this.driverService.updateProfile(userId, dto);
   }
 
   @Post('avatar')
-  uploadAvatar(@CurrentUser('id') userId: string, @Body() dto: any) {
+  uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UploadAvatarDto,
+  ) {
     return this.driverService.uploadAvatar(userId, dto);
   }
 

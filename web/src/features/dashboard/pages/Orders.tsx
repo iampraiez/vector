@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import axios from "axios";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore, Driver } from "../../../store/driverStore";
@@ -20,6 +21,7 @@ import {
   ExclamationTriangleIcon,
   DocumentDuplicateIcon,
   LockClosedIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal, ModalInput } from "../components/NewOrderModal";
 import { LocationPickerMap } from "../../../components/ui/LocationPickerMap";
@@ -45,6 +47,7 @@ import {
 import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardOrders() {
+  const navigate = useNavigate();
   const {
     orders,
     stats,
@@ -423,6 +426,16 @@ export function DashboardOrders() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/dashboard/orders/${order.id}`)
+                        }
+                        className="p-2 border border-black/8 rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                        title="View order details"
+                      >
+                        <EyeIcon className="w-3.5 h-3.5 text-gray-500" />
+                      </button>
+                      <button
                         onClick={() => {
                           setCopyingOrder(order);
                           setShowNewOrderModal(true);
@@ -702,6 +715,16 @@ export function DashboardOrders() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(`/dashboard/orders/${order.id}`)
+                              }
+                              className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
+                              title="View order details"
+                            >
+                              <EyeIcon className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => {
                                 setCopyingOrder(order);

@@ -181,15 +181,11 @@ The `User` model doesn't have `is_onboarded` in Prisma's generated type, so a `d
 
 ---
 
-### 1.11 Auto-optimize toggle in `new_route.dart` is purely cosmetic
+### 1.11 [x] Auto-optimize toggle in `new_route.dart` is purely cosmetic
 
-**File:** `new_route.dart:303-327`
+**File:** `new_route.dart`
 
-The "Auto-optimize route · AI will calculate the best order" card has no state variable, no toggle, and no effect on the API call.
-
-**Fix logic (choose one):**
-- **Option A (wire it up):** Add `bool _autoOptimize = false` state. On the toggle card's `onTap`, call `setState(() => _autoOptimize = !_autoOptimize)`. In `_createRoute`, if `_autoOptimize` is true, call `await _api.optimizeAssignments({ stopIds: _stops.map((s) => s.id).toList(), currentLat: ..., currentLng: ... })` first and reorder `_stops` based on the returned sequence before sending to `createAdHocRoute`.
-- **Option B (remove the card):** Delete the UI card entirely. Optimization is already available through the "Optimize" flow in the route-preview screen after creation. The card is misleading if it does nothing.
+**Resolved (Option A):** `_autoOptimize` + switch; after `POST /driver/routes` the app calls `optimizeAssignments` with `persist: true` so the server updates stop `sequence` and route distance/duration (`OptimizeRouteDto.persist` + `DriverService.optimizeAssignments`).
 
 ---
 
@@ -334,48 +330,7 @@ Every driver shows `on_time_rate: 98.0` regardless of actual delivery history.
 
 ## 3. SERVER — Code Quality (No-any rule violations)
 
-The user rules state **there must never be `type: any`**. Current violations:
-
-**Fix logic for all four violations:**
-
-**`driver.service.ts:742` — `updateProfile(userId: string, dto: any)`**
-Create `UpdateDriverProfileInputDto` in `driver/dto/`:
-```ts
-export class UpdateDriverProfileInputDto {
-  @IsOptional() @IsString() full_name?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() vehicle_type?: string;
-  @IsOptional() @IsString() vehicle_plate?: string;
-  @IsOptional() @IsString() bio?: string;
-}
-```
-
-**`driver.service.ts:779` — `uploadAvatar(userId: string, dto: any)`**
-Create `UploadAvatarDto`:
-```ts
-export class UploadAvatarDto {
-  @IsString() @IsNotEmpty() file_url: string;
-}
-```
-
-**`driver.service.ts:801` — `updateSettings(_userId: string, dto: any)`**
-Create `UpdateDriverSettingsDto`:
-```ts
-export class UpdateDriverSettingsDto {
-  @IsOptional() @IsBoolean() notifications_enabled?: boolean;
-  @IsOptional() @IsBoolean() sound_enabled?: boolean;
-  @IsOptional() @IsBoolean() vibration_enabled?: boolean;
-  @IsOptional() @IsBoolean() dark_mode?: boolean;
-  @IsOptional() @IsBoolean() compact_view?: boolean;
-}
-```
-
-**`auth.service.ts:74, 82` — `expiresIn: ... as any`**
-Replace with a typed string union. The correct type for `expiresIn` in the `@nestjs/jwt` sign options is `string | number`. Replace `as any` with `as string`:
-```ts
-expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION', '15m') as string,
-```
-This is type-safe because `expiresIn` on the `SignOptions` type accepts `string | number | undefined`.
+**Resolved:** `UpdateDriverProfileDto`, `UploadAvatarDto`, and `UpdateDriverSettingsDto` live in `server/src/driver/dto/driver.dto.ts` and are used on `ProfileController`, `SettingsController`, and `DriverService`. JWT `expiresIn` uses `as unknown as NonNullable<Parameters<JwtService['signAsync']>[1]>['expiresIn']` (no `any`). `uploadAvatar` requires `file_url` (no bogus fallback URL).
 
 ---
 
@@ -517,17 +472,11 @@ jobs:
 
 ## 5. WEB — Broken or Missing Pages
 
-### 5.1 `OrderDetail` page is commented out in the router
+### 5.1 [x] `OrderDetail` page is commented out in the router
 
-**File:** `web/src/routes.tsx:8,92`
+**File:** `web/src/routes.tsx`, `Orders.tsx`, `orderStore.ts`
 
-Both the import and route for `/dashboard/orders/:id` are commented out. The component file exists but is unreachable.
-
-**Fix logic:**
-1. In `routes.tsx`, uncomment the import: `import OrderDetail from './features/dashboard/pages/OrderDetail'`.
-2. Uncomment the route: `<Route path="/dashboard/orders/:id" element={<OrderDetail />} />`.
-3. In the Orders table component, wrap each row in a `<Link to={/dashboard/orders/${order.id}}>` or add an "eye" icon button that navigates to it.
-4. Verify the `OrderDetail` component fetches `GET /dashboard/orders/:id` on mount using `useParams()` to get the ID.
+**Resolved:** Route `orders/:id` and `DashboardOrderDetail` import enabled; desktop and mobile order rows include an **eye** button that `navigate`s to `/dashboard/orders/:id`. `fetchOrderDetail` clears `selectedOrder` while loading / on error and maps `route.name` → `route_name` for the detail UI.
 
 ---
 
@@ -548,23 +497,9 @@ The proof-of-delivery flow requires the driver to scan the customer's QR code. T
 
 ---
 
-### 5.3 Tracking page has no live updates
+### 5.3 [x] Tracking page has no live updates
 
-After location confirmation the page is static. The driver's position never refreshes.
-
-**Fix logic:**
-1. In the tracking page component, set up a polling interval in a `useEffect`:
-   ```ts
-   useEffect(() => {
-     const interval = setInterval(() => {
-       fetchTrackingData(token); // re-calls GET /tracking?token=
-     }, 30_000);
-     return () => clearInterval(interval);
-   }, [token]);
-   ```
-2. `fetchTrackingData` updates the driver lat/lng in local state, which re-renders the map marker.
-3. Also update the stop status badge (e.g., "En Route" → "Arrived") in the same refresh cycle.
-4. Show a "Last updated X seconds ago" counter so the customer knows the data is live.
+**Resolved:** `CustomerTracking` uses `fetchTrackingData` (initial + silent 30s polling), updates `delivery` on each success (status, stops, `liveLocation`), shows **Last updated … ago** in the header with a 1s tick for relative time, and a **View driver's last position on map** link when `liveLocation` is present.
 
 ---
 
@@ -1007,5 +942,5 @@ This is the same as item 6.5 — already covered with the full Hive offline queu
 | 🟠 P1 | 6.4 [x] — background location tracking |
 | 🟡 P2 | 2.2 [x] — in-app notifications |
 | 🟡 P2 | 1.10 [x] — duplicate client-side geocoding |
-| 🟡 P2 | 1.11 + 3 — cosmetic toggle, any-type violations |
+| 🟡 P2 | 1.11 + 3 [x] — cosmetic toggle, any-type violations |
 | 🟡 P2 | 5 web gaps, 8 testing |

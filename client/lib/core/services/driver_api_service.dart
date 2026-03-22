@@ -50,11 +50,17 @@ class DriverApiService {
     required List<String> stopIds,
     required double lat,
     required double lng,
+    bool persist = false,
   }) async {
     try {
       final res = await _dio.post(
         '/driver/assignments/optimize',
-        data: {'stopIds': stopIds, 'currentLat': lat, 'currentLng': lng},
+        data: {
+          'stopIds': stopIds,
+          'currentLat': lat,
+          'currentLng': lng,
+          if (persist) 'persist': true,
+        },
       );
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {

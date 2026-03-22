@@ -66,22 +66,24 @@ export class AuthService {
       full_name: user.full_name ?? '',
     };
 
+    const accessExpires =
+      this.configService.get<string>('JWT_ACCESS_EXPIRATION', '1h') ?? '1h';
+    const refreshExpires =
+      this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d') ?? '7d';
+
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync<JwtPayload>(payload, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        expiresIn: this.configService.get<string>(
-          'JWT_ACCESS_EXPIRATION',
-          '1h',
-        ) as any,
+        // jwt `expiresIn` typing uses `ms.StringValue`; env vars are plain strings.
+        expiresIn: accessExpires as unknown as NonNullable<
+          Parameters<JwtService['signAsync']>[1]
+        >['expiresIn'],
       }),
       this.jwtService.signAsync<JwtPayload>(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        expiresIn: this.configService.get<string>(
-          'JWT_REFRESH_EXPIRATION',
-          '7d',
-        ) as any,
+        expiresIn: refreshExpires as unknown as NonNullable<
+          Parameters<JwtService['signAsync']>[1]
+        >['expiresIn'],
       }),
     ]);
 

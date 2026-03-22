@@ -6,6 +6,8 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  IsBoolean,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -77,6 +79,11 @@ export class OptimizeRouteDto {
 
   @IsNumber()
   currentLng!: number;
+
+  /** When true, writes optimized `sequence` (and route distance/duration) to the database. */
+  @IsBoolean()
+  @IsOptional()
+  persist?: boolean;
 }
 
 export class CreateOptimizedRouteDto {
@@ -135,4 +142,50 @@ export class CreateAdHocRouteDto {
   @ValidateNested({ each: true })
   @Type(() => AdHocStopDto)
   stops!: AdHocStopDto[];
+}
+
+export class UpdateDriverProfileDto {
+  @IsString()
+  @IsOptional()
+  full_name?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  vehicle_type?: string;
+
+  @IsString()
+  @IsOptional()
+  vehicle_plate?: string;
+}
+
+export class UploadAvatarDto {
+  @IsString()
+  @IsNotEmpty()
+  file_url!: string;
+}
+
+export class UpdateDriverSettingsDto {
+  @IsBoolean()
+  @IsOptional()
+  notifications_enabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  sound_enabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  vibration_enabled?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  dark_mode?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  compact_view?: boolean;
 }
