@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { CreateOptimizedRouteDto } from './dto/driver.dto';
+import { CreateOptimizedRouteDto, CreateAdHocRouteDto } from './dto/driver.dto';
 
 @Controller('driver/routes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,8 +49,8 @@ export class RoutesController {
   @Post()
   createRoute(
     @CurrentUser('id') userId: string,
-    @Body() data: { name: string; stops: any[] },
+    @Body() dto: CreateAdHocRouteDto,
   ) {
-    return this.driverService.createAdHocRoute(userId, data);
+    return this.driverService.createAdHocRoute(userId, dto);
   }
 }

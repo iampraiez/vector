@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
@@ -8,24 +12,118 @@ import '../../shared/widgets/buttons.dart';
 import '../../core/services/driver_api_service.dart';
 
 class NewRouteScreen extends StatefulWidget {
-  const NewRouteScreen({super.key});
+  final bool isManualTab;
+  const NewRouteScreen({super.key, this.isManualTab = true});
 
   @override
   State<NewRouteScreen> createState() => _NewRouteScreenState();
 }
 
 class _NewRouteScreenState extends State<NewRouteScreen> {
-  bool _isManualTab = true;
+  late bool _isManualTab;
   final TextEditingController _nameController = TextEditingController();
   final List<Map<String, dynamic>> _stops = [
-    {'customerName': '', 'address': '', 'packages': 1, 'date': DateTime.now()}
+    {
+      'customerName': '', 
+      'customerEmail': '',
+      'customerPhone': '',
+      'address': '', 
+      'packages': 1, 
+      'notes': '',
+      'externalId': '',
+      'priority': 'normal',
+      'date': DateTime.now()
+    }
   ];
   bool _creating = false;
   String? _importedFileName;
-  int _detectedOrders = 0;
+
+  Future<void> _pickAndParseCSV() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        withData: true,
+      );
+      if (result != null) {
+        final file = result.files.single;
+        final csvString = file.bytes != null 
+            ? utf8.decode(file.bytes!) 
+            : await File(file.path!).readAsString();
+            
+        List<List<dynamic>> rowsAsListOfValues = const CsvDecoder().convert(csvString);
+        if (rowsAsListOfValues.isEmpty) return;
+        
+        final headers = rowsAsListOfValues[0].map((h) => h.toString().toLowerCase().trim()).toList();
+        
+        int addressIdx = headers.indexWhere((h) => h.contains('address'));
+        int nameIdx = headers.indexWhere((h) => h.contains('name') && !h.contains('company'));
+        int emailIdx = headers.indexWhere((h) => h.contains('email'));
+        int phoneIdx = headers.indexWhere((h) => h.contains('phone') || h.contains('mobile'));
+        int pkgsIdx = headers.indexWhere((h) => h.contains('package') || h.contains('qty') || h.contains('quantity'));
+        int notesIdx = headers.indexWhere((h) => h.contains('note'));
+        int orderIdx = headers.indexWhere((h) => h.contains('order') || h.contains('external'));
+        int priorityIdx = headers.indexWhere((h) => h.contains('priority'));
+        
+        if (addressIdx == -1) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CSV must contain an "Address" column')));
+          return;
+        }
+
+        setState(() {
+          _importedFileName = file.name;
+          _nameController.text = _nameController.text.isNotEmpty ? _nameController.text : 'Import-${DateFormat('MMM-dd').format(DateTime.now())}';
+          _stops.clear();
+          
+          for (int i = 1; i < rowsAsListOfValues.length; i++) {
+            final row = rowsAsListOfValues[i];
+            if (row.length <= addressIdx) continue;
+            final address = row[addressIdx].toString().trim();
+            if (address.isEmpty) continue;
+            
+            _stops.add({
+              'customerName': nameIdx != -1 && row.length > nameIdx ? row[nameIdx].toString().trim() : '',
+              'customerEmail': emailIdx != -1 && row.length > emailIdx ? row[emailIdx].toString().trim() : '',
+              'customerPhone': phoneIdx != -1 && row.length > phoneIdx ? row[phoneIdx].toString().trim() : '',
+              'address': address,
+              'packages': pkgsIdx != -1 && row.length > pkgsIdx ? (int.tryParse(row[pkgsIdx].toString()) ?? 1) : 1,
+              'notes': notesIdx != -1 && row.length > notesIdx ? row[notesIdx].toString().trim() : '',
+              'externalId': orderIdx != -1 && row.length > orderIdx ? row[orderIdx].toString().trim() : '',
+              'priority': priorityIdx != -1 && row.length > priorityIdx ? _parsePriority(row[priorityIdx].toString()) : 'normal',
+              'date': DateTime.now(),
+            });
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to read CSV: $e')));
+    }
+  }
+
+  String _parsePriority(String p) {
+    final lower = p.toLowerCase().trim();
+    if (['low', 'normal', 'high', 'urgent'].contains(lower)) return lower;
+    return 'normal';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _isManualTab = widget.isManualTab;
+  }
 
   void _addStop() {
-    setState(() => _stops.add({'customerName': '', 'address': '', 'packages': 1, 'date': DateTime.now()}));
+    setState(() => _stops.add({
+      'customerName': '', 
+      'customerEmail': '',
+      'customerPhone': '',
+      'address': '', 
+      'packages': 1, 
+      'notes': '',
+      'externalId': '',
+      'priority': 'normal',
+      'date': DateTime.now()
+    }));
   }
 
   void _removeStop(int index) {
@@ -42,10 +140,27 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
       final validStops = _stops.where((s) => (s['address'] as String).isNotEmpty).toList();
       final route = await DriverApiService.instance.createRoute(
         name: _nameController.text,
-        stops: validStops,
+        stops: validStops.map((s) => {
+          'customerName': s['customerName'],
+          'customerEmail': s['customerEmail'],
+          'customerPhone': s['customerPhone'],
+          'address': s['address'],
+          'packages': s['packages'],
+          'notes': s['notes'],
+          'externalId': s['externalId'],
+          'priority': s['priority'],
+          'delivery_date': (s['date'] as DateTime).toIso8601String(),
+        }).toList(),
       );
       
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Orders successfully added to the system!'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 3),
+          ),
+        );
         context.push('/route-preview', extra: route);
       }
     } catch (e) {
@@ -181,121 +296,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     
                     const SizedBox(height: AppSpacing.p6),
 
-                    // Stops
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('STOPS (${_stops.length})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.7)),
-                        TextButton.icon(
-                          onPressed: _addStop,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Add stop', style: TextStyle(fontWeight: FontWeight.w600)),
-                          style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.p2),
-
-                    ..._stops.asMap().entries.map((e) {
-                      int idx = e.key;
-                      var s = e.value;
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: AppSpacing.p3),
-                        padding: const EdgeInsets.all(AppSpacing.p4),
-                        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
-                                  alignment: Alignment.center,
-                                  child: Text('${idx + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                                ),
-                                const SizedBox(width: AppSpacing.p3),
-                                Expanded(child: Text('STOP ${idx + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5))),
-                                if (_stops.length > 1)
-                                  IconButton(
-                                    icon: const Icon(Icons.close, size: 18),
-                                    color: AppColors.textHint,
-                                    onPressed: () => _removeStop(idx),
-                                  )
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.p3),
-                            AppTextField(
-                              hintText: 'Customer name (Optional)',
-                              initialValue: s['customerName'],
-                              onChanged: (v) => setState(() => _stops[idx]['customerName'] = v),
-                              prefixIcon: const Icon(Icons.person_outline, size: 18),
-                            ),
-                            const SizedBox(height: AppSpacing.p3),
-                            AppTextField(
-                              hintText: 'Enter delivery address',
-                              initialValue: s['address'],
-                              onChanged: (v) => setState(() => _stops[idx]['address'] = v),
-                              prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
-                            ),
-                            const SizedBox(height: AppSpacing.p2),
-                            Row(
-                              children: [
-                                const Icon(Icons.inventory_2_outlined, size: 16, color: AppColors.textSecondary),
-                                const SizedBox(width: AppSpacing.p2),
-                                const Expanded(child: Text('Packages', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary))),
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline),
-                                  color: s['packages'] > 1 ? AppColors.textSecondary : AppColors.border,
-                                  onPressed: s['packages'] > 1 ? () => setState(() => _stops[idx]['packages']--) : null,
-                                ),
-                                Container(
-                                  width: 40,
-                                  alignment: Alignment.center,
-                                  child: Text('${s['packages']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline),
-                                  color: AppColors.primary,
-                                  onPressed: () => setState(() => _stops[idx]['packages']++),
-                                ),
-                              ],
-                            ),
-                            const Divider(color: AppColors.border, height: 24),
-                            // Per-stop Date
-                            InkWell(
-                              onTap: () async {
-                                final picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: s['date'],
-                                  firstDate: DateTime.now(),
-                                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                                );
-                                if (picked != null) setState(() => _stops[idx]['date'] = picked);
-                              },
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'Delivery Date',
-                                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                                    ),
-                                  ),
-                                  Text(
-                                    DateFormat('MMM dd, yyyy').format(s['date']),
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                      _buildStopsList(),
                     
                     const SizedBox(height: AppSpacing.p4),
 
@@ -325,6 +326,20 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     ),
 
                     const SizedBox(height: AppSpacing.p6),
+                    // Fleet manager note
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p3),
+                      decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFEF3C7))),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Icon(Icons.warning_amber_rounded, size: 18, color: Color(0xFFD97706)),
+                          SizedBox(width: 8),
+                          Expanded(child: Text('Note: Once added, these orders are synced to the database. Only your Fleet Manager can delete them.', style: TextStyle(fontSize: 12, color: Color(0xFF92400E), height: 1.4))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.p4),
                     AppButton(
                       label: _creating ? 'Creating...' : 'Create & optimize route',
                       isFullWidth: true,
@@ -356,12 +371,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                             AppButton(
                               label: 'Choose file', 
                               variant: ButtonVariant.outline, 
-                              onPressed: () {
-                                setState(() {
-                                  _importedFileName = 'orders_march_17.csv';
-                                  _detectedOrders = 12;
-                                });
-                              }
+                              onPressed: _pickAndParseCSV,
                             )
                           ],
                         ),
@@ -389,7 +399,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(_importedFileName!, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                                      Text('$_detectedOrders orders detected', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12)),
+                                      Text('${_stops.length} orders detected', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12)),
                                     ],
                                   ),
                                 ),
@@ -401,10 +411,32 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.p6),
+                          
+                          // Preview List for Import
+                          const Text('REVIEW IMPORTED STOPS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.7)),
+                          const SizedBox(height: AppSpacing.p2),
+                          _buildStopsList(),
+
+                          const SizedBox(height: AppSpacing.p6),
+                          // Fleet manager note
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p3),
+                            decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFEF3C7))),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Icon(Icons.warning_amber_rounded, size: 18, color: Color(0xFFD97706)),
+                                SizedBox(width: 8),
+                                Expanded(child: Text('Note: Once added, these orders are synced to the database. Only your Fleet Manager can delete them.', style: TextStyle(fontSize: 12, color: Color(0xFF92400E), height: 1.4))),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.p4),
                           AppButton(
-                            label: _creating ? 'Importing...' : 'Confirm & import orders',
+                            label: 'Confirm & import orders',
+                            isLoading: _creating,
                             isFullWidth: true,
-                            onPressed: _createRoute,
+                            onPressed: canCreate ? _createRoute : () {},
                           ),
                         ],
                       ),
@@ -425,7 +457,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                           ),
                           const SizedBox(height: AppSpacing.p3),
                           const Text(
-                            'Upload a CSV with these columns:\n• Full Address (Required)\n• Packages (Default: 1)\n• Customer Name (Optional)',
+                            'Upload a CSV with these columns:\n• Full Address (Required)\n• Customer Name, Email, Phone (Optional)\n• Packages (Default: 1)\n• Order #, Priority, Notes (Optional)',
                             style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.6),
                           )
                         ],
@@ -438,9 +470,204 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
           ),
         ),
       ),
+    ],
+  ),
+),
+);
+}
+
+  Widget _buildStopsList() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('STOPS (${_stops.length})', 
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.7)),
+            TextButton.icon(
+              onPressed: _addStop,
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Add stop', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            )
           ],
         ),
-      ),
+        const SizedBox(height: AppSpacing.p2),
+
+        ..._stops.asMap().entries.map((e) {
+          int idx = e.key;
+          var s = e.value;
+          return Container(
+            margin: const EdgeInsets.only(bottom: AppSpacing.p3),
+            padding: const EdgeInsets.all(AppSpacing.p4),
+            decoration: BoxDecoration(
+              color: AppColors.white, 
+              borderRadius: BorderRadius.circular(16), 
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: Text('${idx + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    ),
+                    const SizedBox(width: AppSpacing.p3),
+                    Expanded(child: Text('STOP ${idx + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5))),
+                    if (_stops.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        color: AppColors.textHint,
+                        onPressed: () => _removeStop(idx),
+                      )
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.p3),
+                AppTextField(
+                  hintText: 'Customer name (Optional)',
+                  initialValue: s['customerName'],
+                  onChanged: (v) => setState(() => _stops[idx]['customerName'] = v),
+                  prefixIcon: const Icon(Icons.person_outline, size: 18),
+                ),
+                const SizedBox(height: AppSpacing.p3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        hintText: 'Email',
+                        initialValue: s['customerEmail'],
+                        onChanged: (v) => setState(() => _stops[idx]['customerEmail'] = v),
+                        prefixIcon: const Icon(Icons.email_outlined, size: 18),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.p3),
+                    Expanded(
+                      child: AppTextField(
+                        hintText: 'Phone',
+                        initialValue: s['customerPhone'],
+                        onChanged: (v) => setState(() => _stops[idx]['customerPhone'] = v),
+                        prefixIcon: const Icon(Icons.phone_outlined, size: 18),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.p3),
+                AppTextField(
+                  hintText: 'Enter delivery address',
+                  initialValue: s['address'],
+                  onChanged: (v) => setState(() => _stops[idx]['address'] = v),
+                  prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
+                ),
+                const SizedBox(height: AppSpacing.p3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        hintText: 'Order # (Optional)',
+                        initialValue: s['externalId'],
+                        onChanged: (v) => setState(() => _stops[idx]['externalId'] = v),
+                        prefixIcon: const Icon(Icons.tag, size: 18),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.p3),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: s['priority'],
+                            isExpanded: true,
+                            icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                            onChanged: (v) => setState(() => _stops[idx]['priority'] = v),
+                            items: ['low', 'normal', 'high', 'urgent'].map((p) {
+                              return DropdownMenuItem(
+                                value: p,
+                                child: Text(p[0].toUpperCase() + p.substring(1)),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.p3),
+                AppTextField(
+                  hintText: 'Add notes for this stop...',
+                  initialValue: s['notes'],
+                  onChanged: (v) => setState(() => _stops[idx]['notes'] = v),
+                  prefixIcon: const Icon(Icons.notes, size: 18),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.p2),
+                Row(
+                  children: [
+                    const Icon(Icons.inventory_2_outlined, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: AppSpacing.p2),
+                    const Expanded(child: Text('Packages', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary))),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      color: s['packages'] > 1 ? AppColors.textSecondary : AppColors.border,
+                      onPressed: s['packages'] > 1 ? () => setState(() => _stops[idx]['packages']--) : null,
+                    ),
+                    Container(
+                      width: 40,
+                      alignment: Alignment.center,
+                      child: Text('${s['packages']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      color: AppColors.primary,
+                      onPressed: () => setState(() => _stops[idx]['packages']++),
+                    ),
+                  ],
+                ),
+                const Divider(color: AppColors.border, height: 24),
+                // Per-stop Date
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: s['date'],
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (picked != null) setState(() => _stops[idx]['date'] = picked);
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Delivery Date',
+                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                        ),
+                      ),
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(s['date']),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 }

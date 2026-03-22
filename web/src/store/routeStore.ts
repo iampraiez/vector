@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
 import { AxiosError } from "axios";
+import { ReactNode } from "react";
 
 export interface RouteStop {
+  customerName: string;
+  address: ReactNode;
   id: string;
   order_id: string;
   sequence: number;

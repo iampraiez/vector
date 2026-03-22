@@ -56,15 +56,14 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
     if (_isDraft && _stopIds.isNotEmpty) {
       setState(() => _fetchingFullRoute = true);
       try {
-        // 1. Get current location
+        // 1. Get current location (Optional for Drafts)
         final position = await LocationService.instance.getCurrentPosition();
-        if (position == null) throw Exception('Could not get current location');
         
         // 2. Call AI optimization
         final data = await DriverApiService.instance.optimizeAssignments(
           stopIds: _stopIds,
-          lat: position.latitude,
-          lng: position.longitude,
+          lat: position?.latitude ?? 6.5244,
+          lng: position?.longitude ?? 3.3792,
         );
         
         if (mounted) {
@@ -149,10 +148,14 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
 
     // Pan camera to show the full route
     if (validCoords.isNotEmpty) {
-      final bounds = LatLngBounds.fromPoints(validCoords);
-      _mapController.fitCamera(
-        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)),
-      );
+      if (validCoords.length == 1) {
+        _mapController.move(validCoords.first, 14.0);
+      } else {
+        final bounds = LatLngBounds.fromPoints(validCoords);
+        _mapController.fitCamera(
+          CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)),
+        );
+      }
     }
   }
 
@@ -221,7 +224,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_routeName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
+                        Text(_stops.length == 1 ? ((_stops[0]['customer_name'] ?? _stops[0]['customerName'])?.toString() ?? _stops[0]['address']?.toString() ?? _routeName) : _routeName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
                         Text(dateStr, style: TextStyle(fontSize: 13, color: AppColors.textPrimary.withValues(alpha: 0.5), fontWeight: FontWeight.w500)),
                       ],
                     ),
@@ -501,7 +504,7 @@ class _StopCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(stop['customer_name'] as String? ?? 'Customer', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+                    Text((stop['customer_name'] ?? stop['customerName'])?.toString() ?? 'Customer', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
                     if (isFirst)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -511,13 +514,13 @@ class _StopCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(stop['address'] as String, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4)),
+                Text(stop['address']?.toString() ?? 'Unknown Address', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(Icons.schedule, size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
-                    Text(stop['eta'] as String, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    Text(stop['eta']?.toString() ?? '--', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                     const SizedBox(width: 16),
                     const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 4),

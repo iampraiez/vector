@@ -3,20 +3,22 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
-import { Prisma, DriverStatus } from '@prisma/client';
+import { Prisma, DriverStatus, StopPriority } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { settingsOtpTemplate } from '../common/template';
 import {
-  UpdateStatusDto,
-  UpdateLocationDto,
-  CompleteDeliveryDto,
-  FailDeliveryDto,
   OnboardingDto,
   ExportHistoryDto,
   OptimizeRouteDto,
   CreateOptimizedRouteDto,
+  CreateAdHocRouteDto,
+  CompleteDeliveryDto,
+  FailDeliveryDto,
+  UpdateStatusDto,
+  UpdateLocationDto,
 } from './dto/driver.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
@@ -24,16 +26,12 @@ import { MailService } from '../mail/mail.service';
 import { Route, Stop } from '@prisma/client';
 import { MapService } from '../map/map.service';
 
-interface AdHocStopInput {
-  customerName?: string;
-  address: string;
-  packages?: number;
-}
-
 type AssignmentItem = (Route & { type: 'route' }) | (Stop & { type: 'stop' });
 
 @Injectable()
 export class DriverService {
+  private readonly logger = new Logger(DriverService.name);
+
   constructor(
     private prisma: PrismaService,
     private redis: RedisService,
@@ -56,37 +54,36 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const today = new Date().toISOString().split('T')[0];
 
-    const [todayRoutes, completedToday, driverData, activeRoute] =
-      await Promise.all([
-        this.prisma.route.findMany({
-          where: { driver_id: driver.id, date: today },
-          include: { stops: true },
-        }),
-        this.prisma.stop.count({
-          where: {
-            driver_id: driver.id,
-            status: 'completed',
-            updated_at: { gte: new Date(today) },
-          },
-        }),
-        this.prisma.driver.findUnique({
-          where: { id: driver.id },
-          select: { total_deliveries: true },
-        }),
-        this.prisma.route.findFirst({
-          where: {
-            driver_id: driver.id,
-            status: 'active',
-          },
-          orderBy: { updated_at: 'desc' },
-        }),
-      ]);
+    const [completedToday, driverData, activeRoute] = await Promise.all([
+      // this.prisma.route.findMany({
+      //   where: { driver_id: driver.id, date: today },
+      //   include: { stops: true },
+      // }),
+      this.prisma.stop.count({
+        where: {
+          driver_id: driver.id,
+          status: 'completed',
+          updated_at: { gte: new Date(today) },
+        },
+      }),
+      this.prisma.driver.findUnique({
+        where: { id: driver.id },
+        select: { total_deliveries: true },
+      }),
+      this.prisma.route.findFirst({
+        where: {
+          driver_id: driver.id,
+          status: 'active',
+        },
+        orderBy: { updated_at: 'desc' },
+      }),
+    ]);
 
-    let pendingStopsCount = 0;
-    todayRoutes.forEach((r) => {
-      pendingStopsCount += r.stops.filter((s) =>
-        ['assigned', 'pending', 'in_progress'].includes(s.status),
-      ).length;
+    const pendingStopsCount = await this.prisma.stop.count({
+      where: {
+        driver_id: driver.id,
+        status: { in: ['assigned', 'pending', 'in_progress'] },
+      },
     });
 
     return {
@@ -95,6 +92,7 @@ export class DriverService {
       total_deliveries: driverData?.total_deliveries || 0,
       pending_stops: pendingStopsCount,
       active_route_name: activeRoute?.name || null,
+      active_route_id: activeRoute?.id || null,
       rating: driver.avg_rating,
       last_active_at: driver.last_active_at,
     };
@@ -123,7 +121,61 @@ export class DriverService {
         last_active_at: new Date(),
       },
     });
+
+    // --- Geofencing: Auto-arrive at pending stops ---
+    if (dto.lat != null && dto.lng != null) {
+      const pendingStops = await this.prisma.stop.findMany({
+        where: {
+          driver_id: driver.id,
+          status: 'pending',
+          lat: { not: null },
+          lng: { not: null },
+        },
+      });
+
+      for (const stop of pendingStops) {
+        if (stop.lat && stop.lng) {
+          const distance = this.calculateDistance(
+            dto.lat,
+            dto.lng,
+            stop.lat,
+            stop.lng,
+          );
+          if (distance <= 200) {
+            try {
+              await this.arriveAtStop(userId, stop.id);
+              this.logger.log(
+                `Auto-arrived driver ${driver.id} at stop ${stop.id} (Distance: ${Math.round(distance)}m)`,
+              );
+            } catch (err) {
+              this.logger.error(`Failed to auto-arrive stop ${stop.id}:`, err);
+            }
+          }
+        }
+      }
+    }
+
     return { lat: dto.lat, lng: dto.lng };
+  }
+
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const R = 6371e3; // metres
+    const p1 = (lat1 * Math.PI) / 180;
+    const p2 = (lat2 * Math.PI) / 180;
+    const dp = ((lat2 - lat1) * Math.PI) / 180;
+    const dl = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dp / 2) * Math.sin(dp / 2) +
+      Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
   }
 
   async getAssignments(userId: string) {
@@ -135,7 +187,15 @@ export class DriverService {
     const routes = await this.prisma.route.findMany({
       where: {
         driver_id: driver.id,
-        OR: [{ status: 'active' }, { date: today }, { date: { gt: today } }],
+        OR: [
+          { status: 'active' },
+          { date: today },
+          { date: { gt: today } },
+          {
+            status: { in: ['completed', 'cancelled'] },
+            updated_at: { gte: todayStart },
+          },
+        ],
       },
       include: {
         stops: { orderBy: { sequence: 'asc' } },
@@ -279,31 +339,49 @@ export class DriverService {
     return { message: 'Route started successfully' };
   }
 
-  async createAdHocRoute(
-    userId: string,
-    data: { name: string; stops: AdHocStopInput[] },
-  ) {
+  async createAdHocRoute(userId: string, dto: CreateAdHocRouteDto) {
     const driver = await this.getDriverOrThrow(userId);
     const today = new Date().toISOString().split('T')[0];
 
+    // Daily limit check: 10 ad-hoc routes per day
+    const count = await this.prisma.route.count({
+      where: {
+        driver_id: driver.id,
+        created_by: userId,
+        created_at: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        },
+      },
+    });
+
+    if (count >= 10) {
+      throw new BadRequestException('Daily limit of 10 ad-hoc routes reached.');
+    }
+
     const route = await this.prisma.route.create({
       data: {
-        name: data.name,
+        name: dto.name,
         company_id: driver.company_id,
         driver_id: driver.id,
         date: today,
         status: 'draft',
-        total_stops: data.stops.length,
+        created_by: userId, // Indication that the driver created it
+        total_stops: dto.stops.length,
         stops: {
-          create: data.stops.map((s, idx) => ({
+          create: dto.stops.map((s, idx) => ({
             company_id: driver.company_id,
             driver_id: driver.id,
             customer_name: s.customerName || 'Customer',
+            customer_email: s.customerEmail,
+            customer_phone: s.customerPhone,
             address: s.address,
             packages: s.packages || 1,
+            notes: s.notes,
+            external_id: s.externalId,
+            priority: (s.priority as StopPriority) || StopPriority.normal,
             sequence: idx,
             status: 'assigned',
-            delivery_date: today,
+            delivery_date: s.delivery_date || today,
           })),
         },
       },
@@ -398,8 +476,8 @@ export class DriverService {
           status: 'completed',
           completed_at: new Date(),
           notes: dto.notes,
-          photo_url: dto.photo_urls ? dto.photo_urls[0] : null,
-          signature_url: dto.signature_url,
+          photo_url: dto.photo_urls?.[0] || null,
+          signature_url: dto.signature_url || null,
         },
       }),
       this.prisma.driver.update({
@@ -432,8 +510,8 @@ export class DriverService {
       data: {
         status: 'failed',
         completed_at: new Date(),
-        failure_reason: dto.reason,
-        failure_notes: dto.notes,
+        failure_reason: dto.reason || 'unknown',
+        failure_notes: dto.notes || null,
       },
     });
 

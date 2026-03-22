@@ -95,7 +95,10 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/new-route',
-      builder: (context, state) => const NewRouteScreen(),
+      builder: (context, state) {
+        final tab = state.uri.queryParameters['tab'];
+        return NewRouteScreen(isManualTab: tab != 'import');
+      },
     ),
     GoRoute(
       path: '/route-preview',

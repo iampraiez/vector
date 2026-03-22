@@ -93,9 +93,20 @@ export class TrackingService {
       created_at: Date;
     };
 
+    let displayStatus: string = stopData.status;
+    if (displayStatus === 'pending' && stopData.started_at) {
+      displayStatus = 'out_for_delivery';
+    } else if (displayStatus === 'in_progress') {
+      displayStatus = 'out_for_delivery';
+    } else if (displayStatus === 'completed') {
+      displayStatus = 'delivered';
+    } else if (displayStatus === 'returned' || displayStatus === 'failed') {
+      displayStatus = 'failed';
+    }
+
     return {
       trackingToken: stopData.tracking_token,
-      status: stopData.status,
+      status: displayStatus,
       locationConfirmed: stopData.location_confirmed,
       address: stopData.address,
       customerName: stopData.customer_name,

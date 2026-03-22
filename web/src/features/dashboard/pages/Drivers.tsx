@@ -9,12 +9,14 @@ import {
   EnvelopeIcon,
   ClockIcon,
   TrashIcon,
-  Squares2X2Icon,
   ListBulletIcon,
   UserGroupIcon,
+  UsersIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Skeleton } from "../../../components/ui/skeleton";
+import { maskEmail, maskPhone } from "../../../utils/masking";
 
 export function DashboardDrivers() {
   const navigate = useNavigate();
@@ -194,29 +196,46 @@ export function DashboardDrivers() {
 
                 {/* Driver Header */}
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-13 h-13 rounded-full bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 relative transition-all duration-300 group-hover:bg-emerald-50 group-hover:border-emerald-100">
-                    <span className="text-gray-500 font-bold text-[14px] tracking-tight group-hover:text-emerald-600 uppercase">
-                      {(driver.name || "U")
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")}
-                    </span>
+                  <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 relative transition-all duration-300 group-hover:bg-emerald-50 group-hover:border-emerald-100 group-hover:shadow-sm">
+                    <div className="flex flex-col items-center justify-center">
+                      <UsersIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 mb-0.5" />
+                      <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-tighter group-hover:text-emerald-500">
+                        {driver.name
+                          ? driver.name
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")
+                          : "???"}
+                      </span>
+                    </div>
+                    {/* Status Dot */}
                     {(driver.status || "").toLowerCase() === "active" && (
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
+                      <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm animate-pulse" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[16px] font-semibold text-gray-700 mb-0.5 truncate tracking-tight">
+                    <h3 className="text-[17px] font-bold text-gray-900 mb-1 truncate tracking-tight group-hover:text-emerald-700 transition-colors">
                       {driver.name || "Unknown Driver"}
                     </h3>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-widest ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border shadow-sm ${
                           (driver.status || "").toLowerCase() === "active"
-                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                            : "bg-gray-50 text-gray-400 border border-gray-100"
+                            ? "bg-emerald-50/50 text-emerald-700 border-emerald-100"
+                            : (driver.status || "").toLowerCase() === "idle"
+                              ? "bg-amber-50/50 text-amber-700 border-amber-100"
+                              : "bg-gray-50/50 text-gray-400 border-gray-100"
                         }`}
                       >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            (driver.status || "").toLowerCase() === "active"
+                              ? "bg-emerald-500"
+                              : (driver.status || "").toLowerCase() === "idle"
+                                ? "bg-amber-500"
+                                : "bg-gray-400"
+                          }`}
+                        />
                         {driver.status || "Unknown"}
                       </span>
                     </div>
@@ -224,56 +243,66 @@ export function DashboardDrivers() {
                 </div>
 
                 {/* Contact & Vehicle Info */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-3 text-gray-500 group-hover:text-gray-700 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
-                      <EnvelopeIcon className="w-4 h-4 shrink-0 opacity-70" />
+                <div className="space-y-4 mb-6">
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex items-center gap-3 text-gray-500 group-hover:text-gray-700 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-gray-50/50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
+                        <EnvelopeIcon className="w-3.5 h-3.5 shrink-0" />
+                      </div>
+                      <span className="text-[12.5px] font-semibold tracking-tight truncate">
+                        {maskEmail(driver.email || "") || "No email"}
+                      </span>
                     </div>
-                    <span className="text-[13px] font-medium truncate">
-                      {driver.email || "No email"}
-                    </span>
+                    <div className="flex items-center gap-3 text-gray-500 group-hover:text-gray-700 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-gray-50/50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
+                        <PhoneIcon className="w-3.5 h-3.5 shrink-0" />
+                      </div>
+                      <span className="text-[12.5px] font-semibold tracking-tight">
+                        {maskPhone(driver.phone || "") || "No phone"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-500 group-hover:text-gray-700 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
-                      <PhoneIcon className="w-4 h-4 shrink-0 opacity-70" />
+
+                  <div className="p-3 bg-gray-50/50 rounded-xl border border-black/5 group-hover:bg-white transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-black/5 shadow-sm group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
+                        <LocalShippingIcon
+                          size={16}
+                          className="shrink-0 text-gray-400 group-hover:text-emerald-600"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest mb-0.5">
+                          Vehicle
+                        </p>
+                        <p className="text-[12.5px] font-bold text-gray-700 truncate tracking-tight">
+                          {driver.vehicle_type
+                            ? `${driver.vehicle_type} • ${driver.vehicle_plate || ""}`
+                            : "No Vehicle Assigned"}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-[13px] font-medium">
-                      {driver.phone || "No phone"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-400 group-hover:text-gray-600 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-black/5 group-hover:bg-white transition-colors">
-                      <LocalShippingIcon
-                        size={16}
-                        className="shrink-0 opacity-60"
-                      />
-                    </div>
-                    <span className="text-[13px] font-semibold tracking-tight">
-                      {driver.vehicle_type
-                        ? `${driver.vehicle_type} • ${driver.vehicle_plate || ""}`
-                        : "Unassigned Vehicle"}
-                    </span>
                   </div>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-2 bg-gray-50/50 rounded-xl p-3 mb-6 border border-black/5 transition-colors group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50">
+                <div className="grid grid-cols-2 gap-2 bg-gray-50/50 rounded-xl p-3 mb-6 border border-black/5 transition-all group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50">
                   <div className="text-center border-r border-black/5 last:border-0 border-dashed">
-                    <p className="text-lg font-bold text-gray-900 mb-0">
+                    <p className="text-lg font-extrabold text-gray-900 mb-0 tracking-tight">
                       {driver.total_deliveries || 0}
                     </p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-widest">
                       Routes
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <StarIcon className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <p className="text-lg font-bold text-gray-900">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <StarIcon className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shadow-sm" />
+                      <p className="text-lg font-extrabold text-gray-900 tracking-tight">
                         {driver.avg_rating || "N/A"}
                       </p>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-widest">
                       Rating
                     </p>
                   </div>
@@ -407,26 +436,32 @@ export function DashboardDrivers() {
                       }}
                       className="transition-colors cursor-pointer hover:bg-gray-50 group"
                     >
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-600/10 flex items-center justify-center shrink-0 relative transition-colors group-hover:bg-emerald-100">
-                            <span className="text-[12px] font-bold text-emerald-600 uppercase">
-                              {(driver.name || "U")
-                                .split(" ")
-                                .map((n: string) => n[0])
-                                .join("")}
-                            </span>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 relative transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100 group-hover:shadow-sm">
+                            <div className="flex flex-col items-center justify-center">
+                              <UsersIcon className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 mb-0.5" />
+                              <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-tighter group-hover:text-emerald-500">
+                                {driver.name
+                                  ? driver.name
+                                      .split(" ")
+                                      .map((n: string) => n[0])
+                                      .join("")
+                                  : "???"}
+                              </span>
+                            </div>
                             {(driver.status || "").toLowerCase() ===
                               "active" && (
-                              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm animate-pulse" />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[13px] font-semibold text-gray-700 mb-0.5 truncate tracking-tight">
+                            <p className="text-[14px] font-bold text-gray-800 mb-0.5 truncate tracking-tight group-hover:text-emerald-700 transition-colors">
                               {driver.name || "Unknown Driver"}
                             </p>
-                            <p className="text-[12px] text-gray-400 truncate tracking-tight">
-                              {driver.email || "No email"}
+                            <p className="text-[12px] text-gray-400 truncate tracking-tight font-medium">
+                              {maskEmail(driver.email || "")} •{" "}
+                              {maskPhone(driver.phone || "")}
                             </p>
                           </div>
                         </div>
@@ -438,34 +473,57 @@ export function DashboardDrivers() {
                             : "Unassigned"}
                         </p>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-[13px] font-semibold text-gray-700">
+                      <td className="px-5 py-4">
+                        <span className="text-[14px] font-extrabold text-gray-900 tracking-tight bg-gray-50/50 px-2.5 py-1 rounded-lg border border-black/5 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50 transition-colors">
                           {driver.total_deliveries || 0}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-1">
-                          <StarIcon className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                          <span className="text-[13px] font-bold text-gray-900">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 bg-gray-50/50 px-2.5 py-1 rounded-lg border border-black/5 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50 transition-colors">
+                          <StarIcon className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          <span className="text-[14px] font-extrabold text-gray-900 tracking-tight">
                             {driver.avg_rating || "N/A"}
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-1.5 whitespace-nowrap">
-                          <ClockIcon className="w-3.5 h-3.5 text-gray-300" />
-                          <span className="text-[12px] text-gray-400 font-medium">
-                            {(driver.status || "").toLowerCase() === "active"
-                              ? "Active Now"
-                              : driver.last_active_at
-                                ? new Date(
-                                    driver.last_active_at,
-                                  ).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : "Idle"}
+                      <td className="px-5 py-4">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border shadow-sm ${
+                              (driver.status || "").toLowerCase() === "active"
+                                ? "bg-emerald-50/50 text-emerald-700 border-emerald-100"
+                                : (driver.status || "").toLowerCase() === "idle"
+                                  ? "bg-amber-50/50 text-amber-700 border-amber-100"
+                                  : "bg-gray-50/50 text-gray-400 border-gray-100"
+                            }`}
+                          >
+                            <div
+                              className={`w-1 h-1 rounded-full ${
+                                (driver.status || "").toLowerCase() === "active"
+                                  ? "bg-emerald-500"
+                                  : (driver.status || "").toLowerCase() ===
+                                      "idle"
+                                    ? "bg-amber-500"
+                                    : "bg-gray-400"
+                              }`}
+                            />
+                            {driver.status || "Unknown"}
                           </span>
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <ClockIcon className="w-3 h-3 text-gray-300" />
+                            <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+                              {(driver.status || "").toLowerCase() === "active"
+                                ? "Just Now"
+                                : driver.last_active_at
+                                  ? new Date(
+                                      driver.last_active_at,
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "Offline"}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-right">
@@ -506,14 +564,14 @@ function StatsCard({
   isLoading?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-black/8 transition-all duration-200 hover:border-emerald-600 hover:shadow-sm">
-      <p className="text-[11px] text-gray-500 font-extrabold uppercase tracking-wider mb-2">
+    <div className="bg-white rounded-2xl p-5 border border-black/5 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 hover:-translate-y-0.5">
+      <p className="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest mb-2 transition-colors group-hover:text-emerald-600">
         {label}
       </p>
       {isLoading ? (
         <Skeleton className="w-16 h-8" />
       ) : (
-        <p className="text-2xl font-bold text-gray-900 tracking-tight">
+        <p className="text-2xl font-bold text-gray-900 tracking-tight leading-none group-hover:text-gray-800">
           {value}
         </p>
       )}

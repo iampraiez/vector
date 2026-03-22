@@ -255,7 +255,7 @@ const MapView: React.FC<MapViewProps> = ({
           </Marker>
         )}
 
-        {/* Route Polylines */}
+        {/* Route Polylines & Stops */}
         {routes.map((route) => {
           if (!route.stops || route.stops.length === 0) return null;
           const driverColor = getDriverColor(route.driver_id);
@@ -266,28 +266,99 @@ const MapView: React.FC<MapViewProps> = ({
             )
             .map((s) => [s.lat, s.lng] as [number, number]);
 
-          // Also include current driver location if available
-          const driver = drivers.find((d) => d.id === route.driver_id);
-          if (
-            driver?.location_lat &&
-            driver?.location_lng &&
-            route.status === "active"
-          ) {
-            // Logic to find closest stop or just append?
-            // Better to show the path between stops.
-          }
-
-          if (points.length < 2) return null;
-
           return (
-            <Polyline
-              key={route.id}
-              positions={points}
-              color={driverColor}
-              weight={3}
-              opacity={0.6}
-              dashArray={route.status === "pending" ? "10, 10" : undefined}
-            />
+            <React.Fragment key={route.id}>
+              {points.length >= 2 && (
+                <Polyline
+                  positions={points}
+                  color={driverColor}
+                  weight={4}
+                  opacity={0.7}
+                  dashArray={route.status === "pending" ? "10, 10" : undefined}
+                />
+              )}
+              {route.stops.map((stop, stopIdx) => {
+                if (!stop.lat || !stop.lng) return null;
+                const isCompleted = stop.status === "completed";
+                const isFailed = stop.status === "failed";
+                const markerColor = isCompleted
+                  ? "#10B981"
+                  : isFailed
+                    ? "#EF4444"
+                    : driverColor;
+
+                return (
+                  <Marker
+                    key={stop.id}
+                    position={[stop.lat, stop.lng]}
+                    icon={L.divIcon({
+                      html: renderToString(
+                        <div
+                          style={{
+                            backgroundColor: isCompleted
+                              ? "#10B981"
+                              : isFailed
+                                ? "#EF4444"
+                                : "#FFFFFF",
+                            color:
+                              isCompleted || isFailed ? "#FFFFFF" : markerColor,
+                            border: `2px solid ${markerColor}`,
+                            borderRadius: "50%",
+                            width: "24px",
+                            height: "24px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                          }}
+                        >
+                          {stopIdx + 1}
+                        </div>,
+                      ),
+                      className: "custom-stop-marker",
+                      iconSize: [24, 24],
+                      iconAnchor: [12, 12],
+                    })}
+                  >
+                    <Popup>
+                      <div style={{ minWidth: "150px", padding: "4px" }}>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "14px",
+                            margin: "0 0 4px 0",
+                          }}
+                        >
+                          Stop {stopIdx + 1}: {stop.customerName || "Customer"}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            color: "#6B7280",
+                            margin: "0 0 6px 0",
+                          }}
+                        >
+                          {stop.address}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                            color: markerColor,
+                            margin: "0",
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          Status: {stop.status}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </React.Fragment>
           );
         })}
 
@@ -361,6 +432,22 @@ const MapView: React.FC<MapViewProps> = ({
                       <span style={{ color: "#111827" }}>
                         {driver.location_lat.toFixed(4)},{" "}
                         {driver.location_lng.toFixed(4)}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Last Seen:</span>
+                      <span style={{ color: "#111827" }}>
+                        {driver.last_active_at
+                          ? new Date(driver.last_active_at).toLocaleTimeString(
+                              [],
+                              { hour: "2-digit", minute: "2-digit" },
+                            )
+                          : "Active"}
                       </span>
                     </div>
                   </div>

@@ -24,7 +24,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   static const _cacheKey = 'cache_assignments_today';
   static const _cacheTtlMinutes = 10;
 
-  int _activeTab = 0; // 0 = Active, 1 = Upcoming, 2 = Completed
+  int _activeTab = 0; // 0 = Active, 1 = Upcoming
 
   bool _isLoading = true;
   bool _isOffline = false;
@@ -33,7 +33,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   // Assignments from API
   List<Map<String, dynamic>> _activeAssignments = [];
   List<Map<String, dynamic>> _upcomingAssignments = [];
-  List<Map<String, dynamic>> _completedAssignments = [];
 
   // Track which routes are being started (spinner per card)
   final Set<String> _startingRoutes = {};
@@ -100,7 +99,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   void _applyData(Map<String, dynamic> data) {
     _activeAssignments = (data['active'] as List? ?? []).cast<Map<String, dynamic>>();
     _upcomingAssignments = (data['upcoming'] as List? ?? []).cast<Map<String, dynamic>>();
-    _completedAssignments = (data['completed'] as List? ?? []).cast<Map<String, dynamic>>();
   }
 
   Future<void> _refreshInBackground() async {
@@ -358,12 +356,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         isActive: _activeTab == 1,
                         onTap: () => setState(() => _activeTab = 1),
                       ),
-                      _Tab(
-                        label: 'Activity',
-                        count: _completedAssignments.length,
-                        isActive: _activeTab == 2,
-                        onTap: () => setState(() => _activeTab = 2),
-                      ),
                     ],
                   ),
                 ),
@@ -394,7 +386,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           ),
         ),
       ),
-      floatingActionButton: (_activeTab == 1 && _selectedStopIds.isNotEmpty)
+      floatingActionButton: (_selectedStopIds.isNotEmpty)
           ? FloatingActionButton.extended(
               onPressed: () => _optimizeSelection(context),
               backgroundColor: AppColors.primary,
@@ -424,16 +416,11 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       emptyTitle = 'No active assignments';
       emptyMessage = 'Your routes for today will appear here.';
       emptyIcon = Icons.local_shipping_outlined;
-    } else if (_activeTab == 1) {
+    } else {
       currentList = _upcomingAssignments;
       emptyTitle = 'No upcoming routes';
       emptyMessage = 'Future assignments will appear here.';
       emptyIcon = Icons.calendar_today_outlined;
-    } else {
-      currentList = _completedAssignments;
-      emptyTitle = 'No completed work';
-      emptyMessage = 'Assignments you finish today will appear here.';
-      emptyIcon = Icons.inventory_2_outlined;
     }
 
     if (currentList.isEmpty) {
@@ -457,10 +444,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       itemBuilder: (ctx, i) {
         final item = currentList[i];
         final isRoute = item['type'] == 'route';
-        
-        if (_activeTab == 2) {
-          return _buildCompletedCard(item);
-        }
 
         if (isRoute) {
           final stops = (item['stops'] as List? ?? []);
@@ -486,9 +469,12 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           );
         } else {
           // Standalone Stop
+          final ext = (item['external_id'] ?? item['externalId'])?.toString().trim() ?? '';
+          final cust = (item['customer_name'] ?? item['customerName'])?.toString().trim() ?? '';
+          final displayName = ext.isNotEmpty ? 'Order #$ext' : (cust.isNotEmpty ? cust : 'Order');
           return _RouteCard(
             routeId: item['id'],
-            name: item['customer_name'] ?? 'Order',
+            name: displayName,
             status: item['status'] ?? 'assigned',
             totalStops: 1,
             completedStops: item['status'] == 'completed' ? 1 : 0,
@@ -508,91 +494,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           );
         }
       },
-    );
-  }
-
-  Widget _buildCompletedCard(Map<String, dynamic> item) {
-    final status = (item['status'] ?? '').toString().toLowerCase();
-    final isFailed = status == 'failed';
-    
-    final isRoute = item['type'] == 'route';
-    final title = isRoute ? (item['name'] ?? 'Route') : (item['customer_name'] ?? 'Order');
-    
-    String subtitle;
-    if (isRoute) {
-      subtitle = '${(item['stops'] as List? ?? []).length} stops completed';
-    } else {
-      subtitle = isFailed ? 'Delivery failed' : 'Order delivered';
-    }
-
-    final statusColor = isFailed ? AppColors.error : AppColors.success;
-    final statusBg = isFailed ? AppColors.errorLight : const Color(0xFFECFDF5);
-    final statusLabel = isFailed ? 'Failed' : 'Done';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(AppSpacing.p4),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: statusBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isFailed ? Icons.cancel_rounded : Icons.check_circle_rounded,
-              color: statusColor,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              statusLabel,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: statusColor,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

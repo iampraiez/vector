@@ -4,11 +4,14 @@ import {
   IsOptional,
   IsEnum,
   IsArray,
+  ValidateNested,
+  Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateStatusDto {
   @IsEnum(['active', 'idle', 'offline', 'suspended'])
-  status!: any;
+  status!: 'active' | 'idle' | 'offline' | 'suspended';
 }
 
 export class UpdateLocationDto {
@@ -84,4 +87,52 @@ export class CreateOptimizedRouteDto {
   @IsString()
   @IsOptional()
   name?: string;
+}
+
+export class AdHocStopDto {
+  @IsString()
+  @IsOptional()
+  customerName?: string;
+
+  @IsString()
+  @IsOptional()
+  customerEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  customerPhone?: string;
+
+  @IsString()
+  address!: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  packages?: number;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @IsString()
+  @IsOptional()
+  externalId?: string;
+
+  @IsString()
+  @IsOptional()
+  priority?: string;
+
+  @IsString()
+  @IsOptional()
+  delivery_date?: string;
+}
+
+export class CreateAdHocRouteDto {
+  @IsString()
+  name!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdHocStopDto)
+  stops!: AdHocStopDto[];
 }

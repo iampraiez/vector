@@ -4,15 +4,17 @@ import { useDriverStore } from "../../../store/driverStore";
 
 import {
   ArrowLeftIcon,
-  UserIcon,
   PhoneIcon,
   EnvelopeIcon,
   StarIcon,
   ClockIcon,
   CheckCircleIcon,
+  UsersIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Skeleton } from "../../../components/ui/skeleton";
+import { maskEmail, maskPhone } from "../../../utils/masking";
 
 interface DeliveryHistory {
   id: string;
@@ -196,8 +198,22 @@ export function DashboardDriverDetail() {
       <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
         <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8">
           {/* Avatar */}
-          <div className="w-20 h-20 rounded-2xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-600/20">
-            <UserIcon className="w-10 h-10 text-white" />
+          <div className="w-24 h-24 rounded-3xl bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 relative shadow-sm group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-all">
+            <div className="flex flex-col items-center justify-center">
+              <UsersIcon className="w-8 h-8 text-gray-400 mb-0.5" />
+              <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-tighter">
+                {driver.name
+                  ? driver.name
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                  : "??"}
+              </span>
+            </div>
+            {/* Pulsing Presence Indicator */}
+            {(driver.status || "").toLowerCase() === "active" && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full shadow-lg animate-pulse" />
+            )}
           </div>
 
           {/* Info */}
@@ -208,21 +224,21 @@ export function DashboardDriverDetail() {
                   {driver.name}
                 </h1>
                 <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${
-                    driver.status === "active"
-                      ? "bg-emerald-50 text-emerald-600"
-                      : driver.status === "idle"
-                        ? "bg-amber-50 text-amber-600"
-                        : "bg-gray-50 text-gray-400"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border shadow-sm ${
+                    (driver.status || "").toLowerCase() === "active"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                      : (driver.status || "").toLowerCase() === "idle"
+                        ? "bg-amber-50 text-amber-700 border-amber-100"
+                        : "bg-gray-50 text-gray-400 border-gray-100"
                   }`}
                 >
                   <div
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      driver.status === "active"
+                    className={`w-2 h-2 rounded-full ${
+                      (driver.status || "").toLowerCase() === "active"
                         ? "bg-emerald-500 animate-pulse"
-                        : driver.status === "idle"
+                        : (driver.status || "").toLowerCase() === "idle"
                           ? "bg-amber-500"
-                          : "bg-gray-300"
+                          : "bg-gray-400"
                     }`}
                   />
                   <span className="text-[11px] font-bold uppercase tracking-wider">
@@ -245,8 +261,8 @@ export function DashboardDriverDetail() {
             {/* Contact Info Chips */}
             <div className="flex flex-wrap gap-2.5 mb-8">
               {[
-                { icon: EnvelopeIcon, text: driver.email },
-                { icon: PhoneIcon, text: driver.phone },
+                { icon: EnvelopeIcon, text: maskEmail(driver.email || "") },
+                { icon: PhoneIcon, text: maskPhone(driver.phone || "") },
                 { icon: LocalShippingIcon, text: driver.vehicle },
               ].map(({ icon: Icon, text }) => (
                 <div
@@ -417,11 +433,11 @@ export function DashboardDriverDetail() {
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">
+    <div className="relative">
+      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest mb-1.5">
         {label}
       </p>
-      <p className="text-[14px] font-bold text-gray-900 tracking-tight">
+      <p className="text-[15px] font-bold text-gray-900 tracking-tight">
         {value}
       </p>
     </div>
@@ -446,18 +462,18 @@ function StatCard({
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm transition-all duration-200 hover:border-emerald-600/30">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="bg-white border border-black/5 rounded-2xl p-6 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 hover:-translate-y-0.5">
+      <div className="flex items-center gap-4 mb-5">
         <div
-          className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-sm ${colorClasses[color]}`}
+          className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-sm transition-all group-hover:scale-110 ${colorClasses[color]}`}
         >
-          <Icon className="w-5.5 h-5.5" />
+          <Icon className="w-6 h-6" />
         </div>
-        <p className="text-2xl font-bold text-gray-900 tracking-tight">
+        <p className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none">
           {value}
         </p>
       </div>
-      <p className="text-[13px] font-bold text-gray-400 uppercase tracking-wide">
+      <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-emerald-600">
         {label}
       </p>
     </div>

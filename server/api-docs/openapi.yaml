@@ -897,6 +897,12 @@ paths:
     post:
       operationId: RoutesController_createRoute
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdHocRouteDto"
       responses:
         "201":
           description: ""
@@ -1731,6 +1737,42 @@ components:
           type: string
       required:
         - stopIds
+    AdHocStopDto:
+      type: object
+      properties:
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        address:
+          type: string
+        packages:
+          type: number
+          minimum: 1
+        notes:
+          type: string
+        externalId:
+          type: string
+        priority:
+          type: string
+        delivery_date:
+          type: string
+      required:
+        - address
+    CreateAdHocRouteDto:
+      type: object
+      properties:
+        name:
+          type: string
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdHocStopDto"
+      required:
+        - name
+        - stops
     CompleteDeliveryDto:
       type: object
       properties:

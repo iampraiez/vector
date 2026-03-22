@@ -10,7 +10,7 @@ import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/location_service.dart';
-import '../../main.dart' show AuthScope;
+import '../../main.dart' show AuthScope, RouteProgressScope;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +28,7 @@ class _HomeSummary {
   final String? companyName;
   final String? managerName;
   final String? activeRouteName;
+  final String? activeRouteId;
   final DateTime? lastActiveAt;
 
   const _HomeSummary({
@@ -39,6 +40,7 @@ class _HomeSummary {
     this.companyName,
     this.managerName,
     this.activeRouteName,
+    this.activeRouteId,
     this.lastActiveAt,
   });
 
@@ -51,6 +53,7 @@ class _HomeSummary {
         companyName: j['company_name'] as String?,
         managerName: j['manager_name'] as String?,
         activeRouteName: j['active_route_name'] as String?,
+    activeRouteId: j['active_route_id'] as String?,
         lastActiveAt: j['last_active_at'] != null 
             ? DateTime.tryParse(j['last_active_at'] as String) 
             : null,
@@ -65,6 +68,7 @@ class _HomeSummary {
         'company_name': companyName,
         'manager_name': managerName,
         'active_route_name': activeRouteName,
+    'active_route_id': activeRouteId,
         'last_active_at': lastActiveAt?.toIso8601String(),
       };
 }
@@ -569,7 +573,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildContent(BuildContext context) {
     final s = _summary;
     final pendingStops = s?.pendingStops ?? 0;
-    final hasActiveRoute = pendingStops > 0;
+    final hasActiveRoute =
+        (s?.activeRouteName != null && s!.activeRouteName!.isNotEmpty) ||
+        pendingStops > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -662,9 +668,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         const SizedBox(height: AppSpacing.p2),
         GestureDetector(
-          onTap: () => hasActiveRoute
-              ? context.push('/assignments')
-              : context.push('/assignments'),
+          onTap: () async {
+            if (s?.activeRouteId != null) {
+              showDialog(
+                context: context, 
+                barrierDismissible: false, 
+                builder: (_) => const Center(child: CircularProgressIndicator()),
+              );
+              try {
+                final routeData = await _api.getRoutePreview(s!.activeRouteId!);
+                if (!context.mounted) return;
+                Navigator.pop(context); // close dialog
+                final stops = (routeData['stops'] as List? ?? []).cast<Map<String, dynamic>>();
+                if (stops.isNotEmpty) {
+                  RouteProgressScope.of(context).loadStops(stops);
+                  context.push('/navigation');
+                } else {
+                  context.push('/assignments');
+                }
+              } catch (e) {
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load active route: $e')));
+              }
+            } else {
+              context.push('/assignments');
+            }
+          },
           child: Container(
             padding: const EdgeInsets.all(AppSpacing.p5),
             decoration: BoxDecoration(
@@ -781,9 +811,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               color: AppColors.primary,
                             ),
                             const SizedBox(width: AppSpacing.p2),
-                            const Expanded(
-                              child: Text(
-                                'Tap to view your current route',
+                            Expanded(
+                              child: const Text(
+                                'Resume your active delivery route',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -887,12 +917,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             Expanded(
               child: _ActionCard(
+                icon: Icons.add_road_outlined,
+                label: 'Add Route',
+                onTap: () => context.push('/new-route'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ActionCard(
+                icon: Icons.upload_file,
+                label: 'Import',
+                onTap: () => context.push('/new-route?tab=import'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ActionCard(
                 icon: Icons.qr_code_scanner,
                 label: 'Scan',
                 onTap: () => context.push('/proof-delivery'),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: _ActionCard(
                 icon: Icons.settings_outlined,
