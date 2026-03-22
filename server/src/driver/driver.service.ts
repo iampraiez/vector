@@ -977,12 +977,12 @@ export class DriverService {
   async optimizeAssignments(userId: string, dto: OptimizeRouteDto) {
     const driver = await this.getDriverOrThrow(userId);
 
-    // 1. Fetch the stops to ensure they belong to this driver and are pending
+    // 1. Fetch the stops to ensure they belong to this driver and are optimizable (pending or assigned)
     const stops = await this.prisma.stop.findMany({
       where: {
         id: { in: dto.stopIds },
         driver_id: driver.id,
-        status: 'pending',
+        status: { in: ['pending', 'assigned'] },
       },
     });
 
@@ -1034,7 +1034,7 @@ export class DriverService {
       where: {
         id: { in: dto.stopIds },
         driver_id: driver.id,
-        status: 'pending',
+        status: { in: ['pending', 'assigned'] },
       },
     });
 

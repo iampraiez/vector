@@ -32,7 +32,7 @@
 
 ## 1. SERVER — Broken or Flawed Logic (Fix First)
 
-### 1.1 `optimizeAssignments` and `createOptimizedRoute` always fail silently
+### 1.1 [x] `optimizeAssignments` and `createOptimizedRoute` always fail silently
 
 **File:** `driver.service.ts:981-993` and `driver.service.ts:1033-1045`
 
