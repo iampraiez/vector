@@ -129,10 +129,12 @@ export class AuthController {
   @SkipThrottle()
   @Post('complete-onboarding')
   @HttpCode(HttpStatus.OK)
-  completeOnboarding(@Request() req: RequestWithUser) {
-    return this.authService.completeOnboarding(req.user.id);
+  completeOnboarding(
+    @Request() req: RequestWithUser,
+    @Body() dto?: UpdateDriverProfileDto,
+  ) {
+    return this.authService.completeOnboarding(req.user.id, dto);
   }
-
   @UseGuards(JwtAuthGuard)
   @SkipThrottle()
   @Post('join-company')

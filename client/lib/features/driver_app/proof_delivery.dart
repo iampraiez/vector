@@ -33,12 +33,11 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
   Future<void> _handleSubmit() async {
     if (!_photo || !_qrScanned) return;
 
-    // Guard offline writes
     if (!context.mounted) return;
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    final isOffline = await OfflineService.isOffline();
     if (!mounted) return;
 
-    if (!Env.isCloudinaryConfigured) {
+    if (!Env.isCloudinaryConfigured && !isOffline) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -53,7 +52,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
 
     setState(() {
       _submitting = true;
-      _uploadingPhoto = true;
+      _uploadingPhoto = !isOffline;
     });
 
     final progress = RouteProgressScope.of(context);
@@ -72,18 +71,30 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
 
     String? cloudPhotoUrl;
     try {
-      cloudPhotoUrl = await CloudinaryService.upload(filePath: localPath);
-      if (!mounted) return;
-      setState(() => _uploadingPhoto = false);
+      if (isOffline) {
+        // Queue for later sync
+        await OfflineService.queueDelivery(
+          stopId: stop.id,
+          localPhotoPath: localPath,
+          qrCode: _scannedQrCode,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        );
+      } else {
+        cloudPhotoUrl = await CloudinaryService.upload(filePath: localPath);
+        if (!mounted) return;
+        setState(() => _uploadingPhoto = false);
 
-      await _api.completeDelivery(
-        stop.id,
-        photoUrl: cloudPhotoUrl,
-        qrCode: _scannedQrCode,
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-      );
+        await _api.completeDelivery(
+          stop.id,
+          photoUrl: cloudPhotoUrl,
+          qrCode: _scannedQrCode,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,11 +127,13 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            '🎉 Route complete! All deliveries done.',
-            style: TextStyle(fontWeight: FontWeight.w600),
+          content: Text(
+            isOffline
+                ? '📦 Saved offline. All stops done!'
+                : '🎉 Route complete! All deliveries done.',
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: isOffline ? AppColors.warning : AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           margin: const EdgeInsets.all(16),
@@ -133,10 +146,12 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '✅ Stop delivered! Navigating to stop ${progress.currentIndex + 1}.',
+            isOffline
+                ? '📦 Saved offline. Navigating to stop ${progress.currentIndex + 1}.'
+                : '✅ Stop delivered! Navigating to stop ${progress.currentIndex + 1}.',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: isOffline ? AppColors.warning : AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           margin: const EdgeInsets.all(16),

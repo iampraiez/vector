@@ -174,37 +174,36 @@ class AuthProvider extends ChangeNotifier {
     await _authService.resendVerification(email);
   }
 
-  Future<void> completeOnboarding() async {
+  Future<void> completeOnboarding([Map<String, dynamic>? vehicleData]) async {
     if (_user == null || _accessToken == null) return;
     try {
       // Call backend to persist the onboarding state permanently
-      await _authService.completeOnboarding(_accessToken!);
+      await _authService.completeOnboarding(
+        _accessToken!,
+        data: vehicleData,
+      );
 
       // Update local state and persist to secure storage
-      _user = UserModel(
-        id: _user!.id,
-        email: _user!.email,
-        name: _user!.name,
-        role: _user!.role,
-        companyId: _user!.companyId,
-        emailVerified: _user!.emailVerified,
+      _user = _user!.copyWith(
         isOnboarded: true,
-        vehicleType: _user!.vehicleType,
-        vehicleMake: _user!.vehicleMake,
-        vehicleModel: _user!.vehicleModel,
-        vehiclePlate: _user!.vehiclePlate,
-        vehicleColor: _user!.vehicleColor,
-        licenseNumber: _user!.licenseNumber,
+        name: vehicleData?['full_name'],
+        phone: vehicleData?['phone'],
+        vehicleType: vehicleData?['vehicle_type'],
+        vehicleMake: vehicleData?['vehicle_make'],
+        vehicleModel: vehicleData?['vehicle_model'],
+        vehiclePlate: vehicleData?['vehicle_plate'],
+        vehicleColor: vehicleData?['vehicle_color'],
+        licenseNumber: vehicleData?['license_number'],
       );
+
       await _storage.write(key: 'user', value: jsonEncode(_user!.toJson()));
       notifyListeners();
     } catch (e) {
       debugPrint('Error completing onboarding: $e');
-      // If backend fails, we might reconsider whether we update local state
-      // but typically we should let the user through or show an error.
-      // For now, let's keep it robust and only update on success.
+      rethrow;
     }
   }
+
 
   Future<void> updateDriverProfile(Map<String, dynamic> profileData) async {
     if (_accessToken == null) return;

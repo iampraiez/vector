@@ -168,7 +168,10 @@ export function OnboardingTour() {
           arrowColor: "rgba(255, 255, 255, 0.95)",
         },
         overlay: {
-          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          backgroundColor: "rgba(15, 23, 42, 0.6)", // Sleek dark slate tint
+        },
+        spotlight: {
+          borderRadius: 16, // Beautiful rounded edges
         },
       }}
     />

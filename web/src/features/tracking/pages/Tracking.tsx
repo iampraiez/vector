@@ -66,6 +66,7 @@ interface TrackingData {
     arrived_at: string | null;
     completed_at: string | null;
   };
+  hasRated: boolean;
 }
 
 export function CustomerTracking() {
@@ -709,7 +710,7 @@ export function CustomerTracking() {
           )}
 
         {/* Rating Section */}
-        {status === "delivered" && !submitted && (
+        {status === "delivered" && !delivery.hasRated && !submitted && (
           <div className="bg-white rounded-2xl border border-black/8 p-5 mb-3 shadow-sm">
             <h2 className="text-[15px] font-extrabold text-[#212121] mb-1">
               How was your delivery?

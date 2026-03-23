@@ -124,7 +124,7 @@ The web dashboard's "Optimize" button calls `POST /routes/:id/optimize` which hi
 
 ---
 
-### 1.9 `signIn` uses an unsafe cast to read `is_onboarded`
+### 1.9 [x] `signIn` uses an unsafe cast to read `is_onboarded`
 
 **File:** `auth.service.ts:156-158`
 
@@ -214,7 +214,7 @@ The schema defines `NotificationType` with `new_assignment`, `route_started`, `d
 
 ---
 
-### 2.4 Trial expiry has no effect
+### 2.4 [x] Trial expiry has no effect
 
 `BillingRecord.status` is set to `'trialing'` for paid plans on signup, with `current_period_end` set to 14 days out. Nothing in the server checks if the trial has expired and locks the account.
 
@@ -231,7 +231,7 @@ The schema defines `NotificationType` with `new_assignment`, `route_started`, `d
 
 ---
 
-### 2.5 `refreshOrderStatuses` fires on every dashboard page load
+### 2.5 [x] `refreshOrderStatuses` fires on every dashboard page load
 
 **File:** `dashboard.service.ts:1161-1213`
 
@@ -248,7 +248,7 @@ This method is called from `getOrders` and `getMetrics`. It loops through all ac
 
 ---
 
-### 2.6 `getSettings` / `updateSettings` are pure stubs with no DB write
+### 2.6 [x] `getSettings` / `updateSettings` are pure stubs with no DB write
 
 **File:** `driver.service.ts:791-806`
 
@@ -270,7 +270,7 @@ This method is called from `getOrders` and `getMetrics`. It loops through all ac
 
 ---
 
-### 2.7 `on_time_rate` in driver performance is hardcoded
+### 2.7 [x] `on_time_rate` in driver performance is hardcoded
 
 **File:** `dashboard.service.ts:762`
 
@@ -289,7 +289,7 @@ Every driver shows `on_time_rate: 98.0` regardless of actual delivery history.
 
 ---
 
-### 2.8 `getMetrics` dashboard stats are partially mocked
+### 2.8 [x] `getMetrics` dashboard stats are partially mocked
 
 **File:** `dashboard.service.ts:94-98`
 
@@ -299,7 +299,20 @@ Every driver shows `on_time_rate: 98.0` regardless of actual delivery history.
 1. For change stats, the `getMetrics` DTO already accepts a `period` param (`'day' | 'week'`). Define a `getPreviousPeriodStart` helper that returns the start of the previous day/week.
 2. Compute `current_count` (e.g. active deliveries this period) and `previous_count` (same metric, previous period window).
 3. Format the change as `current_count >= previous_count ? '+X' : '-X'`.
-4. **Remove `fuel_saved_usd` and `fuel_saved_change` entirely** — there is no fuel cost model in the schema. Delete the fields from the response DTO and the frontend card.
+4. **Remove `fuel_saved_usd` and `fuel_saved_change` entirely** — there is no fuel cost model in the schema. Delete the fields from the response DTO and the frontend card. Verified with successful backend and frontend builds.
+
+## Item 6.5: Offline Delivery Completions
+Implemented a queue-based synchronization mechanism using Hive.
+- **Offline Storage:** Deliveries are cached locally if the driver is offline.
+- **Automatic Sync:** Sync triggers automatically when connectivity returns.
+- **Verification:** Verified with `flutter analyze`.
+
+## Item 6.6: Upcoming Route Card Navigation
+Fixed a bug where the upcoming route card passed an empty stops list.
+- **Fix:** Modified `_RouteCard` to accept and pass the actual `stops` data.
+- **Verification:** Verified with `flutter analyze`.
+
+
 5. For `rating`: keep returning `null` if no ratings exist yet — display "No ratings yet" in the web UI instead of a fake `4.8`.
 
 ---
@@ -307,6 +320,10 @@ Every driver shows `on_time_rate: 98.0` regardless of actual delivery history.
 ## 3. SERVER — Code Quality (No-any rule violations)
 
 **Resolved:** `UpdateDriverProfileDto`, `UploadAvatarDto`, and `UpdateDriverSettingsDto` live in `server/src/driver/dto/driver.dto.ts` and are used on `ProfileController`, `SettingsController`, and `DriverService`. JWT `expiresIn` uses `as unknown as NonNullable<Parameters<JwtService['signAsync']>[1]>['expiresIn']` (no `any`). `uploadAvatar` requires `file_url` (no bogus fallback URL).
+
+### 3.6 [x] "Routes" tab in Company Settings is empty
+Integrated `route_settings` JSON field into `Company` model and implemented the corresponding UI in `Settings.tsx` to manage auto-optimization and depot addresses.
+
 
 ---
 
@@ -548,7 +565,9 @@ The "Mark as Arrived" button directly pushes to the proof delivery screen withou
 
 ---
 
-### 6.5 Offline delivery completions are dropped
+### 6.5 [x] Offline delivery completions are dropped
+Implemented persistent local storage using Hive, allowing drivers to complete stops in dead zones. Deliveries are automatically synchronized once connectivity is restored.
+
 
 **File:** `proof_delivery.dart:35` — `OfflineService.checkAndShowOfflineSnackBar`
 
@@ -572,7 +591,9 @@ If the driver is offline when submitting proof of delivery, the action is entire
 
 ---
 
-### 6.6 Upcoming route card passes empty stops list on tap
+### 6.6 [x] Upcoming route card passes empty stops list on tap
+Fixed `context.push` in `assignments.dart` to pass the actual stops list instead of an empty array.
+
 
 **File:** `assignments.dart:631-639`
 
@@ -587,7 +608,7 @@ When an upcoming route card is tapped, it navigates to `/route-preview` with `'s
 
 ---
 
-### 6.7 Driver settings are reset to defaults on every app launch
+### 6.7 [x] Driver settings are reset to defaults on every app launch
 
 *(Server gap 2.6 is the root cause. This is the Flutter-side fix once the server is fixed.)*
 
@@ -599,7 +620,7 @@ When an upcoming route card is tapped, it navigates to `/route-preview` with `'s
 
 ---
 
-### 6.8 Onboarding completes without vehicle information
+### 6.8 [x] Onboarding completes without vehicle information
 
 **File:** `auth.service.ts:165-209` — `signUpDriver`
 
@@ -616,7 +637,7 @@ The driver sign-up sends `vehicle_type` and `vehicle_plate` but neither field is
 
 ---
 
-## 7. Signature Capture — Remove or Implement
+## 7. [x] Signature Capture — Remove or Implement
 
 The Prisma schema has `signature_url` and `signature_name` on the `Stop` model. The proof-of-delivery screen has no signature pad.
 
@@ -811,6 +832,9 @@ This is the same as item 6.5 — already covered with the full Hive offline queu
 | 🔴 P0 | 6.2 — QR scan accepts any barcode |
 | 🟠 P1 | 2.1 — duplicate tracking emails |
 | 🟠 P1 | 1.3 — manager-side route optimization still mock |
+| 🟠 P1 | 3.5 [x] — Optimization score is mocked |
+| 🟡 P1 | 3.6 [x] — Routes tab in Company Settings |
+
 | 🟠 P1 | 2.3 — no driver seat limit |
 | 🟠 P1 | 5.2 — customer QR code missing on tracking page |
 | 🟠 P1 | 4 infra [x] — Joi env validation, Bull retries, auth throttle + stricter forgot-password, Redis reconnect tuning, APP_URL required (no fallback) |

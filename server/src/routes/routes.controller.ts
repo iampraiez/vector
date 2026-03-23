@@ -17,6 +17,7 @@ import {
   UpdateRouteDto,
   AssignRouteDto,
 } from './dto/routes.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -30,7 +31,10 @@ export class RoutesController {
 
   @Get()
   @Roles('admin', 'manager')
-  getRoutes(@CurrentUser('company_id') companyId: string, @Query() query: any) {
+  getRoutes(
+    @CurrentUser('company_id') companyId: string,
+    @Query() query: PaginationDto,
+  ) {
     return this.routesService.getRoutes(companyId, query);
   }
 

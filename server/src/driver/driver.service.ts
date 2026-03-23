@@ -32,6 +32,14 @@ import { MapService } from '../map/map.service';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { NotificationsService } from '../notifications/notifications.service';
 
+const DEFAULT_SETTINGS = {
+  notifications_enabled: true,
+  sound_enabled: true,
+  vibration_enabled: true,
+  dark_mode: false,
+  compact_view: false,
+};
+
 /** Stops returned to the driver app (includes `tracking_token` for customer QR verification). */
 const DRIVER_STOP_LIST_SELECT = {
   id: true,
@@ -62,9 +70,7 @@ const DRIVER_STOP_LIST_SELECT = {
   completed_at: true,
   failure_reason: true,
   failure_notes: true,
-  signature_url: true,
   photo_url: true,
-  signature_name: true,
   customer_rating: true,
   customer_rating_comment: true,
   customer_rated_at: true,
@@ -555,7 +561,6 @@ export class DriverService {
           completed_at: new Date(),
           notes: dto.notes,
           photo_url: dto.photo_urls?.[0] || null,
-          signature_url: dto.signature_url || null,
         },
       }),
       this.prisma.driver.update({
@@ -881,20 +886,33 @@ export class DriverService {
     return { avatar_url: url };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getSettings(_userId: string) {
-    // if settings is added
+  async getSettings(userId: string) {
+    const driver = await this.getDriverOrThrow(userId);
+    const settings = (driver.settings as Record<string, unknown>) || {};
+
     return {
-      notifications_enabled: true,
-      location_tracking: 'always',
-      language: 'en',
+      ...DEFAULT_SETTINGS,
+      ...settings,
     };
   }
 
-  updateSettings(_userId: string, dto: UpdateDriverSettingsDto) {
+  async updateSettings(userId: string, dto: UpdateDriverSettingsDto) {
+    const driver = await this.getDriverOrThrow(userId);
+
+    const currentSettings = (driver.settings as Record<string, unknown>) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      ...dto,
+    };
+
+    await this.prisma.driver.update({
+      where: { id: driver.id },
+      data: { settings: updatedSettings },
+    });
+
     return {
       message: 'Settings successfully updated',
-      settings: dto,
+      settings: updatedSettings,
     };
   }
 

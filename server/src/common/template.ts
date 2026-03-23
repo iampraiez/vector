@@ -196,3 +196,22 @@ export function settingsOtpTemplate(
   `;
   return generateBaseTemplate(content, 'Security Verification');
 }
+
+export function trialExpiredTemplate(companyName: string) {
+  const content = `
+    <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Trial Ended</h2>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Hi from Vector,</p>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 32px;">The 14-day trial period for <b>${companyName}</b> has ended. Access to your workspace has been temporarily locked.</p>
+    
+    <div style="background-color: #fef2f2; padding: 24px; border-radius: 16px; border: 1px solid #fee2e2; margin-bottom: 32px;">
+      <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">Action Required: Upgrade your plan to unlock your workspace and resume deliveries.</p>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0;">
+      <a href="{{frontend_url}}/dashboard/billing" style="background-color: #0f172a; color: #ffffff; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block;">Upgrade Now</a>
+    </div>
+    
+    <p style="font-size: 14px; color: #64748b; margin-top: 32px; font-weight: 500;">If you have any questions, our support team is here to help.</p>
+  `;
+  return generateBaseTemplate(content, 'Trial Period Ended');
+}

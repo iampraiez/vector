@@ -4,30 +4,12 @@ import {
   IsNumber,
   IsEnum,
   Min,
-  Max,
   IsEmail,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { StopPriority } from '@prisma/client';
 
-export class PaginationDto {
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  @Min(1)
-  page: number = 1;
-
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  @Min(1)
-  @Max(100)
-  limit: number = 20;
-
-  @IsString()
-  @IsOptional()
-  search?: string;
-}
+import { PaginationDto } from '../../common/dto/pagination.dto';
+export { PaginationDto };
 
 export class DriverQueryDto extends PaginationDto {
   @IsString()

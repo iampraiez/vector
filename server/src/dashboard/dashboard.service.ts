@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, DriverStatus, StopStatus } from '@prisma/client';
+import { Prisma, DriverStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -23,6 +23,7 @@ import {
 import {
   UpdateCompanySettingsDto,
   UpdateNotificationsDto,
+  UpdateRouteSettingsDto,
 } from './dto/settings.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -67,7 +68,13 @@ export class DashboardService {
     );
   }
 
-  async getMetrics(companyId: string) {
+  async getMetrics(companyId: string, period: 'day' | 'week' = 'week') {
+    const now = new Date();
+    const periodMs =
+      period === 'day' ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+    const currentStart = new Date(now.getTime() - periodMs);
+    const previousStart = new Date(currentStart.getTime() - periodMs);
+
     const [
       activeDrivers,
       totalDrivers,
@@ -76,6 +83,11 @@ export class DashboardService {
       totalStops,
       activeRoute,
       companyRow,
+      prevActiveDrivers,
+      prevPendingStops,
+      prevCompletedStops,
+      prevTotalStops,
+      avgRatingRow,
     ] = await Promise.all([
       this.prisma.driver.count({
         where: { company_id: companyId, status: 'active' },
@@ -87,10 +99,14 @@ export class DashboardService {
         where: { company_id: companyId, status: 'unassigned' },
       }),
       this.prisma.stop.count({
-        where: { company_id: companyId, status: 'completed' },
+        where: {
+          company_id: companyId,
+          status: 'completed',
+          completed_at: { gte: currentStart },
+        },
       }),
       this.prisma.stop.count({
-        where: { company_id: companyId },
+        where: { company_id: companyId, created_at: { gte: currentStart } },
       }),
       this.prisma.route.findFirst({
         where: { company_id: companyId, status: 'active' },
@@ -100,26 +116,80 @@ export class DashboardService {
         where: { id: companyId },
         select: { company_code: true },
       }),
+      // Previous period stats
+      this.prisma.driver.count({
+        where: {
+          company_id: companyId,
+          status: 'active',
+          last_active_at: { gte: previousStart, lt: currentStart },
+        },
+      }),
+      this.prisma.stop.count({
+        where: {
+          company_id: companyId,
+          status: 'unassigned',
+          created_at: { gte: previousStart, lt: currentStart },
+        },
+      }),
+      this.prisma.stop.count({
+        where: {
+          company_id: companyId,
+          status: 'completed',
+          completed_at: { gte: previousStart, lt: currentStart },
+        },
+      }),
+      this.prisma.stop.count({
+        where: {
+          company_id: companyId,
+          created_at: { gte: previousStart, lt: currentStart },
+        },
+      }),
+      this.prisma.stop.aggregate({
+        where: {
+          company_id: companyId,
+          status: 'completed',
+          customer_rating: { not: null },
+        },
+        _avg: { customer_rating: true },
+      }),
     ]);
 
-    const onTimeRate =
-      totalStops > 0
+    const calculateChange = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? `+${current}` : '+0';
+      const change = current - previous;
+      return change >= 0 ? `+${change}` : `${change}`;
+    };
+
+    const currentOnTimeRate =
+      completedStops > 0
         ? parseFloat(((completedStops / totalStops) * 100).toFixed(1))
         : null;
+    const prevOnTimeRate =
+      prevCompletedStops > 0
+        ? parseFloat(((prevCompletedStops / prevTotalStops) * 100).toFixed(1))
+        : null;
+
+    const onTimeRateChange =
+      currentOnTimeRate != null && prevOnTimeRate != null
+        ? calculateChange(
+            Math.round(currentOnTimeRate),
+            Math.round(prevOnTimeRate),
+          )
+        : '+0';
 
     return {
       active_drivers: activeDrivers,
       total_drivers: totalDrivers,
       company_code: companyRow?.company_code ?? null,
-      active_drivers_change: '+0',
+      active_drivers_change: calculateChange(activeDrivers, prevActiveDrivers),
       pending_orders: pendingStops,
-      pending_orders_change: '+0',
+      pending_orders_change: calculateChange(pendingStops, prevPendingStops),
       active_route_name: activeRoute?.name || null,
-      rating: 4.8, // Mock rating
-      on_time_rate: onTimeRate,
-      on_time_rate_change: '+0',
-      fuel_saved_usd: 0,
-      fuel_saved_change: '+0',
+      rating: avgRatingRow._avg.customer_rating
+        ? parseFloat(avgRatingRow._avg.customer_rating.toFixed(1))
+        : null,
+      on_time_rate: currentOnTimeRate,
+      on_time_rate_change: onTimeRateChange,
     };
   }
 
@@ -143,7 +213,6 @@ export class DashboardService {
   }
 
   async getRecentOrders(companyId: string) {
-    await this.refreshOrderStatuses(companyId);
     const orders = await this.prisma.stop.findMany({
       where: { company_id: companyId },
       orderBy: { created_at: 'desc' },
@@ -268,7 +337,7 @@ export class DashboardService {
     }
 
     // Refresh statuses for upcoming/active orders before fetching
-    await this.refreshOrderStatuses(companyId);
+    // await this.refreshOrderStatuses(companyId); // Now handled by background job
 
     const [data, total] = await Promise.all([
       this.prisma.stop.findMany({
@@ -807,13 +876,43 @@ export class DashboardService {
       this.prisma.driver.count({ where: { company_id: companyId } }),
     ]);
 
-    const data = drivers.map((d) => ({
-      driver_id: d.id,
-      name: d.user.full_name,
-      deliveries_completed: d.total_deliveries,
-      on_time_rate: d.total_deliveries > 0 ? 98.0 : 0,
-      rating: d.avg_rating,
-    }));
+    const driverIds = drivers.map((d) => d.id);
+    const stops = await this.prisma.stop.findMany({
+      where: {
+        driver_id: { in: driverIds },
+        status: 'completed',
+        time_window_end: { not: null },
+        arrived_at: { not: null },
+        delivery_date: { not: null },
+      },
+      select: {
+        driver_id: true,
+        arrived_at: true,
+        delivery_date: true,
+        time_window_end: true,
+      },
+    });
+
+    const data = drivers.map((d) => {
+      const driverStops = stops.filter((s) => s.driver_id === d.id);
+      const onTimeCount = driverStops.filter((s) => {
+        const deadline = new Date(`${s.delivery_date}T${s.time_window_end}:00`);
+        return s.arrived_at! <= deadline;
+      }).length;
+
+      const onTimeRate =
+        driverStops.length > 0
+          ? (onTimeCount / driverStops.length) * 100
+          : null;
+
+      return {
+        driver_id: d.id,
+        name: d.user.full_name,
+        deliveries_completed: d.total_deliveries,
+        on_time_rate: onTimeRate,
+        rating: d.avg_rating,
+      };
+    });
 
     return {
       data,
@@ -900,14 +999,30 @@ export class DashboardService {
     };
   }
 
-  async getInvoices(companyId: string) {
-    const invoices = await this.prisma.invoice.findMany({
-      where: { company_id: companyId },
-      orderBy: { created_at: 'desc' },
-      take: 10,
-    });
+  async getInvoices(companyId: string, query: PaginationDto) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
+    const skip = (page - 1) * limit;
 
-    return { invoices };
+    const [data, total] = await Promise.all([
+      this.prisma.invoice.findMany({
+        where: { company_id: companyId },
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.invoice.count({ where: { company_id: companyId } }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async changePlan(companyId: string, dto: ChangePlanDto, userId: string) {
@@ -945,10 +1060,13 @@ export class DashboardService {
       },
     });
 
-    // Update company subscription tier
+    // Update company subscription tier and UNLOCK if it was locked
     await this.prisma.company.update({
       where: { id: companyId },
-      data: { subscription_tier: dto.plan_id },
+      data: {
+        subscription_tier: dto.plan_id,
+        subscription_locked: false,
+      },
     });
 
     await this.auditService.log({
@@ -1012,27 +1130,40 @@ export class DashboardService {
             created_at: true,
             last_used_at: true,
           },
+          orderBy: { created_at: 'desc' },
         },
       },
     });
 
     if (!company) throw new NotFoundException('Company not found');
 
+    const billing = await this.getBillingInfo(companyId);
+
     return {
       company: {
-        id: company.id,
-        name: company.name,
-        email: company.contact_email || company.billing_email,
-        phone: company.phone,
-        city: company.city,
-        state: company.state,
-        timezone: company.timezone,
-        company_code: company.company_code,
-        created_at: company.created_at,
+        ...company,
+        api_keys: company.api_keys,
       },
       notifications: company.notification_settings,
-      apiKeys: company.api_keys,
+      route_settings: company.route_settings,
+      billing,
     };
+  }
+
+  async updateRouteSettings(companyId: string, dto: UpdateRouteSettingsDto) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const currentSettings =
+      (company.route_settings as Record<string, unknown>) || {};
+    const updatedSettings = { ...currentSettings, ...dto };
+
+    return this.prisma.company.update({
+      where: { id: companyId },
+      data: { route_settings: updatedSettings },
+    });
   }
 
   async updateSettings(companyId: string, dto: UpdateCompanySettingsDto) {
@@ -1255,84 +1386,6 @@ export class DashboardService {
       return {
         message: 'Workspace scheduled for permanent deletion in 10 days',
       };
-    }
-  }
-  private async refreshOrderStatuses(companyId: string) {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const currentH = now.getHours();
-    const currentM = now.getMinutes();
-    const currentTotalMinutes = currentH * 60 + currentM;
-
-    const companyAdmin = await this.prisma.user.findFirst({
-      where: {
-        company_id: companyId,
-        role: { in: ['manager', 'admin'] },
-      },
-      orderBy: { created_at: 'asc' },
-    });
-
-    const activeOrders = await this.prisma.stop.findMany({
-      where: {
-        company_id: companyId,
-        status: { in: ['unassigned', 'assigned', 'in_progress'] },
-      },
-      include: {
-        driver: { select: { user_id: true } },
-      },
-    });
-
-    for (const order of activeOrders) {
-      if (!order.delivery_date) continue;
-
-      let newStatus: StopStatus | null = null;
-      const isPast = order.delivery_date < today;
-      const isToday = order.delivery_date === today;
-
-      if (isPast) {
-        newStatus = 'failed';
-      } else if (isToday && order.time_window_end) {
-        const [endH, endM] = order.time_window_end.split(':').map(Number);
-        const endTotalMinutes = endH * 60 + endM;
-
-        if (currentTotalMinutes > endTotalMinutes) {
-          newStatus = 'failed';
-        } else if (order.time_window_start) {
-          const [startH, startM] = order.time_window_start
-            .split(':')
-            .map(Number);
-          const startTotalMinutes = startH * 60 + startM;
-
-          if (currentTotalMinutes >= startTotalMinutes) {
-            newStatus = 'in_progress';
-          }
-        }
-      }
-
-      if (newStatus && newStatus !== order.status) {
-        await this.prisma.stop.update({
-          where: { id: order.id },
-          data: {
-            status: newStatus as StopStatus,
-            failure_reason:
-              newStatus === 'failed' ? 'Time window expired' : undefined,
-          },
-        });
-
-        if (newStatus === 'failed') {
-          const targetUserId =
-            order.driver?.user_id ?? companyAdmin?.id ?? null;
-          if (targetUserId) {
-            await this.notificationsService.create({
-              userId: targetUserId,
-              companyId,
-              type: 'delivery_failed',
-              title: 'Order expired',
-              body: `Order for "${order.customer_name}" has expired.`,
-            });
-          }
-        }
-      }
     }
   }
 }

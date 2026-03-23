@@ -83,7 +83,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Header (Skip)
+                // Header (Skip disabled for now to force onboarding completion or handle properly)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.p6,
@@ -92,29 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      if (_currentPage < _steps.length - 1)
-                        GestureDetector(
-                          onTap: () => context.go('/home'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Skip',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: AppColors.textMuted,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
+                      // Skip is removed to force completion
                     ],
                   ),
                 ),
@@ -129,7 +107,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     itemCount: _steps.length,
                     itemBuilder: (context, index) {
                       final step = _steps[index];
-                      return Padding(
+
+                      return SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.p8,
                         ),
@@ -182,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 height: 1.1,
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
@@ -276,17 +255,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 key: const ValueKey('continue'),
                                 width: double.infinity,
                                 height: 52,
-                                child: TextButton(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _steps[_currentPage]['accent'] as Color,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
                                   onPressed: () {
                                     _pageController.nextPage(
                                       duration: const Duration(milliseconds: 500),
                                       curve: Curves.easeInOutCubic,
                                     );
                                   },
-                                  child: Text(
+                                  child: const Text(
                                     'Continue',
                                     style: TextStyle(
-                                      color: _steps[_currentPage]['accent'] as Color,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
                                     ),
@@ -304,4 +290,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+
+
 }
+

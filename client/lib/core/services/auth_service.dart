@@ -117,10 +117,14 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> completeOnboarding(String accessToken) async {
+  Future<Map<String, dynamic>> completeOnboarding(
+    String accessToken, {
+    Map<String, dynamic>? data,
+  }) async {
     try {
       final response = await _dio.post(
         '/auth/complete-onboarding',
+        data: data,
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
       return response.data;
@@ -128,6 +132,7 @@ class AuthService {
       throw _handleError(e);
     }
   }
+
 
   Future<Map<String, dynamic>> joinCompany(
     String accessToken,

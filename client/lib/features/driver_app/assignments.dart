@@ -483,7 +483,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             },
             isUpcoming: _activeTab == 1,
             isCompleted: isCompletedTab,
+            stops: stops,
             isSelected: _selectedStopIds.contains(item['id']),
+
             isSelectionMode: _isSelectionMode && !isCompletedTab,
             onLongPress: isCompletedTab
                 ? null
@@ -513,7 +515,9 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             isUpcoming: _activeTab == 1,
             isStandalone: true,
             isCompleted: isCompletedTab,
+            stops: [item],
             isSelected: _selectedStopIds.contains(item['id']),
+
             isSelectionMode: _isSelectionMode && !isCompletedTab,
             onLongPress: isCompletedTab
                 ? null
@@ -622,6 +626,7 @@ class _RouteCard extends StatelessWidget {
   final bool isUpcoming;
   final bool isStandalone;
   final bool isCompleted;
+  final List<dynamic>? stops;
   final bool isSelected;
   final bool isSelectionMode;
   final VoidCallback? onLongPress;
@@ -640,11 +645,13 @@ class _RouteCard extends StatelessWidget {
     this.isUpcoming = false,
     this.isStandalone = false,
     this.isCompleted = false,
+    this.stops,
     this.isSelected = false,
     this.isSelectionMode = false,
     this.onLongPress,
     this.onSelectionToggle,
   });
+
 
   @override
   Widget build(BuildContext context) {
@@ -735,8 +742,9 @@ class _RouteCard extends StatelessWidget {
                                 'name': name,
                                 'status': status,
                                 'date': date,
-                                'stops': [],
+                                'stops': stops ?? [],
                               },
+
                             )
                         : isActive
                             ? onContinue

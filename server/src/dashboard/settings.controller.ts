@@ -19,6 +19,7 @@ import {
   UpdateCompanySettingsDto,
   CreateApiKeyDto,
   UpdateNotificationsDto,
+  UpdateRouteSettingsDto,
 } from './dto/settings.dto';
 
 @Controller('dashboard/settings')
@@ -46,6 +47,14 @@ export class SettingsController {
     @Body() dto: UpdateNotificationsDto,
   ) {
     return this.dashboardService.updateNotifications(companyId, dto);
+  }
+
+  @Patch('routes')
+  updateRouteSettings(
+    @CurrentUser('company_id') companyId: string,
+    @Body() dto: UpdateRouteSettingsDto,
+  ) {
+    return this.dashboardService.updateRouteSettings(companyId, dto);
   }
 
   @Post('regenerate-code')

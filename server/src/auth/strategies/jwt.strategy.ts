@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -61,6 +65,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user.is_active) {
       throw new UnauthorizedException('User account is inactive');
+    }
+
+    if (
+      user.company.subscription_locked &&
+      !req.path.includes('/dashboard/billing')
+    ) {
+      throw new ForbiddenException(
+        'Your workspace is locked due to an expired trial or past-due payment. Please upgrade to continue.',
+      );
     }
 
     if (user.role === 'driver') {

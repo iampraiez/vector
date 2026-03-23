@@ -64,3 +64,17 @@ export class CreateApiKeyDto {
   @IsString()
   name!: string;
 }
+
+export class UpdateRouteSettingsDto {
+  @IsBoolean()
+  @IsOptional()
+  auto_optimize?: boolean;
+
+  @IsString()
+  @IsOptional()
+  default_start_address?: string;
+
+  @IsString()
+  @IsOptional()
+  default_end_address?: string;
+}

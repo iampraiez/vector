@@ -12,12 +12,14 @@ import { MailModule } from '../mail/mail.module';
 import { BullModule } from '@nestjs/bull';
 import { MapModule } from '../map/map.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { TrackingModule } from '../tracking/tracking.module';
 
 @Module({
   imports: [
     MailModule,
     MapModule,
     NotificationsModule,
+    TrackingModule,
     BullModule.registerQueue({ name: 'email' }, { name: 'account' }),
   ],
   controllers: [

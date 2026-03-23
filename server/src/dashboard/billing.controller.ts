@@ -4,6 +4,7 @@ import {
   Post,
   Delete,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,7 +14,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { ChangePlanDto } from './dto/dashboard.dto';
+import { ChangePlanDto, PaginationDto } from './dto/dashboard.dto';
 
 @Controller('dashboard/billing')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,8 +28,11 @@ export class BillingController {
   }
 
   @Get('invoices')
-  getInvoices(@CurrentUser('company_id') companyId: string) {
-    return this.dashboardService.getInvoices(companyId);
+  getInvoices(
+    @CurrentUser('company_id') companyId: string,
+    @Query() query: PaginationDto,
+  ) {
+    return this.dashboardService.getInvoices(companyId, query);
   }
 
   @Post('plan')

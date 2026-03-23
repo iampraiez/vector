@@ -7,7 +7,6 @@ import {
   UsersIcon,
   ArchiveBoxIcon,
   ArrowTrendingUpIcon,
-  BanknotesIcon,
   MapPinIcon,
   SignalIcon,
   ChevronRightIcon,
@@ -110,22 +109,6 @@ export function DashboardOverview() {
           ? "up"
           : "down",
       icon: ArrowTrendingUpIcon,
-    },
-    {
-      label: "Fuel Saved",
-      value:
-        metrics && metrics.fuel_saved_usd > 0
-          ? `$${metrics.fuel_saved_usd}`
-          : "—",
-      change: metrics?.fuel_saved_change
-        ? `${metrics.fuel_saved_change}%`
-        : "—",
-      trend:
-        metrics?.fuel_saved_change?.startsWith("+") ||
-        metrics?.fuel_saved_change === "+0"
-          ? "up"
-          : "down",
-      icon: BanknotesIcon,
     },
   ];
 

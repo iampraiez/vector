@@ -1,9 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import '../models/pending_delivery.dart';
+import './cloudinary_service.dart';
+import './driver_api_service.dart';
 
 /// Lightweight offline helper. Works by attempting a quick HEAD request.
 /// Falls back to catching socket/connection errors from Dio.
 class OfflineService {
+  static const String _boxName = 'pending_deliveries';
+
+  static Future<void> init() async {
+    await Hive.initFlutter();
+    Hive.registerAdapter(PendingDeliveryAdapter());
+    await Hive.openBox<PendingDelivery>(_boxName);
+
+    // Listen for connectivity changes to trigger sync
+    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      if (results.any((result) => result != ConnectivityResult.none)) {
+        syncPendingDeliveries();
+      }
+    });
+
+  }
+
   static Future<bool> isOffline() async {
     try {
       final dio = Dio(
@@ -19,6 +40,69 @@ class OfflineService {
     }
   }
 
+  /// Saves a delivery to local Hive box for later sync.
+  static Future<void> queueDelivery({
+    required String stopId,
+    required String localPhotoPath,
+    String? qrCode,
+    String? notes,
+  }) async {
+    final box = Hive.box<PendingDelivery>(_boxName);
+    final pending = PendingDelivery(
+      stopId: stopId,
+      localPhotoPath: localPhotoPath,
+      qrCode: qrCode,
+      notes: notes,
+      createdAt: DateTime.now(),
+    );
+    await box.add(pending);
+    debugPrint('Delivery for stop $stopId queued offline.');
+  }
+
+  /// Attempts to sync all pending deliveries in the box.
+  static Future<void> syncPendingDeliveries() async {
+    final box = Hive.box<PendingDelivery>(_boxName);
+    if (box.isEmpty) return;
+
+    debugPrint('Syncing ${box.length} pending deliveries...');
+    final offline = await isOffline();
+    if (offline) return;
+
+    final List<int> syncedIndices = [];
+
+    for (int i = 0; i < box.length; i++) {
+      final pending = box.getAt(i);
+      if (pending == null) continue;
+
+      try {
+        // 1. Upload photo to Cloudinary
+        final cloudPhotoUrl = await CloudinaryService.upload(
+          filePath: pending.localPhotoPath,
+        );
+
+        // 2. Complete delivery on backend
+        await DriverApiService.instance.completeDelivery(
+          pending.stopId,
+          photoUrl: cloudPhotoUrl,
+          qrCode: pending.qrCode,
+          notes: pending.notes,
+        );
+
+        syncedIndices.add(i);
+        debugPrint('Successfully synced stop ${pending.stopId}');
+      } catch (e) {
+        debugPrint('Failed to sync stop ${pending.stopId}: $e');
+        // Break to avoid spamming failures if network is flaky
+        break;
+      }
+    }
+
+    // Remove synced items from back to front to preserve indices
+    for (final index in syncedIndices.reversed) {
+      await box.deleteAt(index);
+    }
+  }
+
   /// Shows a styled offline snackbar. Returns true if offline.
   static Future<bool> checkAndShowOfflineSnackBar(BuildContext context) async {
     final offline = await isOffline();
@@ -31,7 +115,7 @@ class OfflineService {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "You're offline. This action requires a connection.",
+                  "You're offline. Action will be synced when you return online.",
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -76,3 +160,4 @@ class OfflineService {
     );
   }
 }
+

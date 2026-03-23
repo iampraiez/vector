@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -12,7 +12,10 @@ export class OverviewController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('metrics')
-  getMetrics(@CurrentUser('company_id') companyId: string) {
-    return this.dashboardService.getMetrics(companyId);
+  getMetrics(
+    @CurrentUser('company_id') companyId: string,
+    @Query('period') period: 'day' | 'week' = 'week',
+  ) {
+    return this.dashboardService.getMetrics(companyId, period);
   }
 }

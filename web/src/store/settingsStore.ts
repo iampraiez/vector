@@ -21,6 +21,13 @@ export interface CompanyInfo {
   timezone: string;
   company_code?: string;
   created_at?: string;
+  route_settings?: RouteSettings;
+}
+
+export interface RouteSettings {
+  auto_optimize: boolean;
+  default_start_address: string;
+  default_end_address: string;
 }
 
 export interface NotificationsConfig {
@@ -62,6 +69,7 @@ export interface BillingInvoice {
 interface SettingsState {
   company: CompanyInfo | null;
   notifications: NotificationsConfig | null;
+  routeSettings: RouteSettings | null;
   apiKeys: ApiKey[];
   billing: BillingInfo | null;
   invoices: BillingInvoice[];
@@ -73,6 +81,7 @@ interface SettingsState {
   updateCompany: (data: Partial<CompanyInfo>) => Promise<void>;
   updateNotifications: (data: Partial<NotificationsConfig>) => Promise<void>;
   regenerateAccessCode: () => Promise<void>;
+  updateRouteSettings: (data: Partial<RouteSettings>) => Promise<void>;
 
   createApiKey: (name: string) => Promise<unknown>;
   revokeApiKey: (id: string) => Promise<void>;
@@ -94,6 +103,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   company: null,
   notifications: null,
+  routeSettings: null,
   apiKeys: [],
   billing: null,
   invoices: [],
@@ -115,6 +125,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           deliveryUpdates: true,
           paymentAlerts: false,
           weeklyReport: true,
+        },
+        routeSettings: res.data.route_settings || {
+          auto_optimize: false,
+          default_start_address: "",
+          default_end_address: "",
         },
         apiKeys: res.data.company?.api_keys || [],
         billing: res.data.billing || null,
@@ -164,6 +179,29 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({
         error:
           error.response?.data?.message || "Failed to update notifications",
+      });
+      throw err;
+    }
+  },
+
+  updateRouteSettings: async (data: Partial<RouteSettings>) => {
+    const original = get().routeSettings;
+    set({
+      routeSettings: original ? { ...original, ...data } : null,
+      isMutating: true,
+      error: null,
+    });
+
+    try {
+      await api.patch("/dashboard/settings/routes", data);
+      await get().fetchSettings();
+      set({ isMutating: false });
+    } catch (err: unknown) {
+      set({ routeSettings: original, isMutating: false });
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error:
+          error.response?.data?.message || "Failed to update route settings",
       });
       throw err;
     }

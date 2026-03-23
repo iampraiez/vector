@@ -294,6 +294,25 @@ class DriverApiService {
     }
   }
 
+  // ── Settings ──────────────────────────────────────────────────────────────
+  Future<Map<String, dynamic>> getSettings() async {
+    try {
+      final res = await _dio.get('/driver/settings');
+      return res.data;
+    } catch (e) {
+      throw Exception('Failed to get settings: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateSettings(Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.patch('/driver/settings', data: data);
+      return res.data;
+    } catch (e) {
+      throw Exception('Failed to update settings: $e');
+    }
+  }
+
   // ── Settings OTP ──────────────────────────────────────────────────────────
 
   Future<void> requestSettingsOtp(String action) async {

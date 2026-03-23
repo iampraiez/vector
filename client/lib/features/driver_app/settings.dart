@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/core/theme/colors.dart';
 import 'package:client/main.dart';
 import 'package:client/core/services/driver_api_service.dart';
@@ -25,6 +28,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'autoOptimize': true,
     'voiceGuidance': true,
   };
+
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey('driver_settings_cache')) {
+      final cacheStr = prefs.getString('driver_settings_cache');
+      if (cacheStr != null) {
+        if (mounted) _mapResponseToState(jsonDecode(cacheStr));
+      }
+    }
+
+    try {
+      final res = await DriverApiService.instance.getSettings();
+      final settings = res['settings'] ?? res;
+      await prefs.setString('driver_settings_cache', jsonEncode(settings));
+      if (mounted) _mapResponseToState(settings);
+    } catch (e) {
+      debugPrint('Settings sync failed: $e');
+    }
+  }
+
+  void _mapResponseToState(Map<String, dynamic> data) {
+    setState(() {
+      if (data.containsKey('push')) _notifications['push'] = data['push'] == true;
+      if (data.containsKey('email')) _notifications['email'] = data['email'] == true;
+      if (data.containsKey('sms')) _notifications['sms'] = data['sms'] == true;
+      
+      if (data.containsKey('language')) _preferences['language'] = data['language'];
+      if (data.containsKey('units')) _preferences['units'] = data['units'];
+      if (data.containsKey('autoOptimize')) _preferences['autoOptimize'] = data['autoOptimize'] == true;
+      if (data.containsKey('voiceGuidance')) _preferences['voiceGuidance'] = data['voiceGuidance'] == true;
+    });
+  }
+
+  void _updateSetting(String type, String key, dynamic value) {
+    setState(() {
+      if (type == 'notifications') {
+        _notifications[key] = value as bool;
+      } else {
+        _preferences[key] = value;
+      }
+    });
+
+    SharedPreferences.getInstance().then((prefs) {
+      final cacheStr = prefs.getString('driver_settings_cache');
+      final currentCache = cacheStr != null ? (jsonDecode(cacheStr) as Map<String, dynamic>) : {};
+      currentCache[key] = value;
+      prefs.setString('driver_settings_cache', jsonEncode(currentCache));
+    });
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        await DriverApiService.instance.updateSettings({
+          ..._notifications,
+          ..._preferences,
+        });
+      } catch (e) {
+        debugPrint('Failed to sync settings: $e');
+      }
+    });
+  }
 
   void _handleOtpAction(String action) async {
     // Block dangerous actions if offline
@@ -256,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           sublabel: 'Delivery updates and alerts',
                           value: _notifications['push']!,
                           onChanged: (v) =>
-                              setState(() => _notifications['push'] = v),
+                              _updateSetting('notifications', 'push', v),
                         ),
                         const Divider(height: 1, indent: 16, endIndent: 16),
                         _ToggleItem(
@@ -265,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           sublabel: 'Weekly summaries and reports',
                           value: _notifications['email']!,
                           onChanged: (v) =>
-                              setState(() => _notifications['email'] = v),
+                              _updateSetting('notifications', 'email', v),
                         ),
                         const Divider(height: 1, indent: 16, endIndent: 16),
                         _ToggleItem(
@@ -274,7 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           sublabel: 'Critical alerts only',
                           value: _notifications['sms']!,
                           onChanged: (v) =>
-                              setState(() => _notifications['sms'] = v),
+                              _updateSetting('notifications', 'sms', v),
                         ),
                       ],
                     ),
@@ -318,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           sublabel: 'Reorder stops for efficiency',
                           value: _preferences['autoOptimize']!,
                           onChanged: (v) =>
-                              setState(() => _preferences['autoOptimize'] = v),
+                              _updateSetting('preferences', 'autoOptimize', v),
                         ),
                         const Divider(height: 1, indent: 16, endIndent: 16),
                         _ToggleItem(

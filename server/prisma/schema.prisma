@@ -68,6 +68,8 @@ model Company {
   logo_url           String?
   timezone           String?   @default("UTC")
   notification_settings Json?    @default("{\"email\":true,\"sms\":false,\"push\":true,\"driverAlerts\":true,\"deliveryUpdates\":true,\"paymentAlerts\":false,\"weeklyReport\":true}")
+  route_settings        Json?    @default("{\"auto_optimize\":false,\"default_start_address\":\"\",\"default_end_address\":\"\"}")
+  subscription_locked Boolean   @default(false)
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
 
@@ -131,6 +133,7 @@ model Driver {
   total_routes          Int          @default(0)
   avg_rating            Float        @default(0.0)
   rating_count          Int          @default(0)
+  settings              Json         @default("{}")
   last_active_at        DateTime?
   created_at            DateTime     @default(now())
   updated_at            DateTime     @updatedAt
@@ -206,9 +209,7 @@ model Stop {
   completed_at            DateTime?
   failure_reason          String?
   failure_notes           String?
-  signature_url           String?
   photo_url               String?
-  signature_name          String?
   customer_rating         Int?
   customer_rating_comment String?
   customer_rated_at       DateTime?

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:client/core/services/offline_service.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/core/theme/theme_controller.dart';
 import 'package:client/core/providers/route_progress_provider.dart';
@@ -20,8 +21,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterForegroundTask.initCommunicationPort();
 
+  // Initialize offline sync (Hive + connectivity monitor)
+  await OfflineService.init();
+
   // Initialize auth state before app startup
   await authProvider.initialize();
+
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

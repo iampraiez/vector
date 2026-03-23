@@ -156,6 +156,7 @@ export class TrackingService {
         arrived_at: stopData.arrived_at,
         completed_at: stopData.completed_at,
       },
+      hasRated: !!stopData.customer_rated_at,
     };
   }
 

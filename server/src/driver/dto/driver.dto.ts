@@ -33,10 +33,6 @@ export class CompleteDeliveryDto {
   @IsString({ each: true })
   @IsOptional()
   photo_urls?: string[];
-
-  @IsString()
-  @IsOptional()
-  signature_url?: string;
 }
 
 export class FailDeliveryDto {
@@ -188,4 +184,33 @@ export class UpdateDriverSettingsDto {
   @IsBoolean()
   @IsOptional()
   compact_view?: boolean;
+
+  // Mobile App Settings
+  @IsBoolean()
+  @IsOptional()
+  push?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  email?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  sms?: boolean;
+
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @IsString()
+  @IsOptional()
+  units?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  autoOptimize?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  voiceGuidance?: boolean;
 }

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,10 +16,12 @@ import {
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class RoutesService {
+  private readonly logger = new Logger(RoutesService.name);
   constructor(
     private prisma: PrismaService,
     private readonly mapService: MapService,
@@ -27,14 +30,36 @@ export class RoutesService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getRoutes(_companyId: string, _query: unknown) {
-    return this.prisma.route.findMany({
-      where: { company_id: _companyId },
-      include: { driver: { include: { user: true } } },
-      orderBy: { created_at: 'desc' },
-      take: 20,
-    });
+  async getRoutes(companyId: string, query: PaginationDto) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.RouteWhereInput = { company_id: companyId };
+    if (query.search) {
+      where.name = { contains: query.search, mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.route.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { driver: { include: { user: true } } },
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.route.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async createRoute(companyId: string, dto: CreateRouteDto) {
@@ -196,6 +221,30 @@ export class RoutesService {
       waypoints: pathWaypoints,
     });
 
+    // Calculate original distance for optimization score
+    const originalWaypoints = [
+      agentWaypoint,
+      ...stops.map((s) => ({ lat: Number(s.lat), lng: Number(s.lng) })),
+    ];
+    let optimizationScore = 0;
+    try {
+      const initialDirections = await this.mapService.getDirections({
+        waypoints: originalWaypoints,
+      });
+      if (initialDirections.distanceKm > 0) {
+        const savings = Math.max(
+          0,
+          initialDirections.distanceKm - directions.distanceKm,
+        );
+        optimizationScore = Math.min(
+          100,
+          Math.round((savings / initialDirections.distanceKm) * 100),
+        );
+      }
+    } catch (err) {
+      this.logger.warn('Failed to calculate initial distance for score', err);
+    }
+
     await this.prisma.$transaction(async (tx) => {
       await Promise.all(
         orderedIds.map((stopId, index) =>
@@ -210,6 +259,7 @@ export class RoutesService {
         data: {
           total_distance_km: directions.distanceKm,
           estimated_duration_min: directions.durationMin,
+          optimization_score: optimizationScore,
         },
       });
     });
@@ -232,53 +282,65 @@ export class RoutesService {
   }
 
   async assignRoute(companyId: string, routeId: string, dto: AssignRouteDto) {
-    const route = await this.prisma.route.update({
-      where: { id: routeId, company_id: companyId },
-      data: {
-        driver_id: dto.driver_id,
-        status: RouteStatus.scheduled,
-        assigned_at: new Date(),
-      },
-      include: {
-        driver: { include: { user: true } },
-        stops: true,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const route = await tx.route.update({
+        where: { id: routeId, company_id: companyId },
+        data: {
+          driver_id: dto.driver_id,
+          status: RouteStatus.scheduled,
+          assigned_at: new Date(),
+        },
+        include: {
+          driver: { include: { user: true } },
+          stops: true,
+        },
+      });
 
-    const appUrl = this.configService.getOrThrow<string>('APP_URL');
+      // Update all stops in this route
+      await tx.stop.updateMany({
+        where: { route_id: routeId, company_id: companyId },
+        data: {
+          driver_id: dto.driver_id,
+          status: 'assigned',
+          assigned_at: new Date(),
+        },
+      });
 
-    // Queue "scheduled" tracking emails; stamp stops so startRoute does not duplicate.
-    for (const stop of route.stops) {
-      if (stop.customer_email) {
-        await this.emailQueue.add(
-          'sendTrackingLink',
-          {
-            email: stop.customer_email,
-            customerName: stop.customer_name,
-            trackingLink: `${appUrl}/track?token=${stop.tracking_token}`,
-            orderId: stop.external_id,
-            status: 'scheduled',
-            driverName: route.driver?.user.full_name,
-          },
-          STANDARD_QUEUE_OPTIONS,
-        );
-        await this.prisma.stop.update({
-          where: { id: stop.id },
-          data: { tracking_email_sent_at: new Date() },
+      const appUrl = this.configService.getOrThrow<string>('APP_URL');
+
+      // Queue "scheduled" tracking emails
+      for (const stop of route.stops) {
+        if (stop.customer_email) {
+          await this.emailQueue.add(
+            'sendTrackingLink',
+            {
+              email: stop.customer_email,
+              customerName: stop.customer_name,
+              trackingLink: `${appUrl}/track?token=${stop.tracking_token}`,
+              orderId: stop.external_id,
+              status: 'scheduled',
+              driverName: route.driver?.user.full_name,
+            },
+            STANDARD_QUEUE_OPTIONS,
+          );
+          await tx.stop.update({
+            where: { id: stop.id },
+            data: { tracking_email_sent_at: new Date() },
+          });
+        }
+      }
+
+      if (route.driver?.user_id) {
+        await this.notificationsService.create({
+          userId: route.driver.user_id,
+          companyId: route.company_id,
+          type: 'new_assignment',
+          title: 'New Route Assigned',
+          body: `Route "${route.name}" has been assigned to you.`,
         });
       }
-    }
 
-    if (route.driver?.user_id) {
-      await this.notificationsService.create({
-        userId: route.driver.user_id,
-        companyId: route.company_id,
-        type: 'new_assignment',
-        title: 'New Route Assigned',
-        body: `Route "${route.name}" has been assigned to you.`,
-      });
-    }
-
-    return route;
+      return route;
+    });
   }
 }

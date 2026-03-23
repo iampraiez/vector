@@ -3,6 +3,7 @@ import {
   useSettingsStore,
   NotificationsConfig,
   CompanyInfo,
+  RouteSettings,
 } from "../../../store/settingsStore";
 import { useAuthStore } from "../../../store/authStore";
 import {
@@ -365,6 +366,7 @@ export function DashboardSettings() {
   const {
     company,
     notifications,
+    routeSettings,
     isLoading,
     isMutating,
     requestOtp,
@@ -372,11 +374,15 @@ export function DashboardSettings() {
     fetchSettings,
     updateCompany,
     updateNotifications,
+    updateRouteSettings,
     regenerateAccessCode,
   } = useSettingsStore();
 
   const { user, logout } = useAuthStore();
 
+  const [activeTab, setActiveTab] = useState<
+    "general" | "communications" | "routes"
+  >("general");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isDataCleaningOpen, setIsDataCleaningOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
@@ -391,7 +397,7 @@ export function DashboardSettings() {
     fetchSettings();
   }, [fetchSettings]);
 
-  const toggle = (key: keyof NotificationsConfig) => async () => {
+  const toggleNotification = (key: keyof NotificationsConfig) => async () => {
     if (notifications) {
       const newSettings = { ...notifications, [key]: !notifications[key] };
       try {
@@ -402,8 +408,18 @@ export function DashboardSettings() {
     }
   };
 
+  const toggleRouteSetting = (key: keyof RouteSettings) => async () => {
+    if (routeSettings) {
+      const newSettings = { ...routeSettings, [key]: !routeSettings[key] };
+      try {
+        await updateRouteSettings(newSettings);
+      } catch {
+        alert("Failed to update route setting.");
+      }
+    }
+  };
+
   const handleSaveCompany = async (data: Partial<CompanyInfo>) => {
-    // Only send fields supported by UpdateCompanySettingsDto to avoid 400 error
     const filteredData: Partial<CompanyInfo> = {
       name: data.name,
       contact_email: data.contact_email,
@@ -413,7 +429,6 @@ export function DashboardSettings() {
       timezone: data.timezone,
     };
 
-    // Remove undefined fields to keep the patch request clean
     Object.keys(filteredData).forEach((key) => {
       if (filteredData[key as keyof CompanyInfo] === undefined) {
         delete filteredData[key as keyof CompanyInfo];
@@ -423,17 +438,23 @@ export function DashboardSettings() {
     await updateCompany(filteredData);
   };
 
+  const handleUpdateRouteAddresses = async (data: Partial<RouteSettings>) => {
+    try {
+      await updateRouteSettings(data);
+    } catch {
+      alert("Failed to update route addresses.");
+    }
+  };
+
   const handleRequestOtp = async (
     action: "clear_workspace_data" | "deactivate_workspace",
   ) => {
     if (action === "clear_workspace_data") setIsDataCleaningOpen(false);
     if (action === "deactivate_workspace") setIsDeleteAccountOpen(false);
 
-    // Show modal immediately
     setOtpAction(action);
     setIsOtpOpen(true);
 
-    // Request OTP in background
     requestOtp(action).catch(() => {
       alert("Failed to send verification code. Please try again.");
       setIsOtpOpen(false);
@@ -464,178 +485,273 @@ export function DashboardSettings() {
   };
 
   const isLoadingInitial = isLoading && !company;
-
   const companyCode = company?.company_code || "VECT-XXXX";
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 pb-32">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 pb-32">
       {/* Header */}
       <div className="mb-2 font-inter">
         <h1 className="text-2xl md:text-[26px] font-bold text-gray-900 mb-0.5 tracking-tight">
           Settings
         </h1>
         <p className="text-[12.5px] text-gray-500 font-normal">
-          Manage your workspace profile and notification preferences
+          Manage your workspace profile and performance preferences
         </p>
       </div>
 
-      {/* Driver Access Code */}
-      <div className="relative overflow-hidden bg-white border border-black/8 rounded-3xl p-4.5 md:p-5 flex items-center justify-between gap-4 shadow-sm transition-all hover:bg-gray-50/20">
-        <div className="relative z-10 flex items-center gap-6">
-          <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
-              Fleet Access Code
-            </span>
-            <div className="flex items-center gap-3">
-              {isLoadingInitial ? (
-                <Skeleton className="w-32 h-8" />
-              ) : (
-                <span className="text-[20px] font-mono font-bold text-gray-900 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
-                  {companyCode}
-                </span>
-              )}
+      {/* Tabs */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100/50 border border-black/5 rounded-2xl w-fit">
+        {(
+          [
+            { id: "general", label: "General", icon: BuildingOfficeIcon },
+            { id: "communications", label: "Communications", icon: BellIcon },
+            { id: "routes", label: "Routes", icon: MapPinIcon },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() =>
+              setActiveTab(
+                tab.id as unknown as React.SetStateAction<
+                  "general" | "communications" | "routes"
+                >,
+              )
+            }
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+              activeTab === tab.id
+                ? "bg-white text-emerald-600 shadow-sm border border-black/5 scale-[1.02]"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+            }`}
+          >
+            <tab.icon
+              className={`w-4 h-4 ${activeTab === tab.id ? "text-emerald-600" : "text-gray-400"}`}
+            />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {activeTab === "general" && (
+          <>
+            {/* Driver Access Code */}
+            <div className="relative overflow-hidden bg-white border border-black/8 rounded-3xl p-4.5 md:p-5 flex items-center justify-between gap-4 shadow-sm transition-all hover:bg-gray-50/20">
+              <div className="relative z-10 flex items-center gap-6">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
+                    Fleet Access Code
+                  </span>
+                  <div className="flex items-center gap-3">
+                    {isLoadingInitial ? (
+                      <Skeleton className="w-32 h-8" />
+                    ) : (
+                      <span className="text-[20px] font-mono font-bold text-gray-900 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
+                        {companyCode}
+                      </span>
+                    )}
+                    {!isLoadingInitial && (
+                      <button
+                        onClick={() =>
+                          navigator.clipboard.writeText(companyCode)
+                        }
+                        className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
+                        title="Copy code"
+                      >
+                        <ClipboardDocumentIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
               {!isLoadingInitial && (
                 <button
-                  onClick={() => navigator.clipboard.writeText(companyCode)}
-                  className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
-                  title="Copy code"
+                  onClick={() => regenerateAccessCode()}
+                  disabled={isMutating}
+                  className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <ClipboardDocumentIcon className="w-4 h-4" />
+                  {isMutating ? "..." : "Regenerate"}
                 </button>
               )}
             </div>
-          </div>
-        </div>
-        {!isLoadingInitial && (
-          <button
-            onClick={() => regenerateAccessCode()}
-            disabled={isMutating}
-            className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
-          >
-            {isMutating ? "..." : "Regenerate"}
-          </button>
+
+            {/* Workspace Section */}
+            <Section
+              title="Workspace Profile"
+              subtitle="Public company details and headquarters info"
+              action={
+                <button
+                  onClick={() => setIsEditingProfile(true)}
+                  className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
+                  title="Edit profile"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+              }
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <StaticField
+                  label="Operating Name"
+                  value={company?.name || ""}
+                  icon={BuildingOfficeIcon}
+                  isLoading={isLoadingInitial}
+                />
+                <StaticField
+                  label="Member Since"
+                  value={
+                    company?.created_at
+                      ? new Date(company.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )
+                      : ""
+                  }
+                  icon={BuildingOfficeIcon}
+                  isLoading={isLoadingInitial}
+                />
+                <StaticField
+                  label="Operations Email"
+                  value={company?.contact_email || user?.email || ""}
+                  icon={EnvelopeIcon}
+                  isLoading={isLoadingInitial}
+                />
+                <StaticField
+                  label="Fleet Hotline"
+                  value={company?.phone || ""}
+                  icon={BellIcon}
+                  isLoading={isLoadingInitial}
+                />
+                <StaticField
+                  label="Region"
+                  value={
+                    company?.city && company?.state
+                      ? `${company.city}, ${company.state}`
+                      : company?.city || company?.state || ""
+                  }
+                  icon={MapPinIcon}
+                  isLoading={isLoadingInitial}
+                />
+              </div>
+            </Section>
+
+            {/* Simplified Danger Zone Section */}
+            <div className="bg-white border border-black/5 rounded-3xl p-6 shadow-sm">
+              <h3 className="text-[14px] font-medium text-gray-700 mb-1 tracking-tight">
+                Danger Zone
+              </h3>
+              <p className="text-[12px] text-gray-400 font-normal mb-6">
+                Irreversible actions for your workspace data and access.
+              </p>
+              <div className="flex flex-wrap items-center gap-6">
+                <button
+                  onClick={() => setIsDataCleaningOpen(true)}
+                  className="text-[12px] font-semibold text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  Clear Records
+                </button>
+                <button
+                  onClick={() => setIsDeleteAccountOpen(true)}
+                  className="px-4 py-2 border border-red-100 text-red-500 rounded-xl text-[11px] font-semibold hover:bg-red-50 hover:border-red-200 transition-all cursor-pointer active:scale-95"
+                >
+                  Deactivate Account
+                </button>
+              </div>
+            </div>
+          </>
         )}
-      </div>
 
-      {/* Workspace Section */}
-      <Section
-        title="Workspace Profile"
-        subtitle="Public company details and headquarters info"
-        action={
-          <button
-            onClick={() => setIsEditingProfile(true)}
-            className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
-            title="Edit profile"
+        {activeTab === "communications" && (
+          <Section
+            title="Communications"
+            subtitle="Manage system alerts and automated telemetry"
           >
-            <PencilIcon className="w-4 h-4" />
-          </button>
-        }
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StaticField
-            label="Operating Name"
-            value={company?.name || ""}
-            icon={BuildingOfficeIcon}
-            isLoading={isLoadingInitial}
-          />
-          <StaticField
-            label="Member Since"
-            value={
-              company?.created_at
-                ? new Date(company.created_at).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : ""
-            }
-            icon={BuildingOfficeIcon}
-            isLoading={isLoadingInitial}
-          />
-          <StaticField
-            label="Operations Email"
-            value={company?.contact_email || user?.email || ""}
-            icon={EnvelopeIcon}
-            isLoading={isLoadingInitial}
-          />
-          <StaticField
-            label="Fleet Hotline"
-            value={company?.phone || ""}
-            icon={BellIcon}
-            isLoading={isLoadingInitial}
-          />
-          <StaticField
-            label="Region"
-            value={
-              company?.city && company?.state
-                ? `${company.city}, ${company.state}`
-                : company?.city || company?.state || ""
-            }
-            icon={MapPinIcon}
-            isLoading={isLoadingInitial}
-          />
-        </div>
-      </Section>
+            <div className="space-y-1">
+              <SettingRow
+                label="Real-time Telemetry"
+                subtitle="Get instant updates when drivers go offline."
+              >
+                <Toggle
+                  value={notifications?.driverAlerts ?? true}
+                  onChange={toggleNotification("driverAlerts")}
+                />
+              </SettingRow>
+              <SettingRow
+                label="Daily Email Snapshot"
+                subtitle="Performance summary sent every morning."
+              >
+                <Toggle
+                  value={notifications?.email ?? true}
+                  onChange={toggleNotification("email")}
+                />
+              </SettingRow>
+              <SettingRow
+                label="System Push Notifications"
+                subtitle="Browser alerts for live tracking events."
+              >
+                <Toggle
+                  value={notifications?.push ?? true}
+                  onChange={toggleNotification("push")}
+                />
+              </SettingRow>
+            </div>
+          </Section>
+        )}
 
-      {/* Notifications Section */}
-      <Section
-        title="Communications"
-        subtitle="Manage system alerts and automated telemetry"
-      >
-        <div className="space-y-1">
-          <SettingRow
-            label="Real-time Telemetry"
-            subtitle="Get instant updates when drivers go offline."
+        {activeTab === "routes" && (
+          <Section
+            title="Route Optimization"
+            subtitle="Configure default behavior for route generation and sequence tuning"
           >
-            <Toggle
-              value={notifications?.driverAlerts ?? true}
-              onChange={toggle("driverAlerts")}
-            />
-          </SettingRow>
-          <SettingRow
-            label="Daily Email Snapshot"
-            subtitle="Performance summary sent every morning."
-          >
-            <Toggle
-              value={notifications?.email ?? true}
-              onChange={toggle("email")}
-            />
-          </SettingRow>
-          <SettingRow
-            label="System Push Notifications"
-            subtitle="Browser alerts for live tracking events."
-          >
-            <Toggle
-              value={notifications?.push ?? true}
-              onChange={toggle("push")}
-            />
-          </SettingRow>
-        </div>
-      </Section>
+            <div className="space-y-6">
+              <SettingRow
+                label="Automatic Optimization"
+                subtitle="Automatically sort stops for maximum efficiency upon route creation."
+              >
+                <Toggle
+                  value={routeSettings?.auto_optimize ?? false}
+                  onChange={toggleRouteSetting("auto_optimize")}
+                />
+              </SettingRow>
 
-      {/* Simplified Danger Zone Section */}
-      <div className="bg-white border border-black/5 rounded-3xl p-6">
-        <h3 className="text-[14px] font-medium text-gray-700 mb-1 tracking-tight">
-          Danger Zone
-        </h3>
-        <p className="text-[12px] text-gray-400 font-normal mb-6">
-          Irreversible actions for your workspace data and access.
-        </p>
-        <div className="flex flex-wrap items-center gap-6">
-          <button
-            onClick={() => setIsDataCleaningOpen(true)}
-            className="text-[12px] font-semibold text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-          >
-            Clear Records
-          </button>
-          <button
-            onClick={() => setIsDeleteAccountOpen(true)}
-            className="px-4 py-2 border border-red-100 text-red-500 rounded-xl text-[11px] font-semibold hover:bg-red-50 hover:border-red-200 transition-all cursor-pointer active:scale-95"
-          >
-            Deactivate Account
-          </button>
-        </div>
+              <div className="pt-4 border-t border-gray-50 flex flex-col md:flex-row gap-6">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPinIcon className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-[13px] font-semibold text-gray-700">
+                      Depot Locations
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <InputField
+                      label="Default Start Address"
+                      value={routeSettings?.default_start_address || ""}
+                      placeholder="Enter depot or warehouse address"
+                      onChange={(v) =>
+                        handleUpdateRouteAddresses({ default_start_address: v })
+                      }
+                    />
+                    <InputField
+                      label="Default End Address"
+                      value={routeSettings?.default_end_address || ""}
+                      placeholder="Leave empty to end at the last stop"
+                      onChange={(v) =>
+                        handleUpdateRouteAddresses({ default_end_address: v })
+                      }
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-relaxed italic">
+                    Note: These addresses will be used as the starting and
+                    ending points for all new routes created in this workspace.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Section>
+        )}
       </div>
 
       <EditProfileModal

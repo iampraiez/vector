@@ -162,9 +162,7 @@ export class AuthService {
         role: user.role,
         company_id: user.company_id,
         email_verified: user.email_verified,
-        is_onboarded: Boolean(
-          (user as unknown as { is_onboarded: boolean }).is_onboarded,
-        ),
+        is_onboarded: user.is_onboarded,
         full_name: user.full_name,
       },
       dto.device_id,
@@ -402,9 +400,7 @@ export class AuthService {
       role: user.role,
       company_id: user.company_id,
       email_verified: true,
-      is_onboarded: Boolean(
-        (user as unknown as { is_onboarded: boolean }).is_onboarded,
-      ),
+      is_onboarded: user.is_onboarded,
       full_name: user.full_name,
     });
 
@@ -475,9 +471,7 @@ export class AuthService {
           role: user.role,
           company_id: user.company_id,
           email_verified: user.email_verified,
-          is_onboarded: Boolean(
-            (user as unknown as { is_onboarded: boolean }).is_onboarded,
-          ),
+          is_onboarded: user.is_onboarded,
           full_name: user.full_name,
         },
         deviceId,
@@ -585,10 +579,52 @@ export class AuthService {
     });
   }
 
-  async completeOnboarding(userId: string) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { is_onboarded: true },
+  async completeOnboarding(userId: string, dto?: UpdateDriverProfileDto) {
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Mark user as onboarded
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { is_onboarded: true },
+        include: { driver_profile: true },
+      });
+
+      // 2. If vehicle details provided, update driver profile
+      if (dto && user.driver_profile) {
+        const vehicleData = {
+          vehicle_type: dto.vehicle_type,
+          vehicle_make: dto.vehicle_make,
+          vehicle_model: dto.vehicle_model,
+          vehicle_plate: dto.vehicle_plate,
+          vehicle_color: dto.vehicle_color,
+          license_number: dto.license_number,
+          full_name: dto.full_name,
+          phone: dto.phone,
+        };
+
+        const filteredVehicleData = Object.fromEntries(
+          Object.entries(vehicleData).filter(
+            ([, value]) => value !== undefined,
+          ),
+        );
+
+        await tx.driver.update({
+          where: { id: user.driver_profile.id },
+          data: filteredVehicleData,
+        });
+
+        // If name/phone were updated in DTO, sync back to User model
+        if (dto.full_name || dto.phone) {
+          await tx.user.update({
+            where: { id: userId },
+            data: {
+              ...(dto.full_name ? { full_name: dto.full_name } : {}),
+              ...(dto.phone ? { phone: dto.phone } : {}),
+            },
+          });
+        }
+      }
+
+      return user;
     });
   }
 
