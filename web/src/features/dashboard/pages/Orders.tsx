@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import axios from "axios";
 import { useOrderStore } from "../../../store/orderStore";
 import { useDriverStore, Driver } from "../../../store/driverStore";
 import { api } from "../../../lib/api";
 import { maskEmail, maskPhone } from "../../../utils/masking";
+import { copyCustomerTrackingLink } from "../../../utils/trackingLink";
 import { toast } from "sonner";
 
 import {
@@ -22,6 +23,7 @@ import {
   DocumentDuplicateIcon,
   LockClosedIcon,
   EyeIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal, ModalInput } from "../components/NewOrderModal";
 import { LocationPickerMap } from "../../../components/ui/LocationPickerMap";
@@ -48,6 +50,7 @@ import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardOrders() {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     orders,
     stats,
@@ -75,6 +78,15 @@ export function DashboardOrders() {
     fetchOrders({ limit: 100 });
     fetchDrivers({ limit: 100 });
   }, [fetchOrders, fetchDrivers]);
+
+  useEffect(() => {
+    const state = location.state as { openNewOrder?: boolean } | undefined;
+    if (!state?.openNewOrder) return;
+    setTimeout(() => {
+      setShowNewOrderModal(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }, 0);
+  }, [location, navigate]);
 
   const driverNames = drivers.map((d) => d.name);
 
@@ -292,6 +304,18 @@ export function DashboardOrders() {
                     ? "Try adjusting your filters"
                     : "Create your first order to get started"}
                 </p>
+                {!searchQuery &&
+                  activeFilter === "all" &&
+                  orders.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewOrderModal(true)}
+                      className="mt-5 inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-bold text-white shadow-lg shadow-emerald-600/15 hover:bg-emerald-700 transition-colors cursor-pointer"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      Create order
+                    </button>
+                  )}
               </div>
             ) : (
               filteredOrders.map((order, index) => (
@@ -436,6 +460,17 @@ export function DashboardOrders() {
                         <EyeIcon className="w-3.5 h-3.5 text-gray-500" />
                       </button>
                       <button
+                        type="button"
+                        onClick={() =>
+                          copyCustomerTrackingLink(order.tracking_token)
+                        }
+                        disabled={!order.tracking_token}
+                        className="p-2 border border-black/8 rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Copy customer tracking link"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5 text-gray-500" />
+                      </button>
+                      <button
                         onClick={() => {
                           setCopyingOrder(order);
                           setShowNewOrderModal(true);
@@ -553,6 +588,18 @@ export function DashboardOrders() {
                               ? "Try adjusting your search or filters"
                               : 'Click "New Order" to add your first delivery'}
                           </p>
+                          {!searchQuery &&
+                            activeFilter === "all" &&
+                            orders.length === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setShowNewOrderModal(true)}
+                                className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-bold text-white shadow-lg shadow-emerald-600/15 hover:bg-emerald-700 transition-colors cursor-pointer"
+                              >
+                                <PlusIcon className="w-4 h-4" />
+                                Create order
+                              </button>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -724,6 +771,17 @@ export function DashboardOrders() {
                               title="View order details"
                             >
                               <EyeIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyCustomerTrackingLink(order.tracking_token)
+                              }
+                              disabled={!order.tracking_token}
+                              className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Copy customer tracking link"
+                            >
+                              <LinkIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => {

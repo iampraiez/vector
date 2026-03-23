@@ -4,6 +4,8 @@ import { AxiosError } from "axios";
 
 interface DashboardMetrics {
   active_drivers: number;
+  total_drivers: number;
+  company_code: string | null;
   active_drivers_change: string;
   pending_orders: number;
   pending_orders_change: string;

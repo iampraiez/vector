@@ -865,11 +865,20 @@ export class DriverService {
   }
 
   async uploadAvatar(userId: string, dto: UploadAvatarDto) {
+    const url = dto.file_url?.trim();
+    if (!url) {
+      throw new BadRequestException('file_url is required');
+    }
+    if (!url.startsWith('https://res.cloudinary.com/')) {
+      throw new BadRequestException(
+        'file_url must be a Cloudinary URL (https://res.cloudinary.com/...)',
+      );
+    }
     await this.prisma.user.update({
       where: { id: userId },
-      data: { avatar_url: dto.file_url },
+      data: { avatar_url: url },
     });
-    return { avatar_url: dto.file_url };
+    return { avatar_url: url };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -990,7 +999,8 @@ export class DriverService {
         'clearDataReport',
         {
           companyId: driver.company_id,
-          email: company?.contact_email || 'admin@example.com',
+          email: driver.user.email,
+          fleetManagerEmail: company?.contact_email?.trim() || undefined,
           targetRole: 'driver',
           targetId: driver.id,
         },
@@ -998,7 +1008,7 @@ export class DriverService {
       );
       return {
         message:
-          'Data clearance scheduled and report will be sent to your fleet manager',
+          'Data clearance scheduled. A confirmation and report will be sent to your email.',
       };
     }
 
@@ -1047,21 +1057,26 @@ export class DriverService {
   async leaveCompany(userId: string) {
     const driver = await this.getDriverOrThrow(userId);
 
-    // We don't delete the driver record to preserve history,
-    // but we could mark them as inactive or remove the company association
-    // if the business logic allows.
-    // For "Vector", we'll set their status to suspended/offline and null their company_id if possible,
-    // or just mark them as 'idle' and removed from active roster.
-
-    await this.prisma.driver.update({
-      where: { id: driver.id },
-      data: {
-        status: 'offline',
-        // In this schema company_id is required, so "leaving" might mean
-        // deactivating the driver profile or moving to a 'System' company.
-        // For now, let's just mark status.
-      },
-    });
+    await this.prisma.$transaction([
+      this.prisma.stop.updateMany({
+        where: {
+          driver_id: driver.id,
+          status: { in: ['pending', 'assigned'] },
+        },
+        data: {
+          driver_id: null,
+          status: 'unassigned',
+          assigned_at: null,
+        },
+      }),
+      this.prisma.driver.update({
+        where: { id: driver.id },
+        data: {
+          status: 'offline',
+          is_active: false,
+        },
+      }),
+    ]);
 
     return { message: 'Successfully left the fleet' };
   }

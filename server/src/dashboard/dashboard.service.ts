@@ -33,6 +33,7 @@ import { MailService } from '../mail/mail.service';
 import { MapService } from '../map/map.service';
 import { settingsOtpTemplate } from '../common/template';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
+import { generateCompanyCode } from '../common/utils/generate-company-code';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -67,13 +68,18 @@ export class DashboardService {
   async getMetrics(companyId: string) {
     const [
       activeDrivers,
+      totalDrivers,
       pendingStops,
       completedStops,
       totalStops,
       activeRoute,
+      companyRow,
     ] = await Promise.all([
       this.prisma.driver.count({
         where: { company_id: companyId, status: 'active' },
+      }),
+      this.prisma.driver.count({
+        where: { company_id: companyId, is_active: true },
       }),
       this.prisma.stop.count({
         where: { company_id: companyId, status: 'unassigned' },
@@ -88,6 +94,10 @@ export class DashboardService {
         where: { company_id: companyId, status: 'active' },
         orderBy: { created_at: 'desc' },
       }),
+      this.prisma.company.findUnique({
+        where: { id: companyId },
+        select: { company_code: true },
+      }),
     ]);
 
     const onTimeRate =
@@ -97,8 +107,11 @@ export class DashboardService {
 
     return {
       active_drivers: activeDrivers,
+      total_drivers: totalDrivers,
+      company_code: companyRow?.company_code ?? null,
       active_drivers_change: '+0',
-      pending_stops: pendingStops,
+      pending_orders: pendingStops,
+      pending_orders_change: '+0',
       active_route_name: activeRoute?.name || null,
       rating: 4.8, // Mock rating
       on_time_rate: onTimeRate,
@@ -110,7 +123,7 @@ export class DashboardService {
 
   async getActiveDrivers(companyId: string) {
     const drivers = await this.prisma.driver.findMany({
-      where: { company_id: companyId, status: 'active' },
+      where: { company_id: companyId, status: 'active', is_active: true },
       include: { user: { select: { full_name: true, avatar_url: true } } },
     });
 
@@ -425,6 +438,7 @@ export class DashboardService {
 
     const where: Prisma.DriverWhereInput = {
       company_id: companyId,
+      is_active: true,
       user: { is_active: true },
     };
     if (query.status && query.status !== 'all') {
@@ -432,6 +446,7 @@ export class DashboardService {
     }
     if (query.search) {
       where.user = {
+        is_active: true,
         OR: [
           { full_name: { contains: query.search, mode: 'insensitive' } },
           { email: { contains: query.search, mode: 'insensitive' } },
@@ -615,7 +630,7 @@ export class DashboardService {
 
     await this.prisma.driver.update({
       where: { id: driverId },
-      data: { status: 'offline' },
+      data: { status: 'offline', is_active: false },
     });
   }
 
@@ -624,6 +639,7 @@ export class DashboardService {
       where: {
         company_id: companyId,
         status: { in: ['active', 'idle'] },
+        is_active: true,
         user: { is_active: true },
       },
       select: {
@@ -930,7 +946,11 @@ export class DashboardService {
 
   async cancelPlan(companyId: string) {
     const record = await this.prisma.billingRecord.findFirst({
-      where: { company_id: companyId, status: 'active' },
+      where: {
+        company_id: companyId,
+        status: { in: ['active', 'trialing'] },
+      },
+      orderBy: { created_at: 'desc' },
     });
 
     if (record) {
@@ -1012,11 +1032,22 @@ export class DashboardService {
   }
 
   async regenerateAccessCode(companyId: string) {
-    const newCode = `VECT-${Math.floor(1000 + Math.random() * 9000)}`;
-    return this.prisma.company.update({
-      where: { id: companyId },
-      data: { company_code: newCode },
-    });
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const newCode = generateCompanyCode();
+      const conflict = await this.prisma.company.findFirst({
+        where: { company_code: newCode, id: { not: companyId } },
+        select: { id: true },
+      });
+      if (!conflict) {
+        return this.prisma.company.update({
+          where: { id: companyId },
+          data: { company_code: newCode },
+        });
+      }
+    }
+    throw new ConflictException(
+      'Could not generate a unique company code. Try again.',
+    );
   }
 
   async createApiKey(companyId: string, dto: CreateApiKeyDto, userId: string) {

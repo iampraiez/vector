@@ -10,8 +10,23 @@ import {
   ExclamationCircleIcon,
   SparklesIcon,
   ChevronRightIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { Skeleton } from "../../../components/ui/skeleton";
+import { toast } from "sonner";
+import { api } from "../../../lib/api";
+
+function formatMoneyCents(cents: number, currency: string) {
+  const amount = cents / 100;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency || "NGN",
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
 
 const plans = [
   {
@@ -62,12 +77,21 @@ const plans = [
 ];
 
 export function DashboardBilling() {
-  const { billing, fetchBillingInfo, changePlan, isLoading } =
-    useSettingsStore();
+  const {
+    billing,
+    invoices,
+    fetchBillingInfo,
+    fetchInvoices,
+    changePlan,
+    cancelPlan,
+    isLoading,
+    isMutating,
+  } = useSettingsStore();
 
   useEffect(() => {
-    fetchBillingInfo();
-  }, [fetchBillingInfo]);
+    void fetchBillingInfo();
+    void fetchInvoices();
+  }, [fetchBillingInfo, fetchInvoices]);
 
   const [showChangePlan, setShowChangePlan] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -103,6 +127,21 @@ export function DashboardBilling() {
 
   const isLoadingInitial = isLoading && !billing;
 
+  const handlePaystackSetup = async () => {
+    try {
+      const res = await api.post<{ setup_url?: string }>(
+        "/dashboard/billing/payment-method",
+      );
+      if (res.data.setup_url) {
+        window.location.href = res.data.setup_url;
+      } else {
+        toast.message("Payment setup is not available yet.");
+      }
+    } catch {
+      toast.error("Could not start payment method setup.");
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-300 mx-auto">
       {/* Header */}
@@ -114,6 +153,19 @@ export function DashboardBilling() {
           Manage your plan, payment methods, and invoices
         </p>
       </div>
+
+      {billing?.cancel_at_period_end && billing.current_period_end && (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+          <p className="font-semibold">Subscription ending</p>
+          <p className="mt-1 text-amber-800/90">
+            Your plan will cancel on{" "}
+            <span className="font-bold">
+              {new Date(billing.current_period_end).toLocaleDateString()}
+            </span>
+            . You can change to a new plan anytime before then.
+          </p>
+        </div>
+      )}
 
       {/* Current Plan Section */}
       <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
@@ -267,31 +319,26 @@ export function DashboardBilling() {
                     }
                     setLoadingPlan(plan.id);
                     try {
-                      await changePlan(plan.id as SubscriptionPlan);
+                      const result = await changePlan(
+                        plan.id as SubscriptionPlan,
+                      );
+                      if (result?.checkout_url) {
+                        window.location.href = result.checkout_url;
+                        return;
+                      }
+                      toast.success("Plan updated.");
                       setShowChangePlan(false);
                     } catch {
-                      alert("Failed to change plan.");
+                      toast.error("Failed to change plan.");
                     } finally {
                       setLoadingPlan(null);
                     }
                   }}
                   disabled={!!loadingPlan}
-                  className={`w-full py-4 rounded-2xl text-[14px] font-semibold transition-all flex items-center justify-center gap-2 ${
-                    plan.id === "enterprise"
-                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
-                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-black/5"
-                  } cursor-pointer disabled:opacity-70`}
+                  className="w-full py-4 rounded-2xl text-[14px] font-semibold transition-all flex items-center justify-center gap-2 bg-gray-50 text-gray-700 hover:bg-gray-100 border border-black/5 cursor-pointer disabled:opacity-70"
                 >
                   {loadingPlan === plan.id ? (
-                    <div
-                      className={`w-5 h-5 border-2 rounded-full animate-spin ${
-                        plan.id === "enterprise"
-                          ? "border-white/30 border-t-white"
-                          : "border-emerald-600/30 border-t-emerald-600"
-                      }`}
-                    />
-                  ) : plan.id === "enterprise" ? (
-                    "Upgrade to Enterprise"
+                    <div className="w-5 h-5 border-2 rounded-full animate-spin border-emerald-600/30 border-t-emerald-600" />
                   ) : (
                     "Switch to this Plan"
                   )}
@@ -322,8 +369,12 @@ export function DashboardBilling() {
             <p className="text-[12px] text-gray-300 mb-6">
               Connect your card to start your subscription
             </p>
-            <button className="w-full py-3.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer">
-              Set up with Stripe
+            <button
+              type="button"
+              onClick={() => void handlePaystackSetup()}
+              className="w-full py-3.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
+            >
+              Set up with Paystack
             </button>
           </div>
         </div>
@@ -392,9 +443,102 @@ export function DashboardBilling() {
         </div>
       </div>
 
+      {/* Invoices */}
+      <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 tracking-tight">
+            Invoices
+          </h2>
+          <DocumentTextIcon className="w-5 h-5 text-gray-300" aria-hidden />
+        </div>
+        {invoices.length === 0 ? (
+          <p className="text-[13px] text-gray-400 mb-1">
+            No invoices yet. When you subscribe or pay through Paystack,
+            invoices will appear here.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-black/5">
+            <table className="w-full text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-black/5 bg-gray-50/80">
+                  <th className="px-4 py-3 font-semibold text-gray-500">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">
+                    Amount
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-right">
+                    PDF
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {invoices.map((inv) => (
+                  <tr key={inv.id}>
+                    <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                      {new Date(inv.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-gray-800 font-medium">
+                      {formatMoneyCents(inv.amount_cents, inv.currency)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-gray-700">
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {inv.invoice_pdf_url ? (
+                        <a
+                          href={inv.invoice_pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-emerald-600 hover:text-emerald-700"
+                        >
+                          Download
+                        </a>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Footer Actions */}
       <div className="mt-12 text-center pb-8 border-t border-gray-100 pt-8">
-        <button className="text-[12px] font-medium text-gray-400 uppercase tracking-[2px] hover:text-red-500 transition-colors cursor-pointer group">
+        <button
+          type="button"
+          disabled={
+            isMutating ||
+            isLoadingInitial ||
+            Boolean(billing?.cancel_at_period_end)
+          }
+          onClick={async () => {
+            if (
+              !confirm(
+                "Cancel your subscription at the end of the current billing period? You can keep using Vector until then.",
+              )
+            ) {
+              return;
+            }
+            try {
+              await cancelPlan();
+              toast.success(
+                "Your plan will cancel at the end of the billing period.",
+              );
+            } catch {
+              toast.error("Could not cancel subscription.");
+            }
+          }}
+          className="text-[12px] font-medium text-gray-400 uppercase tracking-[2px] hover:text-red-500 transition-colors cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed"
+        >
           Cancel Fleet Subscription & Services
           <div className="h-0.5 w-0 group-hover:w-full bg-red-400 transition-all duration-300 mx-auto mt-1" />
         </button>

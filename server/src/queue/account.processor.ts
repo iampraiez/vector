@@ -24,11 +24,14 @@ export class AccountProcessor {
     job: Job<{
       companyId: string;
       email: string;
+      /** Optional copy for fleet when a driver clears their own data */
+      fleetManagerEmail?: string;
       targetRole: 'driver' | 'workspace';
       targetId: string;
     }>,
   ) {
-    const { companyId, email, targetRole, targetId } = job.data;
+    const { companyId, email, fleetManagerEmail, targetRole, targetId } =
+      job.data;
     this.logger.log(`Generating clear data report for company ${companyId}`);
 
     try {
@@ -36,19 +39,43 @@ export class AccountProcessor {
       // If targetRole is driver, we could filter by driverId, but for now just send the workspace report
       const csvContent = await generateReportCsv(this.prisma, companyId, {});
 
+      const attachments = [
+        {
+          content: csvContent,
+          filename: 'cleared_data_report.csv',
+          type: 'text/csv',
+        },
+      ];
+
+      const subject = 'Vector Data Clearance Report';
+      const textPlain =
+        'Attached is the final data report before permanent clearance.';
+
       await this.mailService.sendMail(
         email,
-        'Vector Data Clearance Report',
-        dataClearedTemplate(targetRole),
-        'Attached is the final data report before permanent clearance.',
-        [
-          {
-            content: csvContent,
-            filename: 'cleared_data_report.csv',
-            type: 'text/csv',
-          },
-        ],
+        subject,
+        dataClearedTemplate(
+          targetRole,
+          targetRole === 'driver' ? 'driver' : 'fleet',
+        ),
+        textPlain,
+        attachments,
       );
+
+      const manager = fleetManagerEmail?.trim();
+      if (
+        manager &&
+        manager.toLowerCase() !== email.toLowerCase() &&
+        targetRole === 'driver'
+      ) {
+        await this.mailService.sendMail(
+          manager,
+          subject,
+          dataClearedTemplate('driver', 'fleet'),
+          textPlain,
+          attachments,
+        );
+      }
 
       // Now actually clear the data
       if (targetRole === 'workspace') {

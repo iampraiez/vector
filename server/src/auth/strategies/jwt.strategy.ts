@@ -52,7 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: { company: true },
+      include: { company: true, driver_profile: true },
     });
 
     if (!user || user.company_id !== payload.company_id) {
@@ -61,6 +61,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user.is_active) {
       throw new UnauthorizedException('User account is inactive');
+    }
+
+    if (user.role === 'driver') {
+      if (!user.driver_profile) {
+        throw new UnauthorizedException('Driver profile not found');
+      }
+      if (!user.driver_profile.is_active) {
+        throw new UnauthorizedException('This account has been deactivated.');
+      }
     }
 
     this.prisma.user

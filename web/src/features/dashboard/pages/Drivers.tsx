@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useDriverStore } from "../../../store/driverStore";
+import { useSettingsStore } from "../../../store/settingsStore";
 
 import {
   MagnifyingGlassIcon,
@@ -13,7 +14,9 @@ import {
   UserGroupIcon,
   UsersIcon,
   Squares2X2Icon,
+  ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { maskEmail, maskPhone } from "../../../utils/masking";
@@ -21,13 +24,15 @@ import { maskEmail, maskPhone } from "../../../utils/masking";
 export function DashboardDrivers() {
   const navigate = useNavigate();
   const { drivers, isLoading, fetchDrivers, deleteDriver } = useDriverStore();
+  const { company, fetchSettings } = useSettingsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"board" | "list">("list");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDrivers({ limit: 100 });
-  }, [fetchDrivers]);
+    fetchSettings();
+  }, [fetchDrivers, fetchSettings]);
 
   const handleRemoveDriver = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to remove ${name} from your fleet?`)) {
@@ -167,7 +172,7 @@ export function DashboardDrivers() {
               </div>
             ))
           ) : filteredDrivers.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center px-4">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-5">
                 <UserGroupIcon className="w-8 h-8 text-gray-300" />
               </div>
@@ -176,11 +181,45 @@ export function DashboardDrivers() {
                   ? "No drivers match your search"
                   : "No drivers yet"}
               </p>
-              <p className="text-[13px] text-gray-300 font-medium">
-                {searchQuery
-                  ? "Try a different search term"
-                  : "Share your company code with drivers to get them onboard"}
-              </p>
+              {!searchQuery ? (
+                <>
+                  <p className="text-[13px] text-gray-500 font-medium mb-6 max-w-md">
+                    Drivers join the mobile app with your company code. Share it
+                    with your team so they can sign up and appear here.
+                  </p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                    Company code
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+                    <code className="text-2xl sm:text-3xl font-mono font-bold tracking-wide text-gray-900 bg-gray-50 px-4 py-3 rounded-2xl border border-black/8">
+                      {company?.company_code || "—"}
+                    </code>
+                    <button
+                      type="button"
+                      disabled={!company?.company_code}
+                      onClick={async () => {
+                        if (!company?.company_code) return;
+                        try {
+                          await navigator.clipboard.writeText(
+                            company.company_code,
+                          );
+                          toast.success("Company code copied");
+                        } catch {
+                          toast.error("Could not copy");
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-[12px] font-bold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ClipboardDocumentIcon className="w-4 h-4" />
+                      Copy
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-[13px] text-gray-300 font-medium">
+                  Try a different search term
+                </p>
+              )}
             </div>
           ) : (
             filteredDrivers.map((driver) => (
@@ -410,7 +449,7 @@ export function DashboardDrivers() {
                 ) : filteredDrivers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
+                      <div className="flex flex-col items-center gap-3 max-w-lg mx-auto">
                         <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                           <UserGroupIcon className="w-6 h-6 text-gray-300" />
                         </div>
@@ -419,11 +458,46 @@ export function DashboardDrivers() {
                             ? "No drivers match your search"
                             : "No drivers yet"}
                         </p>
-                        <p className="text-[12px] text-gray-300">
-                          {searchQuery
-                            ? "Try a different name or email"
-                            : "Share your company code to onboard drivers"}
-                        </p>
+                        {!searchQuery ? (
+                          <>
+                            <p className="text-[12px] text-gray-500">
+                              Drivers join the mobile app with your company
+                              code. Share it so they can sign up and appear in
+                              this list.
+                            </p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">
+                              Company code
+                            </p>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                              <code className="text-xl sm:text-2xl font-mono font-bold tracking-wide text-gray-900 bg-gray-50 px-3 py-2 rounded-xl border border-black/8">
+                                {company?.company_code || "—"}
+                              </code>
+                              <button
+                                type="button"
+                                disabled={!company?.company_code}
+                                onClick={async () => {
+                                  if (!company?.company_code) return;
+                                  try {
+                                    await navigator.clipboard.writeText(
+                                      company.company_code,
+                                    );
+                                    toast.success("Company code copied");
+                                  } catch {
+                                    toast.error("Could not copy");
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                <ClipboardDocumentIcon className="w-4 h-4" />
+                                Copy
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-[12px] text-gray-300">
+                            Try a different name or email
+                          </p>
+                        )}
                       </div>
                     </td>
                   </tr>

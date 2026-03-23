@@ -28,6 +28,27 @@ L.Marker.prototype.options.icon = DefaultIcon;
 // Default to Lagos, Nigeria
 const DEFAULT_CENTER: [number, number] = [6.5244, 3.3792];
 
+function hasValidCoords(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+): boolean {
+  return (
+    lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)
+  );
+}
+
+function formatLastSeen(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 interface MapViewProps {
   drivers: Driver[];
   routes?: Route[];
@@ -113,15 +134,20 @@ const MapView: React.FC<MapViewProps> = ({
 
   const center: [number, number] = useMemo(() => {
     if (userLocation) return [userLocation.lat, userLocation.lng];
-    if (selectedDriver?.location_lat && selectedDriver?.location_lng) {
-      return [selectedDriver.location_lat, selectedDriver.location_lng];
+    if (
+      selectedDriver &&
+      hasValidCoords(selectedDriver.location_lat, selectedDriver.location_lng)
+    ) {
+      return [selectedDriver.location_lat!, selectedDriver.location_lng!];
     }
-    // Fallback to first driver with coordinates
-    const firstWithCoords = drivers.find(
-      (d) => d.location_lat && d.location_lng,
+    const firstWithCoords = drivers.find((d) =>
+      hasValidCoords(d.location_lat, d.location_lng),
     );
-    if (firstWithCoords?.location_lat && firstWithCoords?.location_lng) {
-      return [firstWithCoords.location_lat, firstWithCoords.location_lng];
+    if (
+      firstWithCoords &&
+      hasValidCoords(firstWithCoords.location_lat, firstWithCoords.location_lng)
+    ) {
+      return [firstWithCoords.location_lat!, firstWithCoords.location_lng!];
     }
     return DEFAULT_CENTER;
   }, [userLocation, selectedDriver, drivers]);
@@ -262,9 +288,9 @@ const MapView: React.FC<MapViewProps> = ({
           const points = (route.stops || [])
             .filter(
               (s: RouteStop): s is RouteStop & { lat: number; lng: number } =>
-                !!(s.lat && s.lng),
+                hasValidCoords(s.lat, s.lng),
             )
-            .map((s) => [s.lat, s.lng] as [number, number]);
+            .map((s) => [s.lat!, s.lng!] as [number, number]);
 
           return (
             <React.Fragment key={route.id}>
@@ -278,7 +304,7 @@ const MapView: React.FC<MapViewProps> = ({
                 />
               )}
               {route.stops.map((stop, stopIdx) => {
-                if (!stop.lat || !stop.lng) return null;
+                if (!hasValidCoords(stop.lat, stop.lng)) return null;
                 const isCompleted = stop.status === "completed";
                 const isFailed = stop.status === "failed";
                 const markerColor = isCompleted
@@ -290,7 +316,7 @@ const MapView: React.FC<MapViewProps> = ({
                 return (
                   <Marker
                     key={stop.id}
-                    position={[stop.lat, stop.lng]}
+                    position={[stop.lat!, stop.lng!]}
                     icon={L.divIcon({
                       html: renderToString(
                         <div
@@ -363,7 +389,9 @@ const MapView: React.FC<MapViewProps> = ({
         })}
 
         {drivers.map((driver) => {
-          if (!driver.location_lat || !driver.location_lng) return null;
+          if (!hasValidCoords(driver.location_lat, driver.location_lng)) {
+            return null;
+          }
 
           const isSelected = driver.id === selectedDriverId;
           const driverColor = getDriverColor(driver.id);
@@ -371,7 +399,7 @@ const MapView: React.FC<MapViewProps> = ({
           return (
             <Marker
               key={driver.id}
-              position={[driver.location_lat, driver.location_lng]}
+              position={[driver.location_lat!, driver.location_lng!]}
               icon={createTruckIcon(isSelected, driver.status, driverColor)}
             >
               <Popup>
@@ -430,24 +458,26 @@ const MapView: React.FC<MapViewProps> = ({
                     >
                       <span>Coordinates:</span>
                       <span style={{ color: "#111827" }}>
-                        {driver.location_lat.toFixed(4)},{" "}
-                        {driver.location_lng.toFixed(4)}
+                        {driver.location_lat!.toFixed(4)},{" "}
+                        {driver.location_lng!.toFixed(4)}
                       </span>
                     </div>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
+                        gap: "8px",
                       }}
                     >
-                      <span>Last Seen:</span>
-                      <span style={{ color: "#111827" }}>
-                        {driver.last_active_at
-                          ? new Date(driver.last_active_at).toLocaleTimeString(
-                              [],
-                              { hour: "2-digit", minute: "2-digit" },
-                            )
-                          : "Active"}
+                      <span>Last update:</span>
+                      <span
+                        style={{
+                          color: "#111827",
+                          textAlign: "right",
+                          maxWidth: "140px",
+                        }}
+                      >
+                        {formatLastSeen(driver.last_active_at)}
                       </span>
                     </div>
                   </div>

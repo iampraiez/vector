@@ -78,61 +78,35 @@ The web dashboard's "Optimize" button calls `POST /routes/:id/optimize` which hi
 
 ---
 
-### 1.4 `leaveCompany` has no real effect because `company_id` is required in the schema
+### 1.4 [x] `leaveCompany` has no real effect because `company_id` is required in the schema
 
-**File:** `driver.service.ts:955-975`
+**Resolved:** `Driver.is_active` (default `true`); `leaveCompany` sets `is_active: false`, clears `pending`/`assigned` stops to `unassigned`; JWT rejects inactive drivers; `signUpDriver` reactivates same email with a new company code; seats and dashboard driver lists/tracking use active drivers. Migration: `20260323103000_driver_is_active`.
 
-The comment in `leaveCompany` says "company_id is required, so we just mark status." After calling this endpoint the driver is `status: 'offline'` but still tied to the company — they can still log in and see all company data.
+**File (historical):** `driver.service.ts` — `leaveCompany` previously only set offline status.
 
-**Fix logic:**
-1. Add an `is_active Boolean @default(true)` field to the `Driver` model in `schema.prisma`. Run `prisma migrate dev`.
-2. In `leaveCompany`, set `driver_profile.is_active = false` and unassign all current `pending`/`assigned` stops belonging to this driver (set `driver_id: null`, `status: 'unassigned'`) so the fleet manager can reassign them.
-3. In the `JwtStrategy.validate`, check that `driver_profile.is_active` is `true` for users with role `'driver'`. If not, throw `UnauthorizedException('This account has been deactivated.')`.
-4. For re-registration: in `signUpDriver`, if an existing user with that email has `driver_profile.is_active = false`, allow them to update their `company_id` and flip `is_active` back to `true` instead of throwing a conflict error.
+**Original issue:** After `leaveCompany` the driver stayed tied to the company and could still use the app.
 
----
-
-### 1.5 `uploadAvatar` fallback is a fake Cloudinary URL
-
-**File:** `driver.service.ts:779-789`
-
-The server fallback is `'https://cloudinary.com/vector/new-avatar.jpg'` — a bogus URL that gets stored in the DB when no `file_url` is sent.
-
-**Fix logic:**
-1. In `uploadAvatar`, check if `dto.file_url` is falsy at the top of the method.
-2. If it is, throw `new BadRequestException('file_url is required')` immediately — do not proceed.
-3. Optionally add a basic URL format check: ensure the string starts with `https://res.cloudinary.com/` to confirm it is a real Cloudinary upload and not another arbitrary URL being saved.
+**Fix logic (implemented):**
+1. `is_active Boolean @default(true)` on `Driver` + migrate.
+2. `leaveCompany`: `is_active = false` + unassign `pending`/`assigned` stops (`driver_id: null`, `status: 'unassigned'`).
+3. `JwtStrategy.validate`: for `role === 'driver'`, require `driver_profile.is_active`.
+4. `signUpDriver`: if email exists with inactive driver profile, update company + reactivate instead of conflict.
 
 ---
 
-### 1.6 Company code format mismatch
+### 1.5 [x] `uploadAvatar` fallback is a fake Cloudinary URL
 
-**File:** `auth.service.ts:220` vs `dashboard.service.ts:1002`
+**Resolved:** `uploadAvatar` rejects empty/whitespace `file_url` with `BadRequestException` and requires URLs under `https://res.cloudinary.com/` before persisting `avatar_url`.
 
-Fleet sign-up generates codes like `FLEET-AB12C` (random alphanumeric). The dashboard "regenerate code" button generates codes like `VECT-1234` (numeric). Two different formats break code lookups.
+---
 
-**Fix logic:**
-1. Create a shared helper function (e.g., in `server/src/common/utils/generate-company-code.ts`):
-   ```ts
-   export function generateCompanyCode(): string {
-     const digits = Math.floor(1000 + Math.random() * 9000).toString();
-     return `VECT-${digits}`;
-   }
-   ```
-2. Replace the inline code generation in both `auth.service.ts:220` and `dashboard.service.ts:1002` with a call to this helper.
-3. Add a uniqueness check: after generating, query the DB `{ where: { company_code: generated } }` — if it already exists, regenerate (loop until unique).
-4. Update any UI hints or placeholder text that show the old `FLEET-` format.
+### 1.6 [x] Company code format mismatch
 
-### 1.7 Customer data clearance report sends to manager's email, not driver's
+**Resolved:** Shared `generateCompanyCode()` in `server/src/common/utils/generate-company-code.ts` (`VECT-####`). **`signUpFleet`** picks a collision-free code inside the transaction (up to 40 attempts). **`regenerateAccessCode`** uses the same helper and avoids clashes with other companies.
 
-**File:** `driver.service.ts:904-915` — `verifySettingsOtp` for `'clear_data'`
+### 1.7 [x] Customer data clearance report sends to manager's email, not driver's
 
-When a driver requests to clear their own data, the report is sent to `company?.contact_email` (the fleet manager's address), not to the driver's email. The driver gets no confirmation.
-
-**Fix logic:**
-1. In `verifySettingsOtp`, when the action is `'clear_data'`, fetch the driver's user email: `const driverEmail = driver.user.email`.
-2. In the email queue job payload, set `email: driverEmail` (or pass both `driverEmail` and `company.contact_email` and modify the processor to send to both).
-3. In `account.processor.ts`, update the `clearData` handler to send the report email to the driver, confirming what records were cleared and when.
+**Resolved:** `verifySettingsOtp` queues `clearDataReport` with **`email: driver.user.email`** and optional **`fleetManagerEmail`** (`company.contact_email`). **`AccountProcessor`** emails the driver first with **`dataClearedTemplate(..., 'driver')`**; if the fleet contact differs from the driver, sends the same attachment with **`'fleet'`** copy. API message updated to mention the driver’s inbox.
 
 ---
 
@@ -503,59 +477,27 @@ The proof-of-delivery flow requires the driver to scan the customer's QR code. T
 
 ---
 
-### 5.4 Billing page has no real Paystack flow and missing invoice list
+### 5.4 [x] Billing page has no real Paystack flow and missing invoice list
 
-The "Upgrade" button is a dead end and the invoices section is empty even though the endpoint exists.
-
-**Fix logic:**
-1. **Invoice list:** In the `Billing.tsx` component's `useEffect`, call `GET /dashboard/billing/invoices` (the endpoint and store method already exist). Render the result as a table with columns: Date, Amount, Status, Download PDF link.
-2. **Paystack upgrade:** Once the Paystack webhook and checkout endpoint are implemented server-side (see item 10.3), the "Upgrade" button should call `POST /dashboard/billing/plan` with the selected `plan_id`, receive a `checkout_url` in the response, and do `window.location.href = checkout_url` to redirect to the Paystack hosted payment page.
-3. **Cancel plan:** The "Cancel Plan" button calls `DELETE /dashboard/billing/cancel` which already sets the status to `'canceling'` in the DB. Ensure the UI shows a "Your plan will cancel on [date]" message after this.
+**Resolved:** `Billing.tsx` calls `fetchInvoices` on mount; invoice table (date, amount from `amount_cents`, status, PDF). Plan switch redirects when API returns `checkout_url`. Paystack setup button uses `POST /dashboard/billing/payment-method`. Cancel wired to `DELETE /dashboard/billing/cancel` with confirmation + toast; banner when `cancel_at_period_end`. **Store:** fixed `cancelPlan` path; `changePlan` returns early on `checkout_url`; `fetchInvoices` does not clobber billing `isLoading`. **Server:** `cancelPlan` applies to `active` or `trialing` billing records.
 
 ---
 
-### 5.5 No empty-state onboarding prompt for fresh accounts
+### 5.5 [x] No empty-state onboarding prompt for fresh accounts
 
-New companies with zero drivers and zero orders see blank tables with no guidance.
-
-**Fix logic:**
-1. In the `Overview` (dashboard home) component, after fetching metrics, check `metrics.total_drivers === 0`.
-2. If true, render an onboarding banner card with two CTAs:
-   - "**Share Your Fleet Code**": shows the company code in a copyable chip.
-   - "**Create Your First Order**": navigates to the Orders page and opens the create modal.
-3. Similarly, in the Drivers list component, if `drivers.length === 0`, render an empty-state illustration with the company code prominently displayed and a "How to invite drivers" explainer line.
-4. In the Orders list component, if `orders.length === 0`, render an empty-state with a "Create Order" button.
+**Resolved:** `GET /dashboard/metrics` returns `total_drivers` and `company_code`. **Overview:** when `!isLoading && metrics.total_drivers === 0`, onboarding card with copyable fleet code + **Create your first order** → `/dashboard/orders` with `state: { openNewOrder: true }`. **Orders:** `useEffect` on `location` opens **New Order** modal and `replace`s state so refresh does not reopen. **Drivers:** `fetchSettings()` for code; when `drivers.length === 0` and no search, empty state shows large company code + copy + invite copy (board + list). **Orders** empty table/cards: primary **Create order** when there are truly no orders (all filters default, no search).
 
 ---
 
-### 5.6 Fleet tracking map — null position crash and no auto-refresh
+### 5.6 [x] Fleet tracking map — null position crash and no auto-refresh
 
-Some drivers have never updated their location so `lat`/`lng` are null. Placing a null marker crashes the map library.
-
-**Fix logic:**
-1. In the map component, before calling `new Marker([driver.lat, driver.lng])`, guard:
-   ```ts
-   if (driver.lat == null || driver.lng == null) return; // skip offline/no-position drivers
-   ```
-2. Instead of skipping, render those drivers in the side panel as "Position Unknown" with a grey status dot.
-3. For auto-refresh: in the `Tracking.tsx` page, use the same `setInterval` pattern from 5.3 — call `fetchDrivers()` every 15–20 seconds.
-4. Show each driver's "last_seen_at" timestamp on their map popup so the manager knows how stale the data is.
+**Resolved:** `MapView.tsx` uses `hasValidCoords()` (`!= null` + `Number.isFinite`) for driver markers, route stop markers, and polylines so `0` coordinates and invalid values never reach `Marker`. `Tracking.tsx` polls `fetchDrivers` every **18s**; selected-driver panel and fleet directory show **Position unknown** with a **grey** dot when GPS is missing; map popup shows **Last update** via `formatLastSeen()` (locale date + time). Toolbar title reflects unknown position.
 
 ---
 
-### 5.7 Orders page — no tracking link copy button
+### 5.7 [x] Orders page — no tracking link copy button
 
-Managers must manually find and copy the tracking URL.
-
-**Fix logic:**
-1. The tracking URL format is `${APP_URL}/track?token=${stop.tracking_token}`. The tracking token is already returned in the orders list response on each stop.
-2. In the orders table row, add a copy icon button next to each order. On click:
-   ```ts
-   navigator.clipboard.writeText(`${window.location.origin}/track?token=${stop.tracking_token}`);
-   toast.success('Tracking link copied!');
-   ```
-3. Also add the same button inside the `OrderDetail` page (once item 5.1 is done).
-4. If the order has multiple stops, each stop should have its own copy button since each has its own `tracking_token`.
+**Resolved:** `copyCustomerTrackingLink()` in `web/src/utils/trackingLink.ts` builds `${origin}/track?token=…` with `encodeURIComponent`. **Orders** list (mobile + desktop actions): **Link** icon copies; disabled when `tracking_token` missing. **OrderDetail:** “Customer tracking” card lists each route stop (sorted by sequence) with its own **Copy link**, or a single row when only `tracking_token` on the stop. **Store:** `Order` includes `tracking_token` and `route.stops` typing.
 
 ---
 
@@ -742,40 +684,17 @@ The Prisma schema has `signature_url` and `signature_name` on the `Stop` model. 
 
 ## 8. Testing
 
-**Server — no tests beyond `AppController`**
+### 8.1 [x] Server — Jest unit specs
 
-**Fix logic:**
-- Create `server/src/auth/auth.service.spec.ts`:
-  - Mock `PrismaService`, `RedisService`, `emailQueue`.
-  - Test `signUpDriver` happy path: expects `prisma.user.create` to be called and a verification email to be queued.
-  - Test duplicate email: expects `ConflictException` when `prisma.user.findUnique` returns a user.
-  - Test invalid company code: expects `NotFoundException` when `prisma.company.findUnique` returns null.
-- Create `server/src/driver/driver.service.spec.ts`:
-  - Test the Haversine distance helper function in `updateLocation` directly with known coordinates.
-  - Test `checkAndUpdateRouteStatus`: when all stops are completed, the route status should become 'completed'.
-- Create `server/src/dashboard/dashboard.service.spec.ts`:
-  - Test `refreshOrderStatuses`: mock stops with `time_window_end` in the past and assert `status` is updated to `'failed'`.
+**Resolved:** `auth.service.spec.ts` — `signUpDriver` happy path (`user.create`, Redis verify key, email queue), `NotFoundException` (bad company code), `ConflictException` (duplicate email), `ForbiddenException` (seat limit). Mocks: `uuid`, `bcrypt`. **`driver.service.spec.ts`** — private `calculateDistance` (0 m for same point, small m for nearby coords); `checkAndUpdateRouteStatus` completes route when all stops terminal. **`dashboard.service.spec.ts`** — private `refreshOrderStatuses` sets `failed` + notification for past `delivery_date`. Run: `pnpm test` in `server/`.
 
-**Flutter — empty `test/` folder**
+### 8.2 [x] Web — Vitest + RTL
 
-**Fix logic:**
-- Create `client/test/proof_delivery_test.dart`:
-  - Widget test: render `ProofDeliveryScreen`. Assert submit button is disabled initially.
-  - Simulate photo capture (`setState(() => _capturedPhotoPath = '/fake.jpg')`). Assert button is still disabled.
-  - Simulate QR scan with matching token. Assert button becomes enabled.
-  - Simulate tapping submit. Assert `_api.completeDelivery` is called.
-- Create `client/test/home_test.dart`:
-  - Widget test: render `HomeScreen` with a mocked driver in 'offline' status.
-  - Tap the duty toggle. Assert `_api.updateStatus('online')` is called.
+**Resolved:** `vite.config.ts` test block + `src/test/setup.ts`. **`format.ts`** — `formatTime` / `formatLastUpdatedAgo` extracted from customer tracking page; **`format.test.ts`** covers null input and relative ago strings. **`Tracking.test.tsx`** — mocked `api.get` and `qrcode.react`; asserts **Out for Delivery** / **Delivered** (via description + badge). Run: `pnpm test` in `web/`.
 
-**Web — no tests**
+### 8.3 [ ] Flutter — widget tests (still open)
 
-**Fix logic:**
-- Create `web/src/features/tracking/__tests__/Tracking.test.tsx` using Vitest + React Testing Library:
-  - Render the tracking page with a mock API response where `status = 'en_route'`.
-  - Assert the status badge renders "En Route".
-  - Update the mock to `status = 'arrived'`. Re-render. Assert the status badge updates.
-- Create `web/src/utils/__tests__/format.test.ts` for any utility functions (date formatting, distance formatting).
+**Target:** `client/test/proof_delivery_test.dart`, `client/test/home_test.dart` per scenarios in the original §8 checklist (PoD enablement + duty toggle).
 
 ---
 

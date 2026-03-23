@@ -41,8 +41,22 @@ interface BillingInfo {
     price_usd: number;
   };
   subscription_id?: string;
-  current_period_start: string;
+  current_period_start?: string;
   current_period_end: string;
+  cancel_at_period_end?: boolean;
+}
+
+export interface BillingInvoice {
+  id: string;
+  amount_cents: number;
+  currency: string;
+  status: string;
+  description?: string | null;
+  period_start: string;
+  period_end: string;
+  invoice_pdf_url?: string | null;
+  paid_at?: string | null;
+  created_at: string;
 }
 
 interface SettingsState {
@@ -50,7 +64,7 @@ interface SettingsState {
   notifications: NotificationsConfig | null;
   apiKeys: ApiKey[];
   billing: BillingInfo | null;
-  invoices: Record<string, unknown>[];
+  invoices: BillingInvoice[];
   isLoading: boolean;
   isMutating: boolean;
   error: string | null;
@@ -69,7 +83,11 @@ interface SettingsState {
   // Billing
   fetchBillingInfo: () => Promise<void>;
   fetchInvoices: () => Promise<void>;
-  changePlan: (planId: SubscriptionPlan) => Promise<unknown>;
+  changePlan: (planId: SubscriptionPlan) => Promise<{
+    checkout_url?: string | null;
+    message?: string;
+    plan_id?: string;
+  }>;
   cancelPlan: () => Promise<void>;
 }
 
@@ -246,15 +264,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   fetchInvoices: async () => {
-    set({ isLoading: true, error: null });
     try {
-      const res = await api.get("/dashboard/billing/invoices");
-      set({ invoices: res.data.invoices, isLoading: false });
+      const res = await api.get<{ invoices: BillingInvoice[] }>(
+        "/dashboard/billing/invoices",
+      );
+      set({ invoices: res.data.invoices ?? [] });
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       set({
         error: error.response?.data?.message || "Failed to fetch invoices",
-        isLoading: false,
       });
     }
   },
@@ -262,12 +280,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   changePlan: async (planId: SubscriptionPlan) => {
     set({ isMutating: true, error: null });
     try {
-      const res = await api.post("/dashboard/billing/plan", {
+      const res = await api.post<{
+        checkout_url?: string | null;
+        message?: string;
+        plan_id?: string;
+      }>("/dashboard/billing/plan", {
         plan_id: planId,
       });
+      const data = res.data;
+      if (data.checkout_url) {
+        set({ isMutating: false });
+        return data;
+      }
       await get().fetchBillingInfo();
       set({ isMutating: false });
-      return res.data; // e.g. contains checkout_url for stripe
+      return data;
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       set({
@@ -281,7 +308,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   cancelPlan: async () => {
     set({ isMutating: true, error: null });
     try {
-      await api.delete("/dashboard/billing/plan");
+      await api.delete("/dashboard/billing/cancel");
       await get().fetchBillingInfo();
       set({ isMutating: false });
     } catch (err: unknown) {

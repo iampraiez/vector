@@ -125,6 +125,8 @@ model Driver {
   current_lng           Float?
   current_location_name String?
   status                DriverStatus @default(offline)
+  /// When false, driver left the fleet; JWT is rejected until they re-register with a company code.
+  is_active             Boolean      @default(true)
   total_deliveries      Int          @default(0)
   total_routes          Int          @default(0)
   avg_rating            Float        @default(0.0)

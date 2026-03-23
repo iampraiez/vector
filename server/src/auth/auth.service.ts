@@ -27,6 +27,7 @@ import {
 } from './dto/auth.dto';
 import { JwtPayload } from './interfaces/auth.interface';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
+import { generateCompanyCode } from '../common/utils/generate-company-code';
 
 @Injectable()
 export class AuthService {
@@ -183,7 +184,7 @@ export class AuthService {
       where: { company_id: company.id },
     });
     const driverCount = await this.prisma.driver.count({
-      where: { company_id: company.id },
+      where: { company_id: company.id, is_active: true },
     });
     if (
       billing &&
@@ -197,12 +198,57 @@ export class AuthService {
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { driver_profile: true },
     });
-    if (existingUser) {
-      throw new ConflictException('An account with this email already exists');
-    }
 
     const hashedPassword = await this.hashPassword(dto.password);
+
+    if (existingUser) {
+      const rejoin =
+        existingUser.role === 'driver' &&
+        existingUser.driver_profile &&
+        !existingUser.driver_profile.is_active;
+
+      if (!rejoin) {
+        throw new ConflictException('An account with this email already exists');
+      }
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            company_id: company.id,
+            password: hashedPassword,
+            full_name: dto.full_name,
+            phone: dto.phone,
+            email_verified: false,
+          },
+        });
+        await tx.driver.update({
+          where: { user_id: existingUser.id },
+          data: {
+            company_id: company.id,
+            is_active: true,
+            status: 'offline',
+            vehicle_type: dto.vehicle_type,
+            vehicle_plate: dto.vehicle_plate,
+          },
+        });
+      });
+
+      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      await this.redis.set(`verify:${existingUser.email}`, token, 3600);
+      await this.emailQueue.add(
+        'sendVerification',
+        { email: existingUser.email, token },
+        STANDARD_QUEUE_OPTIONS,
+      );
+
+      return {
+        message:
+          'Account reactivated. Please verify your email if prompted by your fleet.',
+      };
+    }
 
     const user = await this.prisma.user.create({
       data: {
@@ -245,10 +291,27 @@ export class AuthService {
       throw new ConflictException('An account with this email already exists');
     }
 
-    const companyCode = `FLEET-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const hashedPassword = await this.hashPassword(dto.password);
 
     const result = await this.prisma.$transaction(async (prisma) => {
+      let companyCode: string | null = null;
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const candidate = generateCompanyCode();
+        const taken = await prisma.company.findUnique({
+          where: { company_code: candidate },
+          select: { id: true },
+        });
+        if (!taken) {
+          companyCode = candidate;
+          break;
+        }
+      }
+      if (!companyCode) {
+        throw new ConflictException(
+          'Could not allocate a unique company code. Try again.',
+        );
+      }
+
       const company = await prisma.company.create({
         data: {
           name: dto.company_name,

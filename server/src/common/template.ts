@@ -146,10 +146,17 @@ export function trackingLinkTemplate(
   return generateBaseTemplate(content, title);
 }
 
-export function dataClearedTemplate(targetRole: string) {
+export function dataClearedTemplate(
+  targetRole: string,
+  forRecipient: 'driver' | 'fleet' = 'fleet',
+) {
+  const intro =
+    forRecipient === 'driver'
+      ? `You confirmed clearance of your own delivery data in the Vector app. Attached is the final CSV export of the records that were removed from your profile (routes, stops, and ratings tied to you).`
+      : `A ${targetRole} has initiated a permanent data clearance. As per policy, we have attached the final data report before fully dropping the records.`;
   const content = `
     <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Data Cleared</h2>
-    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">A ${targetRole} has initiated a permanent data clearance. As per policy, we have attached the final data report before fully dropping the records.</p>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">${intro}</p>
     <p style="color: #475569; font-size: 14px;">The report is attached to this email in CSV format.</p>
   `;
   return generateBaseTemplate(content, 'Data Clearance');

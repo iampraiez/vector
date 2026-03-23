@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { useOrderStore, OrderStatus } from "../../../store/orderStore";
+import { copyCustomerTrackingLink } from "../../../utils/trackingLink";
 import {
   ArrowLeftIcon,
   UserIcon,
@@ -12,6 +13,7 @@ import {
   CalendarIcon,
   TruckIcon,
   PhoneIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
 import { Skeleton } from "../../../components/ui/skeleton";
 
@@ -25,6 +27,30 @@ export function DashboardOrderDetail() {
       fetchOrderDetail(id);
     }
   }, [id, fetchOrderDetail]);
+
+  const trackingRows = useMemo(() => {
+    if (!selectedOrder) return [];
+    const stops = selectedOrder.route?.stops;
+    if (stops?.length) {
+      return [...stops]
+        .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+        .map((s) => ({
+          id: s.id,
+          label: `Stop ${s.sequence ?? "?"} — ${s.customer_name || "Customer"}`,
+          token: s.tracking_token,
+        }));
+    }
+    if (selectedOrder.tracking_token) {
+      return [
+        {
+          id: selectedOrder.id,
+          label: "This delivery",
+          token: selectedOrder.tracking_token,
+        },
+      ];
+    }
+    return [];
+  }, [selectedOrder]);
 
   if (isLoading && !selectedOrder) {
     return (
@@ -257,6 +283,39 @@ export function DashboardOrderDetail() {
               </div>
             )}
           </div>
+
+          {trackingRows.length > 0 && (
+            <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-2">
+                Customer tracking
+              </h2>
+              <p className="text-[13px] text-gray-500 mb-6">
+                Share a link so customers can follow delivery status. Each stop
+                has its own link when a route has multiple deliveries.
+              </p>
+              <ul className="space-y-3">
+                {trackingRows.map((row) => (
+                  <li
+                    key={row.id}
+                    className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-black/8 bg-gray-50/50"
+                  >
+                    <span className="text-[13px] font-semibold text-gray-800">
+                      {row.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyCustomerTrackingLink(row.token)}
+                      disabled={!row.token}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    >
+                      <LinkIcon className="w-4 h-4" />
+                      Copy link
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Driver & Route Assignment */}

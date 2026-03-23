@@ -33,8 +33,18 @@ export interface Order {
   notes?: string;
   route_name?: string;
   /** Present when loaded from GET /dashboard/orders/:id (Prisma include). */
-  route?: { name?: string | null };
+  route?: {
+    name?: string | null;
+    stops?: {
+      id: string;
+      sequence?: number;
+      customer_name?: string;
+      tracking_token?: string;
+    }[];
+  };
   created_at?: string;
+  /** Customer tracking page token (Stop row). */
+  tracking_token?: string;
   driver?: {
     id: string;
     user: {

@@ -16,6 +16,16 @@ import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Driver } from "../../../store/driverStore";
 import { Skeleton } from "../../../components/ui/skeleton";
 
+function driverHasMapPosition(d: Driver | null): boolean {
+  if (!d) return false;
+  return (
+    d.location_lat != null &&
+    d.location_lng != null &&
+    Number.isFinite(d.location_lat) &&
+    Number.isFinite(d.location_lng)
+  );
+}
+
 export function DashboardTracking() {
   const { drivers, isLoading, fetchDrivers } = useDriverStore();
   const { routes, fetchRoutes } = useRouteStore();
@@ -32,10 +42,9 @@ export function DashboardTracking() {
     fetchDrivers({ limit: 100 });
     fetchRoutes({ limit: 100 });
 
-    // Poll for driver updates every 10 seconds
     const interval = setInterval(() => {
       fetchDrivers({ limit: 100 });
-    }, 10000);
+    }, 18000);
 
     return () => clearInterval(interval);
   }, [fetchDrivers, fetchRoutes]);
@@ -217,7 +226,9 @@ export function DashboardTracking() {
                     <MapPinIcon className="w-5 h-5 text-emerald-600" />
                     <span className="text-[14px] font-bold text-gray-900 tracking-tight">
                       {selectedDriver
-                        ? `${selectedDriver.name}'s Current Position`
+                        ? driverHasMapPosition(selectedDriver)
+                          ? `${selectedDriver.name}'s current position`
+                          : `${selectedDriver.name} — position unknown`
                         : "Fleet Overview"}
                     </span>
                   </div>
@@ -264,7 +275,11 @@ export function DashboardTracking() {
                 <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm h-full">
                   <div className="flex items-center gap-4 mb-8">
                     <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${getStatusClasses(selectedDriver.status)}`}
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
+                        driverHasMapPosition(selectedDriver)
+                          ? getStatusClasses(selectedDriver.status)
+                          : "bg-gray-400 shadow-gray-400/20"
+                      }`}
                     >
                       <UserIcon className="w-7 h-7 text-white" />
                     </div>
@@ -273,11 +288,23 @@ export function DashboardTracking() {
                         {selectedDriver.name}
                       </h3>
                       <p
-                        className={`text-[11px] font-bold uppercase tracking-wider ${getStatusLabelColor(selectedDriver.status)}`}
+                        className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                          driverHasMapPosition(selectedDriver)
+                            ? getStatusLabelColor(selectedDriver.status)
+                            : "text-gray-400"
+                        }`}
                       >
-                        {selectedDriver.status === "active"
-                          ? "On Route"
-                          : selectedDriver.status}
+                        {!driverHasMapPosition(selectedDriver) && (
+                          <span
+                            className="inline-block w-2 h-2 rounded-full bg-gray-400 shrink-0"
+                            title="No GPS position"
+                          />
+                        )}
+                        {driverHasMapPosition(selectedDriver)
+                          ? selectedDriver.status === "active"
+                            ? "On Route"
+                            : selectedDriver.status
+                          : "Position unknown"}
                       </p>
                     </div>
                   </div>
@@ -292,11 +319,11 @@ export function DashboardTracking() {
                       icon={MapPinIcon}
                       label="Current Location"
                       value={
-                        selectedDriver.location_lat
-                          ? `${selectedDriver.location_lat}, ${selectedDriver.location_lng}`
-                          : "Unknown"
+                        driverHasMapPosition(selectedDriver)
+                          ? `${selectedDriver.location_lat!.toFixed(5)}, ${selectedDriver.location_lng!.toFixed(5)}`
+                          : "Position unknown — driver has not shared GPS yet"
                       }
-                      highlight
+                      highlight={driverHasMapPosition(selectedDriver)}
                     />
 
                     <div className="grid grid-cols-2 gap-4 py-6 border-y border-gray-100">
@@ -328,16 +355,24 @@ export function DashboardTracking() {
                     )}
 
                     <div className="pt-4 flex items-center gap-2 text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Last telemetry update:{" "}
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          driverHasMapPosition(selectedDriver)
+                            ? "bg-emerald-500 animate-pulse"
+                            : "bg-gray-400"
+                        }`}
+                      />
+                      Last update:{" "}
                       {selectedDriver.last_active_at
                         ? new Date(
                             selectedDriver.last_active_at,
-                          ).toLocaleTimeString([], {
+                          ).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
                           })
-                        : "Active"}
+                        : "—"}
                     </div>
                   </div>
                 </div>
@@ -389,10 +424,16 @@ export function DashboardTracking() {
                       {d.name}
                     </h4>
                     <p
-                      className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${getStatusLabelColor(d.status)}`}
+                      className={`text-[10px] font-bold uppercase tracking-widest ${driverHasMapPosition(d) ? "mb-4" : "mb-2"} ${getStatusLabelColor(d.status)}`}
                     >
                       {d.status}
                     </p>
+                    {!driverHasMapPosition(d) && (
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                        Position unknown
+                      </p>
+                    )}
 
                     <div className="flex gap-4 pt-4 border-t border-gray-50">
                       <div className="flex-1">
@@ -468,9 +509,16 @@ export function DashboardTracking() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-[13px] text-gray-500 font-medium truncate max-w-40">
-                              {d.current_location_name || "Unknown"}
-                            </p>
+                            {driverHasMapPosition(d) ? (
+                              <p className="text-[13px] text-gray-500 font-medium truncate max-w-40">
+                                {d.current_location_name || "—"}
+                              </p>
+                            ) : (
+                              <p className="text-[13px] text-gray-400 font-medium flex items-center gap-2 max-w-40">
+                                <span className="w-2 h-2 rounded-full bg-gray-400 shrink-0" />
+                                Position unknown
+                              </p>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-[13px] font-bold text-gray-900">

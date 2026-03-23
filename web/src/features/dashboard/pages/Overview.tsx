@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useDashboardStore } from "../../../store/dashboardStore";
+import { toast } from "sonner";
 
 import {
   UsersIcon,
@@ -10,6 +11,7 @@ import {
   MapPinIcon,
   SignalIcon,
   ChevronRightIcon,
+  ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal } from "../components/NewOrderModal";
 import { Skeleton } from "../../../components/ui/skeleton";
@@ -153,6 +155,60 @@ export function DashboardOverview() {
             </button>
           </div>
         </div>
+
+        {!isLoading && metrics && metrics.total_drivers === 0 && (
+          <div className="mb-8 rounded-2xl border border-emerald-200/80 bg-linear-to-br from-emerald-50/90 to-white p-5 md:p-6 shadow-sm shadow-emerald-600/5">
+            <p className="text-[15px] font-bold text-gray-900 mb-1 tracking-tight">
+              Welcome — let&apos;s get your fleet moving
+            </p>
+            <p className="text-[13px] text-gray-500 mb-5 max-w-2xl">
+              Share your fleet code so drivers can join the Vector app, then
+              create your first delivery.
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Share your fleet code
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <code className="text-lg md:text-xl font-mono font-bold tracking-wide text-gray-900 bg-white/80 px-3 py-2 rounded-xl border border-emerald-100">
+                    {metrics.company_code || "—"}
+                  </code>
+                  <button
+                    type="button"
+                    disabled={!metrics.company_code}
+                    onClick={async () => {
+                      if (!metrics.company_code) return;
+                      try {
+                        await navigator.clipboard.writeText(
+                          metrics.company_code,
+                        );
+                        toast.success("Fleet code copied");
+                      } catch {
+                        toast.error("Could not copy");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ClipboardDocumentIcon className="w-4 h-4" />
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/dashboard/orders", {
+                    state: { openNewOrder: true },
+                  })
+                }
+                className="shrink-0 px-5 py-2.5 rounded-xl text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/15 transition-colors cursor-pointer"
+              >
+                Create your first order
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Metric Cards */}
         <div
