@@ -49,13 +49,13 @@ export function DashboardTracking() {
     return () => clearInterval(interval);
   }, [fetchDrivers, fetchRoutes]);
 
-  const activeDrivers = drivers.filter((d) => d.status === "active");
+  const activeDrivers = (drivers || []).filter((d) => d.status === "active");
 
   const totalDeliveriesToday = drivers.reduce(
     (sum, d) => sum + (d.total_deliveries || 0),
     0,
   );
-  const remainingStops = routes.filter(
+  const remainingStops = (routes || []).filter(
     (r) => r.status === "in_progress" || r.status === "pending",
   ).length;
 
@@ -335,7 +335,7 @@ export function DashboardTracking() {
                       <MiniStat
                         label="Remaining"
                         value={
-                          routes.filter(
+                          (routes || []).filter(
                             (r) =>
                               r.driver_id === selectedDriver.id &&
                               (r.status === "pending" ||
@@ -450,7 +450,7 @@ export function DashboardTracking() {
                         </p>
                         <p className="text-[14px] font-bold text-amber-500">
                           {
-                            routes.filter(
+                            (routes || []).filter(
                               (r) =>
                                 r.driver_id === d.id &&
                                 (r.status === "pending" ||

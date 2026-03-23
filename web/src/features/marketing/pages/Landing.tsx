@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import {
   MapPinIcon,
@@ -243,64 +244,82 @@ export function WebLanding() {
           </button>
         </div>
 
-        {/* Mobile Sidebar Overlay */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-100 flex justify-end">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <div className="relative w-70 max-w-[80vw] bg-white h-full flex flex-col shadow-[-8px_0_24px_rgba(0,0,0,0.1)] animate-slide-left">
-              <div className="p-5 px-6 flex justify-end">
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="bg-none border-none cursor-pointer p-1"
-                >
-                  <XMarkIcon className="w-6 h-6 text-[#212121]" />
-                </button>
-              </div>
-              <div className="px-6 pb-6 flex flex-col gap-5">
-                {["Features", "How it works", "Pricing"].map((item) => (
-                  <a
-                    key={item}
-                    href={`#${item.toLowerCase().replace(" ", "-")}`}
+        {/* Mobile Sidebar */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-100 flex justify-end"
+            >
+              <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="relative w-70 max-w-[80vw] bg-white h-full flex flex-col shadow-[-8px_0_24px_rgba(0,0,0,0.1)]"
+              >
+                <div className="p-5 px-6 flex justify-end">
+                  <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-lg font-semibold text-[#212121] no-underline"
+                    className="bg-none border-none cursor-pointer p-1"
                   >
-                    {item}
-                  </a>
-                ))}
-                <div className="h-px bg-black/5 my-3" />
-                <div className="mt-auto flex flex-col gap-3">
-                  <button
-                    onClick={() => {
-                      navigate("/dashboard/signin");
-                      setMobileMenuOpen(false);
-                    }}
-                    className="p-3.5 rounded-xl border border-black/12 bg-transparent text-base font-semibold text-[#212121] cursor-pointer"
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/dashboard/signup");
-                      setMobileMenuOpen(false);
-                    }}
-                    className="p-3.5 rounded-xl bg-emerald-600 border-none text-base font-semibold text-white cursor-pointer shadow-lg shadow-emerald-500/20"
-                  >
-                    Get started free
+                    <XMarkIcon className="w-6 h-6 text-[#212121]" />
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+                <div className="px-6 pb-6 flex flex-col gap-5">
+                  {["Features", "How it works", "Pricing"].map((item) => (
+                    <a
+                      key={item}
+                      href={`#${item.toLowerCase().replace(" ", "-")}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-lg font-semibold text-[#212121] no-underline"
+                    >
+                      {item}
+                    </a>
+                  ))}
+                  <div className="h-px bg-black/5 my-3" />
+                  <div className="mt-auto flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        navigate("/dashboard/signin");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="p-3.5 rounded-xl border border-black/12 bg-transparent text-base font-semibold text-[#212121] cursor-pointer"
+                    >
+                      Sign in
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/dashboard/signup");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="p-3.5 rounded-xl bg-emerald-600 border-none text-base font-semibold text-white cursor-pointer shadow-lg shadow-emerald-500/20"
+                    >
+                      Get started free
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────────── */}
       <section className="pt-30 pb-20 max-w-300 mx-auto px-6">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2.5 bg-emerald-50/50 backdrop-blur-sm border border-emerald-600/10 rounded-full px-4 py-1.5 mb-8 animate-fade-in shadow-sm">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-flex items-center gap-2.5 bg-emerald-50/50 backdrop-blur-sm border border-emerald-600/10 rounded-full px-4 py-1.5 mb-8 shadow-sm"
+        >
           <span className="flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
@@ -308,11 +327,15 @@ export function WebLanding() {
           <span className="text-[11px] font-bold text-emerald-700 tracking-wider uppercase">
             Vector Open Beta — Free for up to 2 drivers
           </span>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           {/* Left: Copy */}
-          <div className="animate-slide-up">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
             <h1 className="text-[clamp(36px,5vw,60px)] font-extrabold leading-[1.08] tracking-tight text-[#121212] mb-6">
               Route smarter.{" "}
               <span className="bg-linear-to-br from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
@@ -358,10 +381,15 @@ export function WebLanding() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Right: Visual */}
-          <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="relative"
+          >
             <div className="rounded-[20px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.12)] border border-black/6 aspect-4/3">
               <img
                 src={DELIVERY_IMAGE}
@@ -371,7 +399,12 @@ export function WebLanding() {
             </div>
 
             {/* Floating stat cards */}
-            <div className="absolute -bottom-4 -left-4 bg-white rounded-[14px] p-3.5 px-4.5 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+              className="absolute -bottom-4 -left-4 bg-white rounded-[14px] p-3.5 px-4.5 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/6"
+            >
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
                   <ArrowTrendingUpIcon className="w-4.5 h-4.5 text-emerald-600" />
@@ -385,43 +418,65 @@ export function WebLanding() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="absolute top-5 -right-4 bg-white rounded-[14px] p-3 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1 }}
+              className="absolute top-5 -right-4 bg-white rounded-[14px] p-3 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/6"
+            >
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_0_3px_rgba(5,150,105,0.2)]" />
                 <span className="text-[13px] font-bold text-[#121212] tracking-tight">
                   8 active drivers
                 </span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* ── Stats Bar ──────────────────────────────────────────────── */}
-      {/* ── Stats Bar ──────────────────────────────────────────────── */}
-      <section className="border-t border-b border-black/6 bg-gray-50 py-10 px-6">
+      <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        className="border-t border-b border-black/6 bg-gray-50 py-10 px-6"
+      >
         <div className="max-w-250 mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { value: "10,000+", label: "Deliveries optimised daily" },
             { value: "40%", label: "Average time saved" },
             { value: "99.9%", label: "Platform uptime" },
             { value: "500+", label: "Active fleet accounts" },
-          ].map((stat) => (
-            <div key={stat.label}>
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              viewport={{ once: true }}
+            >
               <p className="text-[clamp(28px,4vw,36px)] font-extrabold text-[#121212] tracking-tight leading-none mb-1.5">
                 {stat.value}
               </p>
               <p className="text-sm text-gray-400 font-medium">{stat.label}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Features ───────────────────────────────────────────────── */}
       <section id="features" className="py-24 max-w-300 mx-auto px-6">
-        <div className="text-center mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
           <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
             Features
           </div>
@@ -432,15 +487,20 @@ export function WebLanding() {
             From route planning to proof of delivery, Vector handles the full
             delivery lifecycle so you can focus on growth.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, i) => {
             const Icon = feature.icon;
             return (
-              <div
+              <motion.div
                 key={i}
-                className="bg-white border border-black/8 rounded-2xl p-7 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-default hover:shadow-2xl hover:shadow-black/10 hover:-translate-y-0.5 hover:border-emerald-600/20"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className="bg-white border border-black/8 rounded-2xl p-7 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-default hover:shadow-2xl hover:shadow-black/10 hover:border-emerald-600/20"
               >
                 <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center mb-4.5">
                   <Icon className="w-5.5 h-5.5 text-emerald-600" />
@@ -451,7 +511,7 @@ export function WebLanding() {
                 <p className="text-sm text-gray-500 leading-relaxed">
                   {feature.desc}
                 </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -463,7 +523,13 @@ export function WebLanding() {
         className="bg-[#F8FAF9] py-24 px-6 border-t border-b border-black/5"
       >
         <div className="max-w-275 mx-auto">
-          <div className="text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
               How it works
             </div>
@@ -474,12 +540,19 @@ export function WebLanding() {
               No complex setup. No IT team required. Your fleet is live and
               optimised in under an hour.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {steps.map((step, i) => (
-              <div key={i} className="relative">
-                <div className="bg-white border border-black/7 rounded-2xl p-7 h-full shadow-sm">
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="bg-white border border-black/7 rounded-2xl p-7 h-full shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-600/20">
                   <div className="text-4xl font-black text-emerald-600/12 tracking-tighter mb-4 leading-none">
                     {step.number}
                   </div>
@@ -490,7 +563,7 @@ export function WebLanding() {
                     {step.desc}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -499,7 +572,12 @@ export function WebLanding() {
       {/* ── Dashboard Preview ──────────────────────────────────────── */}
       <section className="py-24 max-w-300 mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
             <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-5">
               Fleet Dashboard
             </div>
@@ -517,35 +595,60 @@ export function WebLanding() {
                 "View live GPS positions on a map",
                 "Review delivery proof photos & signatures",
                 "Export detailed reports for any date range",
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-2.5">
+              ].map((item, idx) => (
+                <motion.div
+                  key={item}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex items-start gap-2.5"
+                >
                   <CheckSolid className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span className="text-sm text-gray-500 leading-snug">
                     {item}
                   </span>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
-          <div className="rounded-[20px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.1)] border border-black/5 animate-fade-in [animation-delay:300ms]">
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="rounded-[20px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.1)] border border-black/5"
+          >
             <img
               src={MAP_IMAGE}
               alt="Route optimization map"
               className="w-full aspect-4/3 object-cover block"
             />
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ── For Drivers Section ────────────────────────────────────── */}
-      <section className="bg-linear-to-br from-emerald-900 via-emerald-800 to-emerald-700 py-20 px-6 overflow-hidden">
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        className="bg-linear-to-br from-emerald-900 via-emerald-800 to-emerald-700 py-20 px-6 overflow-hidden"
+      >
         <div className="max-w-225 mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/12 border border-white/15 rounded-full px-4 py-1.25 mb-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 bg-white/12 border border-white/15 rounded-full px-4 py-1.25 mb-6"
+          >
             <LocalShippingIcon size={16} className="text-emerald-400" />
             <span className="text-xs font-bold text-emerald-400 tracking-widest uppercase">
               For Drivers
             </span>
-          </div>
+          </motion.div>
           <h2 className="text-[clamp(26px,4vw,40px)] font-extrabold tracking-tight text-white mb-4">
             Drivers love the mobile app
           </h2>
@@ -573,22 +676,32 @@ export function WebLanding() {
             manager
           </p>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Testimonials ───────────────────────────────────────────── */}
       <section className="py-24 max-w-275 mx-auto px-6">
-        <div className="text-center mb-14">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-14"
+        >
           <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
             Customer stories
           </div>
           <h2 className="text-[clamp(26px,4vw,40px)] font-extrabold tracking-tight text-[#121212]">
             Trusted by delivery teams worldwide
           </h2>
-        </div>
+        </motion.div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
-            <div
+            <motion.div
               key={i}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              viewport={{ once: true }}
               className="bg-white border border-black/8 rounded-2xl p-7 shadow-sm transition-all duration-300 hover:border-emerald-600/20 hover:shadow-md"
             >
               <div className="flex gap-1 mb-4">
@@ -615,7 +728,7 @@ export function WebLanding() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -626,7 +739,13 @@ export function WebLanding() {
         className="bg-[#F8FAF9] py-24 px-6 border-t border-black/5"
       >
         <div className="max-w-275 mx-auto">
-          <div className="text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <div className="inline-block bg-emerald-50 text-emerald-600 px-3.5 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4">
               Pricing
             </div>
@@ -636,12 +755,17 @@ export function WebLanding() {
             <p className="text-[17px] text-gray-500">
               Start free, scale as you grow. No hidden fees.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             {plans.map((plan, i) => (
-              <div
+              <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
                 className={`rounded-[20px] p-8 relative transition-all duration-300 text-center ${
                   plan.highlighted
                     ? "bg-emerald-600 border-none shadow-[0_20px_60px_rgba(5,150,105,0.3)] scale-[1.03] z-10"
@@ -699,7 +823,7 @@ export function WebLanding() {
 
                 <button
                   onClick={() => navigate("/dashboard/signup")}
-                  className={`w-full py-3 rounded-xl text-sm font-bold cursor-pointer mb-6 transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 tap-scale ${
+                  className={`w-full py-3 rounded-xl text-sm font-bold cursor-pointer mb-6 transition-all duration-200 hover:opacity-90 tap-scale ${
                     plan.highlighted
                       ? "bg-white text-emerald-600"
                       : "bg-emerald-600 text-white"
@@ -731,14 +855,20 @@ export function WebLanding() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── CTA Banner ─────────────────────────────────────────────── */}
-      <section className="py-24 max-w-225 mx-auto px-6 text-center">
+      <motion.section
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        className="py-24 max-w-225 mx-auto px-6 text-center"
+      >
         <div className="bg-linear-to-br from-emerald-50 to-emerald-100 border border-emerald-600/15 rounded-4xl py-16 px-10 shadow-sm relative overflow-hidden">
           <h2 className="text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-emerald-900 mb-4 relative z-10">
             Ready to optimise your fleet?
@@ -763,7 +893,7 @@ export function WebLanding() {
             </button>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
       <footer className="border-t border-black/5 py-20 px-6 bg-white">

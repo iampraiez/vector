@@ -56,7 +56,7 @@ export const useRouteStore = create<RouteState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await api.get("/routes", { params });
-      set({ routes: res.data, isLoading: false });
+      set({ routes: res.data.data, isLoading: false });
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
       set({
