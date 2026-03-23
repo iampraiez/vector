@@ -39,6 +39,7 @@ import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { generateCompanyCode } from '../common/utils/generate-company-code';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
+import { PaystackService } from '../billing/paystack.service';
 
 @Injectable()
 export class DashboardService {
@@ -52,6 +53,7 @@ export class DashboardService {
     @InjectQueue('account') private readonly accountQueue: Queue,
     private readonly notificationsService: NotificationsService,
     private readonly auditService: AuditService,
+    private readonly paystackService: PaystackService,
   ) {}
 
   async queueReportEmail(
@@ -917,8 +919,8 @@ export class DashboardService {
     companyId: string,
     query: ReportQueryDto & PaginationDto,
   ) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = parseInt(query.page as unknown as string) || 1;
+    const limit = parseInt(query.limit as unknown as string) || 20;
     const skip = (page - 1) * limit;
 
     const [drivers, total] = await Promise.all([
@@ -1166,19 +1168,69 @@ export class DashboardService {
       newValue: { plan_id: dto.plan_id },
     });
 
+    let checkoutUrl: string | null = null;
+
+    // If paid plan, initialize Paystack checkout
+    if (isPaidPlan) {
+      const user = await this.prisma.user.findFirst({
+        where: { company_id: companyId, role: 'admin' },
+      });
+
+      if (user) {
+        const planPrices: Record<string, number> = {
+          starter: 2900,
+          growth: 8900,
+        }; // in cents (USD)
+        const amount = (planPrices[dto.plan_id] || 0) * 100; // Convert to kobo
+
+        const result = await this.paystackService.initializeCheckout(
+          user.email,
+          amount,
+          {
+            company_id: companyId,
+            plan_id: dto.plan_id,
+            plan_name:
+              dto.plan_id === 'starter' ? 'Starter Plan' : 'Growth Plan',
+            billing_cycle: 'monthly',
+          },
+        );
+
+        checkoutUrl = result.checkout_url;
+
+        // Store transaction reference for verification
+        await this.prisma.billingRecord.update({
+          where: { id: activeRecord?.id || '' },
+          data: { paystack_reference: result.reference },
+        });
+      }
+    }
+
     return {
       message: 'Plan changed successfully',
       plan_id: dto.plan_id,
-      checkout_url: isPaidPlan ? 'https://paystack.com/pay/stub' : null,
+      checkout_url: checkoutUrl,
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  updatePaymentMethod(_companyId: string) {
-    // Stub for Paystack integration
+  async updatePaymentMethod(companyId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { company_id: companyId, role: 'admin' },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Admin user not found');
+    }
+
+    // Initialize authorization to save payment method
+    const result = await this.paystackService.initializeAuthorization(
+      user.email,
+      'Payment Method Authorization',
+      companyId,
+    );
+
     return {
       message: 'Setup intent created',
-      setup_url: 'https://paystack.com/setup/stub',
+      setup_url: result.authorization_url,
     };
   }
 

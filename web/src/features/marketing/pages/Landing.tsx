@@ -195,13 +195,13 @@ export function WebLanding() {
         <div className="max-w-300 mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <div
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group"
             onClick={() => navigate("/")}
           >
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 transition-all duration-300 group-hover:bg-emerald-700 shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
+            <div className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] bg-emerald-600 transition-all duration-300 group-hover:bg-emerald-700 shadow-[0_2px_8px_rgba(5,150,105,0.35),0_0_0_1px_rgba(5,150,105,0.1)]">
               <LocalShippingIcon size={20} className="text-white" />
             </div>
-            <span className="text-[18px] font-bold tracking-tight text-[#121212]">
+            <span className="text-[17px] font-black tracking-[-0.5px] text-[#121212]">
               VECTOR
             </span>
           </div>
@@ -264,7 +264,21 @@ export function WebLanding() {
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="relative w-70 max-w-[80vw] bg-white h-full flex flex-col shadow-[-8px_0_24px_rgba(0,0,0,0.1)]"
               >
-                <div className="p-5 px-6 flex justify-end">
+                <div className="p-5 px-6 flex items-center justify-between">
+                  <div
+                    className="flex items-center gap-2.5 cursor-pointer"
+                    onClick={() => {
+                      navigate("/");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] bg-emerald-600 shadow-[0_2px_8px_rgba(5,150,105,0.35),0_0_0_1px_rgba(5,150,105,0.1)]">
+                      <LocalShippingIcon size={20} className="text-white" />
+                    </div>
+                    <span className="text-[17px] font-black tracking-[-0.5px] text-[#121212]">
+                      VECTOR
+                    </span>
+                  </div>
                   <button
                     onClick={() => setMobileMenuOpen(false)}
                     className="bg-none border-none cursor-pointer p-1"

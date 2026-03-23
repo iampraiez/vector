@@ -33,7 +33,7 @@ export function NotFound() {
             404
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-20 h-20 bg-white border border-black/8 rounded-[28px] shadow-2xl shadow-black/5 flex items-center justify-center">
+            <div className="w-20 h-20 bg-white border border-black/8 rounded-[28px] shadow-2xl translate-x-0.75 shadow-black/5 flex items-center justify-center">
               <div className="relative">
                 <MagnifyingGlassIcon className="w-10 h-10 text-emerald-600" />
                 <ExclamationTriangleIcon className="w-5 h-5 text-amber-500 absolute -bottom-1 -right-1" />

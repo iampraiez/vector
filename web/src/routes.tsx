@@ -1,29 +1,109 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter } from "react-router";
+import { lazy, Suspense } from "react";
 import { WebLanding as Landing } from "./features/marketing/pages/Landing";
 import { CustomerTracking as TrackingPage } from "./features/tracking/pages/Tracking";
-import { DashboardOverview as Overview } from "./features/dashboard/pages/Overview";
-import { DashboardDrivers as Drivers } from "./features/dashboard/pages/Drivers";
-import { DashboardDriverDetail as DriverDetail } from "./features/dashboard/pages/DriverDetail";
-import { DashboardOrders as Orders } from "./features/dashboard/pages/Orders";
-import { DashboardOrderDetail as OrderDetail } from "./features/dashboard/pages/OrderDetail";
-import { DashboardTracking as Tracking } from "./features/dashboard/pages/Tracking";
-import { DashboardBilling as Billing } from "./features/dashboard/pages/Billing";
-import { DashboardSettings as Settings } from "./features/dashboard/pages/Settings";
-import { DashboardReports as Reports } from "./features/dashboard/pages/Reports";
-import { DashboardSignIn as SignIn } from "./features/auth/pages/SignIn";
-import { DashboardSignUp as SignUp } from "./features/auth/pages/SignUp";
-import { ForgotPassword } from "./features/auth/pages/ForgotPassword";
-import { ResetPassword } from "./features/auth/pages/ResetPassword";
-import { VerifyEmail } from "./features/auth/pages/VerifyEmail";
-import { DashboardNotifications as Notifications } from "./features/dashboard/pages/Notifications";
-import { Privacy } from "./features/marketing/pages/Privacy";
-import { Terms } from "./features/marketing/pages/Terms";
+
+// Lazy load dashboard pages for better code splitting
+const DashboardOverview = lazy(() =>
+  import("./features/dashboard/pages/Overview").then((m) => ({
+    default: m.DashboardOverview,
+  })),
+);
+const DashboardDrivers = lazy(() =>
+  import("./features/dashboard/pages/Drivers").then((m) => ({
+    default: m.DashboardDrivers,
+  })),
+);
+const DashboardDriverDetail = lazy(() =>
+  import("./features/dashboard/pages/DriverDetail").then((m) => ({
+    default: m.DashboardDriverDetail,
+  })),
+);
+const DashboardOrders = lazy(() =>
+  import("./features/dashboard/pages/Orders").then((m) => ({
+    default: m.DashboardOrders,
+  })),
+);
+const DashboardOrderDetail = lazy(() =>
+  import("./features/dashboard/pages/OrderDetail").then((m) => ({
+    default: m.DashboardOrderDetail,
+  })),
+);
+const DashboardTracking = lazy(() =>
+  import("./features/dashboard/pages/Tracking").then((m) => ({
+    default: m.DashboardTracking,
+  })),
+);
+const DashboardBilling = lazy(() =>
+  import("./features/dashboard/pages/Billing").then((m) => ({
+    default: m.DashboardBilling,
+  })),
+);
+const DashboardSettings = lazy(() =>
+  import("./features/dashboard/pages/Settings").then((m) => ({
+    default: m.DashboardSettings,
+  })),
+);
+const DashboardReports = lazy(() =>
+  import("./features/dashboard/pages/Reports").then((m) => ({
+    default: m.DashboardReports,
+  })),
+);
+const DashboardNotifications = lazy(() =>
+  import("./features/dashboard/pages/Notifications").then((m) => ({
+    default: m.DashboardNotifications,
+  })),
+);
+const DashboardSignIn = lazy(() =>
+  import("./features/auth/pages/SignIn").then((m) => ({
+    default: m.DashboardSignIn,
+  })),
+);
+const DashboardSignUp = lazy(() =>
+  import("./features/auth/pages/SignUp").then((m) => ({
+    default: m.DashboardSignUp,
+  })),
+);
+const ForgotPassword = lazy(() =>
+  import("./features/auth/pages/ForgotPassword").then((m) => ({
+    default: m.ForgotPassword,
+  })),
+);
+const ResetPassword = lazy(() =>
+  import("./features/auth/pages/ResetPassword").then((m) => ({
+    default: m.ResetPassword,
+  })),
+);
+const VerifyEmail = lazy(() =>
+  import("./features/auth/pages/VerifyEmail").then((m) => ({
+    default: m.VerifyEmail,
+  })),
+);
+const Privacy = lazy(() =>
+  import("./features/marketing/pages/Privacy").then((m) => ({
+    default: m.Privacy,
+  })),
+);
+const Terms = lazy(() =>
+  import("./features/marketing/pages/Terms").then((m) => ({
+    default: m.Terms,
+  })),
+);
 
 import { DashboardLayout } from "./features/dashboard/components/DashboardLayout";
 import { AuthGuard } from "./features/auth/guards/AuthGuard";
 import { GuestGuard } from "./features/auth/guards/GuestGuard";
 import { ErrorPage } from "./features/errors/pages/ErrorPage";
 import { NotFound } from "./features/errors/pages/NotFound";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+
+// Suspense fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen">
+    <LoadingSpinner />
+  </div>
+);
 
 export const router = createBrowserRouter([
   {
@@ -40,7 +120,9 @@ export const router = createBrowserRouter([
         path: "/dashboard/signin",
         element: (
           <GuestGuard>
-            <SignIn />
+            <Suspense fallback={<PageLoader />}>
+              <DashboardSignIn />
+            </Suspense>
           </GuestGuard>
         ),
       },
@@ -48,7 +130,9 @@ export const router = createBrowserRouter([
         path: "/dashboard/signup",
         element: (
           <GuestGuard>
-            <SignUp />
+            <Suspense fallback={<PageLoader />}>
+              <DashboardSignUp />
+            </Suspense>
           </GuestGuard>
         ),
       },
@@ -56,7 +140,9 @@ export const router = createBrowserRouter([
         path: "/dashboard/forgot-password",
         element: (
           <GuestGuard>
-            <ForgotPassword />
+            <Suspense fallback={<PageLoader />}>
+              <ForgotPassword />
+            </Suspense>
           </GuestGuard>
         ),
       },
@@ -64,7 +150,9 @@ export const router = createBrowserRouter([
         path: "/reset-password",
         element: (
           <GuestGuard>
-            <ResetPassword />
+            <Suspense fallback={<PageLoader />}>
+              <ResetPassword />
+            </Suspense>
           </GuestGuard>
         ),
       },
@@ -72,7 +160,9 @@ export const router = createBrowserRouter([
         path: "/dashboard/verify-email",
         element: (
           <GuestGuard>
-            <VerifyEmail />
+            <Suspense fallback={<PageLoader />}>
+              <VerifyEmail />
+            </Suspense>
           </GuestGuard>
         ),
       },
@@ -85,16 +175,86 @@ export const router = createBrowserRouter([
           </AuthGuard>
         ),
         children: [
-          { index: true, Component: Overview },
-          { path: "drivers", Component: Drivers },
-          { path: "driver-detail/:id", Component: DriverDetail },
-          { path: "orders", Component: Orders },
-          { path: "orders/:id", Component: OrderDetail },
-          { path: "tracking", Component: Tracking },
-          { path: "billing", Component: Billing },
-          { path: "settings", Component: Settings },
-          { path: "reports", Component: Reports },
-          { path: "notifications", Component: Notifications },
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardOverview />
+              </Suspense>
+            ),
+          },
+          {
+            path: "drivers",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardDrivers />
+              </Suspense>
+            ),
+          },
+          {
+            path: "driver-detail/:id",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardDriverDetail />
+              </Suspense>
+            ),
+          },
+          {
+            path: "orders",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardOrders />
+              </Suspense>
+            ),
+          },
+          {
+            path: "orders/:id",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardOrderDetail />
+              </Suspense>
+            ),
+          },
+          {
+            path: "tracking",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardTracking />
+              </Suspense>
+            ),
+          },
+          {
+            path: "billing",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardBilling />
+              </Suspense>
+            ),
+          },
+          {
+            path: "settings",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardSettings />
+              </Suspense>
+            ),
+          },
+          {
+            path: "reports",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardReports />
+              </Suspense>
+            ),
+          },
+          {
+            path: "notifications",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardNotifications />
+              </Suspense>
+            ),
+          },
         ],
       },
       { path: "*", Component: NotFound },

@@ -191,7 +191,7 @@ export function DashboardBilling() {
                 Active Plan
               </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+            <h2 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-2 tracking-tight">
               {isLoadingInitial ? (
                 <Skeleton className="w-48 h-8" />
               ) : (

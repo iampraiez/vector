@@ -1,12 +1,12 @@
 /**
  * Centralized Email Templates for Vector Fleet
+ *
+ * Logo: we use a hosted <img> instead of an inline SVG because most email
+ * clients (especially Outlook) block or strip inline SVGs. The image is
+ * served from the deployed frontend (APP_URL/icon.png).
  */
 
-const BRAND_SVG = `
-<svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path fill="#10b981" d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-</svg>
-`;
+const LOGO_URL = 'https://vector-route.vercel.app/icon.png';
 
 export function generateBaseTemplate(content: string, title: string) {
   return `
@@ -24,12 +24,29 @@ export function generateBaseTemplate(content: string, title: string) {
             <table width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02); border: 1px solid #e5e7eb;">
               <tr>
                 <td style="padding: 40px 40px 20px 40px; text-align: left;">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 40px; height: 40px; background-color: #f0fdf4; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">
-                      ${BRAND_SVG}
-                    </div>
-                    <span style="font-size: 22px; font-weight: 900; color: #0f172a; margin-left: 10px; letter-spacing: -1px; vertical-align: middle; font-family: -apple-system, sans-serif;">VECTOR</span>
-                  </div>
+                  <!-- Brand header: table-based for maximum email client compatibility -->
+                  <table border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 10px;">
+                        <table border="0" cellspacing="0" cellpadding="0">
+                          <tr>
+                            <td style="width: 42px; height: 42px; background-color: #f0fdf4; border-radius: 10px; text-align: center; vertical-align: middle;">
+                              <img
+                                src="${LOGO_URL}"
+                                alt="Vector"
+                                width="28"
+                                height="28"
+                                style="display: block; margin: 7px auto; border: 0; outline: none;"
+                              />
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -1px; font-family: -apple-system, sans-serif;">VECTOR</span>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               <tr>

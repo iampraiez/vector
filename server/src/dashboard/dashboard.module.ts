@@ -14,6 +14,7 @@ import { MapModule } from '../map/map.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TrackingModule } from '../tracking/tracking.module';
 import { TrackingService } from 'src/tracking/tracking.service';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TrackingService } from 'src/tracking/tracking.service';
     MapModule,
     NotificationsModule,
     TrackingModule,
+    BillingModule,
     BullModule.registerQueue({ name: 'email' }, { name: 'account' }),
   ],
   controllers: [

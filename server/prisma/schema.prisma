@@ -270,6 +270,7 @@ model BillingRecord {
   company                Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
   paystack_customer_id   String?
   paystack_subscription_id String?
+  paystack_reference     String?
   plan_id                String
   status                 String
   current_period_start   DateTime

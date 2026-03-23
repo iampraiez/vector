@@ -24,6 +24,7 @@ import { TrackingModule } from './tracking/tracking.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MapModule } from './map/map.module';
 import { BillingModule } from './billing/billing.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { BillingModule } from './billing/billing.module';
     NotificationsModule,
     MapModule,
     BillingModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [

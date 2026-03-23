@@ -305,6 +305,20 @@ paths:
         "200":
           description: ""
       tags: *a5
+  /billing/webhook:
+    post:
+      operationId: BillingController_handleWebhook
+      parameters:
+        - name: x-paystack-signature
+          required: true
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags:
+        - Billing
   /dashboard/metrics:
     get:
       operationId: OverviewController_getMetrics
@@ -1544,9 +1558,9 @@ paths:
               schema:
                 type: object
       tags: *a24
-  /billing/webhook:
+  /api/webhooks/paystack:
     post:
-      operationId: BillingController_handleWebhook
+      operationId: PaystackWebhookController_handlePaystackWebhook
       parameters:
         - name: x-paystack-signature
           required: true
@@ -1557,7 +1571,7 @@ paths:
         "200":
           description: ""
       tags:
-        - Billing
+        - PaystackWebhook
 info:
   title: Vector API
   description: Full API specification for the Vector fleet management platform

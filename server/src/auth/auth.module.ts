@@ -7,12 +7,16 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
+import { BillingModule } from '../billing/billing.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
     PrismaModule,
     RedisModule,
+    BillingModule,
     PassportModule,
+    BullModule.registerQueue({ name: 'email' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

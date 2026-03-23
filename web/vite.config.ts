@@ -61,20 +61,39 @@ export default defineConfig({
   build: {
     target: "esnext",
     outDir: "build",
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom", "react-router"],
-          "ui-vendor": [
-            "lucide-react",
-            "clsx",
-            "tailwind-merge",
-            "@radix-ui/react-slot",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-          ],
-          heroicons: ["@heroicons/react"],
+        manualChunks: (id) => {
+          // Core React vendors
+          if (id.includes("node_modules/react/")) return "react-core";
+          if (id.includes("node_modules/react-dom/")) return "react-core";
+          if (id.includes("node_modules/react-router")) return "react-router";
+
+          // UI Libraries
+          if (id.includes("node_modules/@radix-ui/")) return "radix-ui";
+          if (id.includes("node_modules/lucide-react")) return "lucide-react";
+          if (id.includes("node_modules/recharts")) return "recharts";
+
+          // Utilities
+          if (id.includes("node_modules/zustand")) return "state-management";
+          if (
+            id.includes("node_modules/axios") ||
+            id.includes("node_modules/query-string")
+          ) {
+            return "api-utils";
+          }
+
+          // Date handling
+          if (
+            id.includes("node_modules/date-fns") ||
+            id.includes("node_modules/react-day-picker")
+          ) {
+            return "date-utils";
+          }
+
+          // Forms
+          if (id.includes("node_modules/react-hook-form")) return "forms";
         },
       },
     },

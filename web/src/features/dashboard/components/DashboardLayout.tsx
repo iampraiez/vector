@@ -102,10 +102,10 @@ function DashboardSidebar() {
           onClick={() => handleNav("/")}
           className="flex items-center gap-2.5 cursor-pointer group w-fit"
         >
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 group-hover:opacity-90 transition-opacity -translate-y-px shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
-            <LocalShippingIcon size={18} className="text-white" />
+          <div className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] bg-emerald-600 group-hover:bg-emerald-700 transition-colors shadow-[0_2px_8px_rgba(5,150,105,0.35),0_0_0_1px_rgba(5,150,105,0.1)]">
+            <LocalShippingIcon size={20} className="text-white" />
           </div>
-          <span className="text-[18px] font-bold tracking-tight text-gray-900">
+          <span className="text-[17px] font-black tracking-[-0.5px] text-gray-900">
             VECTOR
           </span>
         </div>
@@ -207,6 +207,54 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [user?.id, navigate]);
 
+  const location = useLocation();
+
+  const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
+    "/dashboard": {
+      title: "Overview",
+      subtitle: "Fleet summary & key metrics",
+    },
+    "/dashboard/drivers": {
+      title: "Drivers",
+      subtitle: "Manage your driver roster",
+    },
+    "/dashboard/orders": {
+      title: "Orders",
+      subtitle: "View & dispatch deliveries",
+    },
+    "/dashboard/tracking": {
+      title: "Live Tracking",
+      subtitle: "Real-time fleet positions",
+    },
+    "/dashboard/reports": {
+      title: "Reports",
+      subtitle: "Analytics & export data",
+    },
+    "/dashboard/billing": {
+      title: "Billing",
+      subtitle: "Plans & payment info",
+    },
+    "/dashboard/notifications": {
+      title: "Notifications",
+      subtitle: "Activity & alerts",
+    },
+    "/dashboard/settings": {
+      title: "Settings",
+      subtitle: "Account & company settings",
+    },
+  };
+
+  const currentPage = Object.entries(PAGE_TITLES)
+    .sort((a, b) => b[0].length - a[0].length)
+    .find(
+      ([path]) =>
+        location.pathname === path ||
+        (path !== "/dashboard" && location.pathname.startsWith(path)),
+    );
+
+  const pageTitle = currentPage?.[1].title ?? "Dashboard";
+  const pageSubtitle = currentPage?.[1].subtitle ?? "";
+
   return (
     <SidebarProvider>
       <OnboardingTour />
@@ -215,20 +263,37 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* ── Main content area ── */}
       <SidebarInset className="bg-gray-50/50">
-        {/* Mobile sticky header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-black/5 bg-white px-4 md:hidden">
+        {/* ── Top header (mobile: logo + trigger / desktop: page title + trigger) ── */}
+        <header className="sticky top-0 z-30 flex h-14 items-center border-b border-black/5 bg-white/90 backdrop-blur-sm px-4 gap-3">
+          <SidebarTrigger className="shrink-0 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" />
+
+          {/* Mobile: show logo */}
           <div
             onClick={() => navigate("/")}
-            className="flex items-center gap-2.5 cursor-pointer"
+            className="flex md:hidden items-center gap-2.5 cursor-pointer group"
           >
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-emerald-600 -translate-y-px shadow-[0_1px_3px_rgba(5,150,105,0.3)]">
-              <LocalShippingIcon size={18} className="text-white" />
+            <div className="inline-flex items-center justify-center w-9 h-9 rounded-[10px] bg-emerald-600 group-hover:bg-emerald-700 transition-colors shadow-[0_2px_8px_rgba(5,150,105,0.35),0_0_0_1px_rgba(5,150,105,0.1)]">
+              <LocalShippingIcon size={20} className="text-white" />
             </div>
-            <span className="text-[18px] font-bold tracking-tight text-gray-900">
-              Vector
+            <span className="text-[17px] font-black tracking-[-0.5px] text-gray-900">
+              VECTOR
             </span>
           </div>
-          <SidebarTrigger className="text-gray-500 hover:text-gray-900 transition-colors" />
+
+          {/* Desktop: show page title with a subtle separator */}
+          <div className="hidden md:flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-px h-4 bg-black/8 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[13px] font-bold text-gray-900 leading-none truncate">
+                {pageTitle}
+              </p>
+              {pageSubtitle && (
+                <p className="text-[11px] text-gray-400 font-medium leading-none mt-0.5 truncate">
+                  {pageSubtitle}
+                </p>
+              )}
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto w-full max-w-400 mx-auto">

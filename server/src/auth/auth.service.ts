@@ -28,6 +28,7 @@ import {
 import { JwtPayload } from './interfaces/auth.interface';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { generateCompanyCode } from '../common/utils/generate-company-code';
+import { PaystackService } from '../billing/paystack.service';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +38,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     @InjectQueue('email') private emailQueue: Queue,
+    private paystackService: PaystackService,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -366,6 +368,26 @@ export class AuthService {
       STANDARD_QUEUE_OPTIONS,
     );
 
+    let checkoutUrl: string | null = null;
+
+    // Initialize Paystack checkout for starter plan trial
+    try {
+      const paymentResult = await this.paystackService.initializeCheckout(
+        result.user.email,
+        0, // Free trial - 0 amount
+        {
+          company_id: result.company.id,
+          plan_id: 'free',
+          plan_name: 'Free Trial Plan',
+          billing_cycle: 'monthly',
+        },
+      );
+      checkoutUrl = paymentResult.checkout_url;
+    } catch (error) {
+      // If Paystack fails, still allow signup but without checkout
+      console.error('Failed to initialize Paystack checkout:', error);
+    }
+
     return {
       message: 'Company and account created. Please verify your email.',
       user_id: result.user.id,
@@ -374,7 +396,7 @@ export class AuthService {
         name: result.company.name,
         company_code: result.company.company_code,
       },
-      checkout_url: 'https://paystack.com/pay/stub',
+      checkout_url: checkoutUrl,
     };
   }
 
