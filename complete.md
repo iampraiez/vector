@@ -110,15 +110,17 @@ The web dashboard's "Optimize" button calls `POST /routes/:id/optimize` which hi
 
 ---
 
-### 1.8 `getAssignments` returns `completed` assignments to the Assignments screen
+### 1.8 [x] `getAssignments` returns `completed` assignments to the Assignments screen
 
-**File:** `driver.service.ts:181-263`
+**Resolved (Option A):** `client/lib/features/driver_app/assignments.dart` — third tab **Done** shows `data['completed']` with count badge; cards use check / cancel / error / undo icons, status chips, strikethrough on cancelled route names, summary progress for multi-stop routes; no navigation tap, long-press selection, or optimize FAB on that tab.
 
-The query returns routes/stops with `status: 'completed'` or `'cancelled'` that were updated today. The Flutter Assignments screen only renders "Active" and "Upcoming" tabs — it doesn't have a "Completed Today" tab visible in the UI. These records are fetched, serialised, and transferred on every load, but silently discarded client-side.
+**File (server, unchanged):** `driver.service.ts` — `getAssignments` already returns `active`, `upcoming`, `completed`.
+
+**Original issue:** Completed-today payloads were fetched but only Active/Upcoming tabs existed client-side.
 
 **Fix logic (choose one):**
-- **Option A (recommended — keep the data, show it):** In `assignments.dart`, add a third "Completed" tab to the `TabBar`/`TabBarView`. Render the `completed` key from the API response there, showing each route/stop with a green checkmark or strikethrough style. This makes the data useful rather than wasteful.
-- **Option B (simpler):** Remove the `completed` include from the `getAssignments` query entirely. The driver can see history on the History screen. This is the smaller change.
+- **Option A (implemented):** Third tab + `completed` list UI (see above).
+- **Option B:** Remove `completed` from the API query (not done).
 
 ---
 
@@ -378,69 +380,23 @@ new Redis(process.env.REDIS_URL, {
 
 ---
 
-**No `GET /health/detailed` endpoint**
-The existing `/health` endpoint likely just returns `{ status: 'ok' }`. There is no way to know if the DB or Redis is actually connected.
-**Fix:** Use `@nestjs/terminus`. Update the `HealthController` to:
-```ts
-@Get('detailed')
-check() {
-  return this.health.check([
-    () => this.db.pingCheck('database'),
-    () => this.redis.checkHealth('redis'),
-    () => this.http.pingCheck('geoapify', 'https://api.geoapify.com'),
-  ]);
-}
-```
-This returns green/red status for each dependency individually.
+**No `GET /health/detailed` endpoint** — **[x] resolved**
+**Resolved:** `GET /health/detailed` uses `@nestjs/terminus` (`PrismaHealthIndicator.pingCheck`, custom `RedisHealthIndicator`, `HttpHealthIndicator.pingCheck` against Geoapify geocode with `GEOAPIFY_API_KEY`). Existing `GET /health` unchanged.
 
 ---
 
-**`AuditLog` model exists but is never written to**
-Destructive actions (delete order, delete driver, clear workspace data, plan change, code regenerate) are untracked — there is no record of who did what and when.
-**Fix:** Create a `AuditService` with a single `log(companyId, userId, action, meta)` method that does `prisma.auditLog.create(...)`. Call it after:
-- `deleteOrder` in DashboardService
-- `removeDriver` in DashboardService
-- `clearData` in account.processor.ts
-- `changePlan` in DashboardService
-- `regenerateCode` in DashboardService
+**`AuditLog` model exists but is never written to** — **[x] resolved**
+**Resolved:** Global `AuditService.log(...)` writes `audit_logs`. Wired after: `deleteOrder`, `deleteDriver` (dashboard), `changePlan`, `regenerateAccessCode`, and after successful data deletion in `AccountProcessor` `clearDataReport` (job carries `actorUserId` from admin or driver OTP flow).
 
 ---
 
-**No `docker-compose.yml` for local development**
-Developers must manually install and run Postgres and Redis locally, with no guarantee of correct versions.
-**Fix:** Create `docker-compose.yml` at the project root:
-```yaml
-services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: vector
-      POSTGRES_PASSWORD: vector
-      POSTGRES_DB: vector
-    ports: ["5432:5432"]
-  redis:
-    image: redis:7-alpine
-    ports: ["6379:6379"]
-```
-Add a `.env.local.example` file with the corresponding `DATABASE_URL=postgresql://vector:vector@localhost:5432/vector` and `REDIS_URL=redis://localhost:6379`.
+**No `docker-compose.yml` for local development** — **[x] resolved**
+**Resolved:** Root `docker-compose.yml` — Postgres 16 Alpine + Redis 7; `.env.local.example` documents `DATABASE_URL` / `REDIS_URL` for that stack.
 
 ---
 
-**No CI workflow files in `.github/workflows/`**
-There is a `.github/` directory but no workflows, meaning PRs are never automatically validated.
-**Fix:** Create `.github/workflows/ci.yml`:
-```yaml
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: cd server && npm ci && npm run test
-      - run: cd web && npm ci && npm run build
-```
+**No CI workflow files in `.github/workflows/`** — **[x] resolved**
+**Resolved:** `.github/workflows/ci.yml` — pnpm, Node 22, `server`: install, `prisma generate`, build, test; `web`: install, build.
 
 ---
 

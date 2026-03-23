@@ -35,6 +35,7 @@ import { settingsOtpTemplate } from '../common/template';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { generateCompanyCode } from '../common/utils/generate-company-code';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class DashboardService {
@@ -47,6 +48,7 @@ export class DashboardService {
     @InjectQueue('email') private readonly emailQueue: Queue,
     @InjectQueue('account') private readonly accountQueue: Queue,
     private readonly notificationsService: NotificationsService,
+    private readonly auditService: AuditService,
   ) {}
 
   async queueReportEmail(
@@ -416,7 +418,7 @@ export class DashboardService {
     });
   }
 
-  async deleteOrder(companyId: string, stopId: string) {
+  async deleteOrder(companyId: string, stopId: string, userId: string) {
     const stop = await this.prisma.stop.findUnique({
       where: { id: stopId, company_id: companyId },
     });
@@ -429,6 +431,18 @@ export class DashboardService {
     }
 
     await this.prisma.stop.delete({ where: { id: stopId } });
+    await this.auditService.log({
+      companyId,
+      userId,
+      action: 'order.delete',
+      resourceType: 'stop',
+      resourceId: stopId,
+      oldValue: {
+        status: stop.status,
+        address: stop.address,
+        customer_name: stop.customer_name,
+      },
+    });
   }
 
   async getDrivers(companyId: string, query: DriverQueryDto) {
@@ -616,7 +630,7 @@ export class DashboardService {
     return this.getDriverDetail(companyId, driverId);
   }
 
-  async deleteDriver(companyId: string, driverId: string) {
+  async deleteDriver(companyId: string, driverId: string, userId: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { id: driverId, company_id: companyId },
     });
@@ -631,6 +645,15 @@ export class DashboardService {
     await this.prisma.driver.update({
       where: { id: driverId },
       data: { status: 'offline', is_active: false },
+    });
+
+    await this.auditService.log({
+      companyId,
+      userId,
+      action: 'driver.deactivate',
+      resourceType: 'driver',
+      resourceId: driverId,
+      oldValue: { user_id: driver.user_id },
     });
   }
 
@@ -887,7 +910,7 @@ export class DashboardService {
     return { invoices };
   }
 
-  async changePlan(companyId: string, dto: ChangePlanDto) {
+  async changePlan(companyId: string, dto: ChangePlanDto, userId: string) {
     const activeRecord = await this.prisma.billingRecord.findFirst({
       where: {
         company_id: companyId,
@@ -926,6 +949,18 @@ export class DashboardService {
     await this.prisma.company.update({
       where: { id: companyId },
       data: { subscription_tier: dto.plan_id },
+    });
+
+    await this.auditService.log({
+      companyId,
+      userId,
+      action: 'billing.change_plan',
+      resourceType: 'billing',
+      resourceId: companyId,
+      oldValue: activeRecord
+        ? { plan_id: activeRecord.plan_id, billing_record_id: activeRecord.id }
+        : undefined,
+      newValue: { plan_id: dto.plan_id },
     });
 
     return {
@@ -1031,7 +1066,12 @@ export class DashboardService {
     });
   }
 
-  async regenerateAccessCode(companyId: string) {
+  async regenerateAccessCode(companyId: string, userId: string) {
+    const before = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { company_code: true },
+    });
+
     for (let attempt = 0; attempt < 40; attempt++) {
       const newCode = generateCompanyCode();
       const conflict = await this.prisma.company.findFirst({
@@ -1039,10 +1079,20 @@ export class DashboardService {
         select: { id: true },
       });
       if (!conflict) {
-        return this.prisma.company.update({
+        const updated = await this.prisma.company.update({
           where: { id: companyId },
           data: { company_code: newCode },
         });
+        await this.auditService.log({
+          companyId,
+          userId,
+          action: 'settings.regenerate_company_code',
+          resourceType: 'company',
+          resourceId: companyId,
+          oldValue: { company_code: before?.company_code },
+          newValue: { company_code: updated.company_code },
+        });
+        return updated;
       }
     }
     throw new ConflictException(
@@ -1179,6 +1229,7 @@ export class DashboardService {
           email: company?.contact_email || admin.email,
           targetRole: 'workspace',
           targetId: companyId,
+          actorUserId: userId,
         },
         STANDARD_QUEUE_OPTIONS,
       );

@@ -28,16 +28,15 @@
 | 1.6 | Shared `VECT-####` `generateCompanyCode()`; fleet signup + dashboard regenerate with uniqueness | ✅ Done |
 | 1.7 | Driver `clear_data`: report to driver email + optional fleet copy; template variants | ✅ Done |
 | 1.4 | Driver `is_active`; `leaveCompany` unassigns pending/assigned stops + deactivates; JWT blocks inactive drivers; `signUpDriver` reactivates same email; seats + fleet lists count/track active drivers only | ✅ Done |
+| 1.8 | Flutter Assignments: third **Done** tab renders API `completed` (today); cards for completed / cancelled / failed / returned; no tap-to-nav or optimize selection on that tab | ✅ Done |
+| §4 (remaining) | `GET /health/detailed` (Terminus: DB, Redis, Geoapify); global `AuditService` + logs on delete order/driver, change plan, regenerate code, post–clear-data job; root `docker-compose.yml`; `.env.local.example`; `.github/workflows/ci.yml` (server build+test, web build) | ✅ Done |
 
 ## Currently Working On
 
 | Item | Description |
 |---|---|
-| _(none — say “yes do” for next)_ | **§1.8** assignments completed tab, **§4** health/audit, **§10** push |
+| _(none — say “yes do” for next)_ | **§10** push |
 
-## §4 not done yet (same section)
+## §4 notes
 
-- `GET /health/detailed` (Terminus)
-- `AuditService` + calls
-- `docker-compose` / CI workflows
-- (Did not add `cache-manager`; default throttler storage is in-memory.)
+- (Still no `cache-manager`; default throttler storage is in-memory.)

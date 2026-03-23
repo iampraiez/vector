@@ -24,7 +24,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   static const _cacheKey = 'cache_assignments_today';
   static const _cacheTtlMinutes = 10;
 
-  int _activeTab = 0; // 0 = Active, 1 = Upcoming
+  int _activeTab = 0; // 0 = Active, 1 = Upcoming, 2 = Completed (today)
 
   bool _isLoading = true;
   bool _isOffline = false;
@@ -33,6 +33,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   // Assignments from API
   List<Map<String, dynamic>> _activeAssignments = [];
   List<Map<String, dynamic>> _upcomingAssignments = [];
+  List<Map<String, dynamic>> _completedAssignments = [];
 
   // Track which routes are being started (spinner per card)
   final Set<String> _startingRoutes = {};
@@ -99,6 +100,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   void _applyData(Map<String, dynamic> data) {
     _activeAssignments = (data['active'] as List? ?? []).cast<Map<String, dynamic>>();
     _upcomingAssignments = (data['upcoming'] as List? ?? []).cast<Map<String, dynamic>>();
+    _completedAssignments =
+        (data['completed'] as List? ?? []).cast<Map<String, dynamic>>();
   }
 
   Future<void> _refreshInBackground() async {
@@ -356,6 +359,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
                         isActive: _activeTab == 1,
                         onTap: () => setState(() => _activeTab = 1),
                       ),
+                      _Tab(
+                        label: 'Done',
+                        count: _completedAssignments.length,
+                        isActive: _activeTab == 2,
+                        onTap: () => setState(() {
+                          _activeTab = 2;
+                          _clearSelection();
+                        }),
+                      ),
                     ],
                   ),
                 ),
@@ -386,7 +398,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
           ),
         ),
       ),
-      floatingActionButton: (_selectedStopIds.isNotEmpty)
+      floatingActionButton: ((_activeTab == 0 || _activeTab == 1) &&
+              _selectedStopIds.isNotEmpty)
           ? FloatingActionButton.extended(
               onPressed: () => _optimizeSelection(context),
               backgroundColor: AppColors.primary,
@@ -416,11 +429,17 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       emptyTitle = 'No active assignments';
       emptyMessage = 'Your routes for today will appear here.';
       emptyIcon = Icons.local_shipping_outlined;
-    } else {
+    } else if (_activeTab == 1) {
       currentList = _upcomingAssignments;
       emptyTitle = 'No upcoming routes';
       emptyMessage = 'Future assignments will appear here.';
       emptyIcon = Icons.calendar_today_outlined;
+    } else {
+      currentList = _completedAssignments;
+      emptyTitle = 'Nothing completed yet today';
+      emptyMessage =
+          'Finished or cancelled routes and stops from today show here.';
+      emptyIcon = Icons.check_circle_outline;
     }
 
     if (currentList.isEmpty) {
@@ -445,6 +464,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
         final item = currentList[i];
         final isRoute = item['type'] == 'route';
 
+        final isCompletedTab = _activeTab == 2;
         if (isRoute) {
           final stops = (item['stops'] as List? ?? []);
           return _RouteCard(
@@ -462,10 +482,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
               context.push('/navigation');
             },
             isUpcoming: _activeTab == 1,
+            isCompleted: isCompletedTab,
             isSelected: _selectedStopIds.contains(item['id']),
-            isSelectionMode: _isSelectionMode,
-            onLongPress: () => _toggleSelection(item['id'] as String),
-            onSelectionToggle: () => _toggleSelection(item['id'] as String),
+            isSelectionMode: _isSelectionMode && !isCompletedTab,
+            onLongPress: isCompletedTab
+                ? null
+                : () => _toggleSelection(item['id'] as String),
+            onSelectionToggle: isCompletedTab
+                ? null
+                : () => _toggleSelection(item['id'] as String),
           );
         } else {
           // Standalone Stop
@@ -487,10 +512,15 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             },
             isUpcoming: _activeTab == 1,
             isStandalone: true,
+            isCompleted: isCompletedTab,
             isSelected: _selectedStopIds.contains(item['id']),
-            isSelectionMode: _isSelectionMode,
-            onLongPress: () => _toggleSelection(item['id'] as String),
-            onSelectionToggle: () => _toggleSelection(item['id'] as String),
+            isSelectionMode: _isSelectionMode && !isCompletedTab,
+            onLongPress: isCompletedTab
+                ? null
+                : () => _toggleSelection(item['id'] as String),
+            onSelectionToggle: isCompletedTab
+                ? null
+                : () => _toggleSelection(item['id'] as String),
           );
         }
       },
@@ -591,6 +621,7 @@ class _RouteCard extends StatelessWidget {
   final VoidCallback onContinue;
   final bool isUpcoming;
   final bool isStandalone;
+  final bool isCompleted;
   final bool isSelected;
   final bool isSelectionMode;
   final VoidCallback? onLongPress;
@@ -608,6 +639,7 @@ class _RouteCard extends StatelessWidget {
     required this.onContinue,
     this.isUpcoming = false,
     this.isStandalone = false,
+    this.isCompleted = false,
     this.isSelected = false,
     this.isSelectionMode = false,
     this.onLongPress,
@@ -616,31 +648,99 @@ class _RouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive = status == 'active' || status == 'in_progress';
+    final isActive =
+        !isCompleted && (status == 'active' || status == 'in_progress');
     final progress = totalStops > 0 ? completedStops / totalStops : 0.0;
+
+    Color completedBorder() {
+      switch (status) {
+        case 'failed':
+          return AppColors.error.withValues(alpha: 0.35);
+        case 'cancelled':
+          return AppColors.textMuted.withValues(alpha: 0.45);
+        default:
+          return AppColors.success.withValues(alpha: 0.4);
+      }
+    }
+
+    (Color bg, Color fg, IconData icon) completedIconStyle() {
+      switch (status) {
+        case 'failed':
+          return (AppColors.errorLight, AppColors.error, Icons.error_outline);
+        case 'cancelled':
+          return (
+            AppColors.surface,
+            AppColors.textMuted,
+            Icons.cancel_outlined,
+          );
+        case 'returned':
+          return (
+            AppColors.warningLight,
+            AppColors.warning,
+            Icons.undo_rounded,
+          );
+        default:
+          return (
+            AppColors.successLight,
+            AppColors.success,
+            Icons.check_circle_rounded,
+          );
+      }
+    }
+
+    String completedBadgeLabel() {
+      switch (status) {
+        case 'failed':
+          return 'Failed';
+        case 'cancelled':
+          return 'Cancelled';
+        case 'returned':
+          return 'Returned';
+        default:
+          return 'Completed';
+      }
+    }
+
+    (Color bg, Color fg) completedBadgeColors() {
+      switch (status) {
+        case 'failed':
+          return (AppColors.errorLight, AppColors.error);
+        case 'cancelled':
+          return (AppColors.surface, AppColors.textSecondary);
+        case 'returned':
+          return (AppColors.warningLight, AppColors.warning);
+        default:
+          return (AppColors.successLight, AppColors.success);
+      }
+    }
+
+    final ci = isCompleted ? completedIconStyle() : null;
+    final cb = isCompleted ? completedBadgeColors() : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onLongPress: onLongPress,
-        onTap: isSelectionMode
-            ? onSelectionToggle
-            : isStarting
-                ? null
-                : isUpcoming
-                  ? () => context.push(
-                        '/route-preview',
-                        extra: {
-                          'id': routeId,
-                          'name': name,
-                          'status': status,
-                          'date': date,
-                          'stops': [], 
-                        },
-                      )
-                  : isActive
-                      ? onContinue
-                      : onStart,
+        onLongPress: isCompleted ? null : onLongPress,
+        onTap: isCompleted
+            ? null
+            : isSelectionMode
+                ? onSelectionToggle
+                : isStarting
+                    ? null
+                    : isUpcoming
+                        ? () => context.push(
+                              '/route-preview',
+                              extra: {
+                                'id': routeId,
+                                'name': name,
+                                'status': status,
+                                'date': date,
+                                'stops': [],
+                              },
+                            )
+                        : isActive
+                            ? onContinue
+                            : onStart,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.p4),
@@ -652,22 +752,26 @@ class _RouteCard extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? AppColors.primary
-                  : isActive
-                      ? AppColors.primary.withValues(alpha: 0.3)
-                      : isUpcoming
-                          ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
-                          : AppColors.border,
+                  : isCompleted
+                      ? completedBorder()
+                      : isActive
+                          ? AppColors.primary.withValues(alpha: 0.3)
+                          : isUpcoming
+                              ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                              : AppColors.border,
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.08)
-                    : isActive
-                        ? AppColors.primary.withValues(alpha: 0.08)
-                        : isUpcoming
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.06)
-                            : Colors.black.withValues(alpha: 0.03),
+                    : isCompleted
+                        ? AppColors.success.withValues(alpha: 0.04)
+                        : isActive
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : isUpcoming
+                                ? const Color(0xFF3B82F6).withValues(alpha: 0.06)
+                                : Colors.black.withValues(alpha: 0.03),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -686,25 +790,31 @@ class _RouteCard extends StatelessWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.white
-                                : isActive
-                                    ? AppColors.successLight
-                                    : isUpcoming
-                                        ? const Color(0xFFEFF6FF)
-                                        : AppColors.surface,
+                            color: isCompleted
+                                ? ci!.$1
+                                : isSelected
+                                    ? AppColors.white
+                                    : isActive
+                                        ? AppColors.successLight
+                                        : isUpcoming
+                                            ? const Color(0xFFEFF6FF)
+                                            : AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            isStandalone
-                                ? Icons.inventory_2_outlined
-                                : Icons.local_shipping_outlined,
+                            isCompleted
+                                ? ci!.$3
+                                : isStandalone
+                                    ? Icons.inventory_2_outlined
+                                    : Icons.local_shipping_outlined,
                             size: 22,
-                            color: isSelected || isActive
-                                ? AppColors.primary
-                                : isUpcoming
-                                    ? const Color(0xFF2563EB)
-                                    : AppColors.textMuted,
+                            color: isCompleted
+                                ? ci!.$2
+                                : isSelected || isActive
+                                    ? AppColors.primary
+                                    : isUpcoming
+                                        ? const Color(0xFF2563EB)
+                                        : AppColors.textMuted,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -714,10 +824,15 @@ class _RouteCard extends StatelessWidget {
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 16,
                                   color: AppColors.textPrimary,
+                                  decoration: isCompleted &&
+                                          status == 'cancelled'
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  decorationColor: AppColors.textMuted,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -740,29 +855,35 @@ class _RouteCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isUpcoming
-                                    ? const Color(0xFFEFF6FF)
-                                    : isActive
-                                        ? AppColors.primaryLight
-                                        : AppColors.surface,
+                                color: isCompleted
+                                    ? cb!.$1
+                                    : isUpcoming
+                                        ? const Color(0xFFEFF6FF)
+                                        : isActive
+                                            ? AppColors.primaryLight
+                                            : AppColors.surface,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                isUpcoming
-                                    ? 'Upcoming'
-                                    : (isActive ? 'Active' : 'Assigned'),
+                                isCompleted
+                                    ? completedBadgeLabel()
+                                    : isUpcoming
+                                        ? 'Upcoming'
+                                        : (isActive ? 'Active' : 'Assigned'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: isUpcoming
-                                      ? const Color(0xFF2563EB)
-                                      : isActive
-                                          ? AppColors.primary
-                                          : AppColors.textMuted,
+                                  color: isCompleted
+                                      ? cb!.$2
+                                      : isUpcoming
+                                          ? const Color(0xFF2563EB)
+                                          : isActive
+                                              ? AppColors.primary
+                                              : AppColors.textMuted,
                                 ),
                               ),
                             ),
-                            if (!isSelectionMode) ...[
+                            if (!isSelectionMode && !isCompleted) ...[
                               const SizedBox(height: 8),
                               Icon(
                                 Icons.chevron_right_rounded,
@@ -778,6 +899,51 @@ class _RouteCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (isCompleted && totalStops > 0) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '$completedStops / $totalStops stops',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            '${(progress * 100).round()}%',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Stack(
+                        children: [
+                          Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: progress.clamp(0.0, 1.0),
+                            child: Container(
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: AppColors.success,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (isActive && totalStops > 0) ...[
                       const SizedBox(height: 12),
                       Row(

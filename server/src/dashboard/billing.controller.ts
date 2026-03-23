@@ -34,9 +34,10 @@ export class BillingController {
   @Post('plan')
   changePlan(
     @CurrentUser('company_id') companyId: string,
+    @CurrentUser('id') userId: string,
     @Body() dto: ChangePlanDto,
   ) {
-    return this.dashboardService.changePlan(companyId, dto);
+    return this.dashboardService.changePlan(companyId, dto, userId);
   }
 
   @Post('payment-method')

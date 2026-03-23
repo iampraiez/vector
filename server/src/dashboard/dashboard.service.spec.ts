@@ -7,6 +7,7 @@ import { MailService } from '../mail/mail.service';
 import { MapService } from '../map/map.service';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -30,6 +31,7 @@ describe('DashboardService', () => {
         { provide: getQueueToken('email'), useValue: { add: jest.fn() } },
         { provide: getQueueToken('account'), useValue: { add: jest.fn() } },
         { provide: NotificationsService, useValue: notificationsService },
+        { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 

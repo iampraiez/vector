@@ -22,6 +22,18 @@ paths:
           description: ""
       tags:
         - Health
+  /health/detailed:
+    get:
+      operationId: HealthController_detailed
+      summary: Terminus health (database, redis, Geoapify)
+      parameters: []
+      responses:
+        "200":
+          description: All dependencies healthy
+        "503":
+          description: One or more checks failed
+      tags:
+        - Health
   /auth/sign-in:
     post:
       operationId: AuthController_signIn

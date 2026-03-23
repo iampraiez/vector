@@ -70,9 +70,10 @@ export class OrdersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteOrder(
     @CurrentUser('company_id') companyId: string,
+    @CurrentUser('id') userId: string,
     @Param('stop_id') stopId: string,
   ) {
-    return this.dashboardService.deleteOrder(companyId, stopId);
+    return this.dashboardService.deleteOrder(companyId, stopId, userId);
   }
 
   @Post('bulk')

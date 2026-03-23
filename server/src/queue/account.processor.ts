@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { generateReportCsv } from '../dashboard/utils/report.util';
 import {
   dataClearedTemplate,
@@ -17,6 +18,7 @@ export class AccountProcessor {
   constructor(
     private readonly mailService: MailService,
     private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
   ) {}
 
   @Process('clearDataReport')
@@ -28,10 +30,13 @@ export class AccountProcessor {
       fleetManagerEmail?: string;
       targetRole: 'driver' | 'workspace';
       targetId: string;
+      /** User who confirmed the OTP (admin or driver user id) */
+      actorUserId?: string;
     }>,
   ) {
     const { companyId, email, fleetManagerEmail, targetRole, targetId } =
       job.data;
+    const actorUserId = job.data.actorUserId ?? null;
     this.logger.log(`Generating clear data report for company ${companyId}`);
 
     try {
@@ -99,6 +104,18 @@ export class AccountProcessor {
           data: { total_deliveries: 0, total_routes: 0 },
         });
       }
+
+      await this.auditService.log({
+        companyId,
+        userId: actorUserId,
+        action:
+          targetRole === 'workspace'
+            ? 'workspace.clear_data'
+            : 'driver.clear_data',
+        resourceType: targetRole === 'workspace' ? 'company' : 'driver',
+        resourceId: targetId,
+        newValue: { targetRole, email },
+      });
 
       this.logger.log(`Data cleared & report sent successfully to ${email}`);
     } catch (err) {

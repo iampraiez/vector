@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './health/health.module';
+import { AuditModule } from './audit/audit.module';
 
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -40,6 +41,7 @@ import { MapModule } from './map/map.module';
     PrismaModule,
     RedisModule,
     QueueModule,
+    AuditModule,
     HealthModule,
     AuthModule,
     MailModule,

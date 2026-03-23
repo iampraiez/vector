@@ -1003,6 +1003,7 @@ export class DriverService {
           fleetManagerEmail: company?.contact_email?.trim() || undefined,
           targetRole: 'driver',
           targetId: driver.id,
+          actorUserId: userId,
         },
         STANDARD_QUEUE_OPTIONS,
       );

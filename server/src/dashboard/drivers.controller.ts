@@ -69,8 +69,9 @@ export class DriversController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteDriver(
     @CurrentUser('company_id') companyId: string,
+    @CurrentUser('id') userId: string,
     @Param('driver_id') driverId: string,
   ) {
-    return this.dashboardService.deleteDriver(companyId, driverId);
+    return this.dashboardService.deleteDriver(companyId, driverId, userId);
   }
 }

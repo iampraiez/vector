@@ -49,8 +49,11 @@ export class SettingsController {
   }
 
   @Post('regenerate-code')
-  regenerateAccessCode(@CurrentUser('company_id') companyId: string) {
-    return this.dashboardService.regenerateAccessCode(companyId);
+  regenerateAccessCode(
+    @CurrentUser('company_id') companyId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.dashboardService.regenerateAccessCode(companyId, userId);
   }
 
   @Post('api-keys')

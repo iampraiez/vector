@@ -210,7 +210,9 @@ export class AuthService {
         !existingUser.driver_profile.is_active;
 
       if (!rejoin) {
-        throw new ConflictException('An account with this email already exists');
+        throw new ConflictException(
+          'An account with this email already exists',
+        );
       }
 
       await this.prisma.$transaction(async (tx) => {
