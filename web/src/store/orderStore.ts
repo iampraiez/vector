@@ -88,6 +88,7 @@ interface OrderState {
   }) => Promise<void>;
   createOrder: (data: Partial<Order>) => Promise<void>;
   updateOrder: (id: string, data: Partial<Order>) => Promise<void>;
+  reassignOrder: (id: string, data: { driver_id?: string }) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   deleteOrders: (ids: string[]) => Promise<void>;
   importBulkOrders: (data: Partial<Order>[]) => Promise<BulkImportResponse>;
@@ -148,6 +149,26 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const error = err as AxiosError<{ message?: string }>;
       set({
         error: error.response?.data?.message || "Failed to update order",
+        isMutating: false,
+      });
+      throw err;
+    }
+  },
+
+  reassignOrder: async (id: string, data: { driver_id?: string }) => {
+    set({ isMutating: true, error: null });
+    try {
+      await api.patch(`/dashboard/orders/${id}/reassign`, data);
+      await get().fetchOrders(); // Refresh list
+      // Refresh selected order if it's the one we're viewing
+      if (get().selectedOrder?.id === id) {
+        await get().fetchOrderDetail(id);
+      }
+      set({ isMutating: false });
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      set({
+        error: error.response?.data?.message || "Failed to reassign order",
         isMutating: false,
       });
       throw err;

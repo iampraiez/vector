@@ -21,6 +21,16 @@ class DriverApiService {
     ),
   );
 
+  // ── Device & Push Notifications ───────────────────────────────────────────
+
+  Future<void> registerFcmToken(String token) async {
+    try {
+      await _dio.patch('/driver/fcm-token', data: {'fcm_token': token});
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── Home ──────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getHomeSummary() async {
@@ -238,6 +248,16 @@ class DriverApiService {
         data: {'name': name, 'stops': stops},
       );
       return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ── Route Actions ────────────────────────────────────────────────────────
+
+  Future<void> rejectRoute(String routeId) async {
+    try {
+      await _dio.patch('/driver/routes/$routeId/reject');
     } on DioException catch (e) {
       throw _handleError(e);
     }

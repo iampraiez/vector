@@ -13,9 +13,6 @@ import {
   UpdateRouteDto,
   AssignRouteDto,
 } from './dto/routes.dto';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bullmq';
-import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -26,7 +23,6 @@ export class RoutesService {
     private prisma: PrismaService,
     private readonly mapService: MapService,
     private readonly configService: ConfigService,
-    @InjectQueue('email') private readonly emailQueue: Queue,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -305,30 +301,6 @@ export class RoutesService {
           assigned_at: new Date(),
         },
       });
-
-      const appUrl = this.configService.getOrThrow<string>('APP_URL');
-
-      // Queue "scheduled" tracking emails
-      for (const stop of route.stops) {
-        if (stop.customer_email) {
-          await this.emailQueue.add(
-            'sendTrackingLink',
-            {
-              email: stop.customer_email,
-              customerName: stop.customer_name,
-              trackingLink: `${appUrl}/track?token=${stop.tracking_token}`,
-              orderId: stop.external_id,
-              status: 'scheduled',
-              driverName: route.driver?.user.full_name,
-            },
-            STANDARD_QUEUE_OPTIONS,
-          );
-          await tx.stop.update({
-            where: { id: stop.id },
-            data: { tracking_email_sent_at: new Date() },
-          });
-        }
-      }
 
       if (route.driver?.user_id) {
         await this.notificationsService.create({

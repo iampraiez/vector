@@ -3,6 +3,7 @@ import {
   useSettingsStore,
   SubscriptionPlan,
 } from "../../../store/settingsStore";
+import { useDriverStore } from "../../../store/driverStore";
 
 import {
   CreditCardIcon,
@@ -87,16 +88,21 @@ export function DashboardBilling() {
     isLoading,
     isMutating,
   } = useSettingsStore();
+  const { drivers, fetchDrivers } = useDriverStore();
 
   useEffect(() => {
     void fetchBillingInfo();
     void fetchInvoices();
-  }, [fetchBillingInfo, fetchInvoices]);
+    void fetchDrivers();
+  }, [fetchBillingInfo, fetchInvoices, fetchDrivers]);
 
   const [showChangePlan, setShowChangePlan] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const activePlanId = billing?.plan?.id || "free";
+  const activePlanSeats =
+    activePlanId === "free" ? 2 : activePlanId === "starter" ? 5 : 20;
+  const activeDriverCount = drivers.filter((d) => d.status === "active").length;
   const isTrial = billing?.status === "trialing";
   const trialDaysLeft =
     isTrial && billing?.current_period_end
@@ -116,7 +122,12 @@ export function DashboardBilling() {
 
   // In a real app, these would come from the backend or a billing store
   const usageItems = [
-    { label: "Active Drivers", used: 0, total: 10, color: "bg-emerald-500" },
+    {
+      label: "Active Drivers",
+      used: activeDriverCount,
+      total: activePlanSeats,
+      color: "bg-emerald-500",
+    },
     {
       label: "Deliveries This Month",
       used: 0,
@@ -309,13 +320,16 @@ export function DashboardBilling() {
               {!plan.current && (
                 <button
                   onClick={async () => {
-                    if (plan.id === "free" && activePlanId !== "free") {
-                      if (
-                        !confirm(
-                          "Are you sure you want to downgrade to Free? No pro-rated refunds are provided.",
-                        )
-                      )
-                        return;
+                    const planSeats =
+                      plan.id === "free" ? 2 : plan.id === "starter" ? 5 : 20;
+
+                    if (planSeats < activePlanSeats) {
+                      let msg = `Are you sure you want to downgrade to ${plan.name}? No pro-rated refunds are provided.`;
+                      if (activeDriverCount > planSeats) {
+                        const excess = activeDriverCount - planSeats;
+                        msg += `\n\nWARNING: This will automatically DEACTIVATE ${excess} of your active drivers because the ${plan.name} plan only allows ${planSeats} drivers.`;
+                      }
+                      if (!confirm(msg)) return;
                     }
                     setLoadingPlan(plan.id);
                     try {

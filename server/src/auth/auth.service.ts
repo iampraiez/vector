@@ -490,7 +490,7 @@ export class AuthService {
 
       await this.redis.set(`reset:${token}`, user.id, 1800);
 
-      const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+      const frontendUrl = this.configService.getOrThrow<string>('APP_URL');
       await this.emailQueue.add(
         'sendPasswordReset',
         {

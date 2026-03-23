@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, DriverStatus, StopPriority } from '@prisma/client';
@@ -423,6 +424,53 @@ export class DriverService {
     return { message: 'Route started successfully' };
   }
 
+  async rejectRoute(userId: string, routeId: string) {
+    const driver = await this.getDriverOrThrow(userId);
+
+    const route = await this.prisma.route.findUnique({
+      where: { id: routeId },
+    });
+    if (!route) throw new NotFoundException('Route not found');
+    if (route.driver_id !== driver.id)
+      throw new ForbiddenException('Route is not assigned to you');
+    if (route.status !== 'scheduled') {
+      throw new ConflictException(
+        `Cannot reject a route that is ${route.status}`,
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.route.update({
+        where: { id: routeId },
+        data: { status: 'draft', driver_id: null },
+      }),
+      this.prisma.stop.updateMany({
+        where: { route_id: routeId },
+        data: { status: 'unassigned', driver_id: null },
+      }),
+    ]);
+
+    const manager = await this.prisma.user.findFirst({
+      where: {
+        company_id: route.company_id,
+        role: { in: ['manager', 'admin'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
+    if (manager) {
+      await this.notificationsService.create({
+        userId: manager.id,
+        companyId: route.company_id,
+        type: 'system_alert',
+        title: 'Route Rejected',
+        body: `Driver ${driver.user?.full_name || 'unknown'} rejected route "${route.name}".`,
+      });
+    }
+
+    return { message: 'Route rejected successfully' };
+  }
+
   async createAdHocRoute(userId: string, dto: CreateAdHocRouteDto) {
     const driver = await this.getDriverOrThrow(userId);
     const today = new Date().toISOString().split('T')[0];
@@ -839,6 +887,17 @@ export class DriverService {
       fleet_name: driver.company.name,
       fleet_code: driver.company.company_code,
     };
+  }
+
+  async updateFcmToken(userId: string, fcmToken: string) {
+    const driver = await this.getDriverOrThrow(userId);
+
+    await this.prisma.driver.update({
+      where: { id: driver.id },
+      data: { fcm_token: fcmToken },
+    });
+
+    return { message: 'FCM token updated successfully' };
   }
 
   async updateProfile(userId: string, dto: UpdateDriverProfileDto) {

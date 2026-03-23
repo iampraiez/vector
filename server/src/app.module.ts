@@ -23,6 +23,7 @@ import { RoutesModule } from './routes/routes.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MapModule } from './map/map.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { MapModule } from './map/map.module';
     TrackingModule,
     NotificationsModule,
     MapModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

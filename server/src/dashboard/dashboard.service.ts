@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, DriverStatus } from '@prisma/client';
@@ -19,6 +20,7 @@ import {
   CreateDriverDto,
   UpdateDriverDto,
   CreateApiKeyDto,
+  ReassignStopDto,
 } from './dto/dashboard.dto';
 import {
   UpdateCompanySettingsDto,
@@ -401,6 +403,34 @@ export class DashboardService {
     return order;
   }
 
+  async reassignStop(companyId: string, stopId: string, dto: ReassignStopDto) {
+    const stop = await this.prisma.stop.findUnique({
+      where: { id: stopId, company_id: companyId },
+    });
+
+    if (!stop) {
+      throw new NotFoundException('Stop not found');
+    }
+
+    if (stop.status !== 'failed' && stop.status !== 'returned') {
+      throw new ConflictException(
+        'Only failed or returned stops can be reassigned',
+      );
+    }
+
+    return this.prisma.stop.update({
+      where: { id: stopId },
+      data: {
+        status: dto.driver_id ? 'assigned' : 'unassigned',
+        driver_id: dto.driver_id || null,
+        failure_reason: null,
+        failure_notes: null,
+        arrived_at: null,
+        completed_at: null,
+      },
+    });
+  }
+
   private async getOrderStats(companyId: string) {
     const stops = await this.prisma.stop.groupBy({
       by: ['status'],
@@ -617,6 +647,31 @@ export class DashboardService {
   }
 
   async createDriverInvite(companyId: string, dto: CreateDriverDto) {
+    // Check seat limit
+    const billing = await this.prisma.billingRecord.findFirst({
+      where: {
+        company_id: companyId,
+        status: { in: ['active', 'trialing', 'past_due'] },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    if (!billing) {
+      throw new ForbiddenException(
+        'No active subscription found. Please subscribe to add drivers.',
+      );
+    }
+
+    const currentDrivers = await this.prisma.driver.count({
+      where: { company_id: companyId, is_active: true },
+    });
+
+    if (currentDrivers >= billing.seats_included) {
+      throw new ForbiddenException(
+        `Your plan limit (${billing.seats_included} drivers) has been reached. Please upgrade your plan to add more drivers.`,
+      );
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -1060,6 +1115,36 @@ export class DashboardService {
       },
     });
 
+    const newSeats =
+      dto.plan_id === 'free' ? 2 : dto.plan_id === 'starter' ? 5 : 20;
+    if (activeRecord && newSeats < activeRecord.seats_included) {
+      const currentDriverCount = await this.prisma.driver.count({
+        where: { company_id: companyId, is_active: true },
+      });
+      const excess = currentDriverCount - newSeats;
+      if (excess > 0) {
+        const driversToLock = await this.prisma.driver.findMany({
+          where: { company_id: companyId, is_active: true },
+          orderBy: { created_at: 'desc' },
+          take: excess,
+        });
+        await this.prisma.driver.updateMany({
+          where: { id: { in: driversToLock.map((d) => d.id) } },
+          data: { is_active: false },
+        });
+        const admins = await this.prisma.user.findMany({
+          where: { company_id: companyId, role: 'admin' },
+        });
+        for (const admin of admins) {
+          await this.mailService.sendMail(
+            admin.email,
+            'Plan Downgraded: Drivers Deactivated',
+            `<p>Your plan was downgraded to ${newSeats} seats. We automatically deactivated ${excess} of your most recently joined drivers. You can re-activate them by upgrading your plan.</p>`,
+          );
+        }
+      }
+    }
+
     // Update company subscription tier and UNLOCK if it was locked
     await this.prisma.company.update({
       where: { id: companyId },
@@ -1145,7 +1230,6 @@ export class DashboardService {
         api_keys: company.api_keys,
       },
       notifications: company.notification_settings,
-      route_settings: company.route_settings,
       billing,
     };
   }

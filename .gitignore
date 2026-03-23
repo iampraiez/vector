@@ -59,3 +59,5 @@ dist
 build
 
 config.json
+
+firebase-service-account.json

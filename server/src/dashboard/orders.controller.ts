@@ -20,6 +20,7 @@ import {
   CreateOrderDto,
   OrderQueryDto,
   UpdateOrderDto,
+  ReassignStopDto,
 } from './dto/dashboard.dto';
 
 @Controller('dashboard/orders')
@@ -64,6 +65,15 @@ export class OrdersController {
     @Body() dto: UpdateOrderDto,
   ) {
     return this.dashboardService.updateOrder(companyId, stopId, dto);
+  }
+
+  @Patch(':stop_id/reassign')
+  reassignOrder(
+    @CurrentUser('company_id') companyId: string,
+    @Param('stop_id') stopId: string,
+    @Body() dto: ReassignStopDto,
+  ) {
+    return this.dashboardService.reassignStop(companyId, stopId, dto);
   }
 
   @Delete(':stop_id')

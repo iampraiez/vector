@@ -348,7 +348,7 @@ ConfigModule.forRoot({
   validationOptions: { abortEarly: true },
 })
 ```
-The server will throw on startup and refuse to run if any required variable is missing.
+The server will throw on startup and refuse to run if any required variable is missing. — **[x] resolved**
 
 ---
 
@@ -357,7 +357,7 @@ Brute-force attacks on `/auth/sign-in`, `/auth/forgot-password`, and `/auth/sign
 **Fix:**
 1. Install `@nestjs/throttler` and `cache-manager`.
 2. Register `ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])` in `app.module.ts` (10 requests per minute per IP).
-3. Apply `@UseGuards(ThrottlerGuard)` to `AuthController` or add the guard globally.
+3. Apply `@UseGuards(ThrottlerGuard)` to `AuthController` or add the guard globally. — **[x] resolved**
 4. For sensitive routes like `/forgot-password`, use a stricter limit: `@Throttle({ default: { limit: 3, ttl: 60000 } })`.
 
 ---
@@ -373,7 +373,7 @@ await this.emailQueue.add('sendVerification', { email, token }, {
   removeOnFail: 100, // keep last 100 failed jobs for inspection
 });
 ```
-Apply this pattern to all 6+ `emailQueue.add` calls and all `accountQueue.add` calls.
+Apply this pattern to all 6+ `emailQueue.add` calls and all `accountQueue.add` calls. — **[x] resolved** (using `STANDARD_QUEUE_OPTIONS`)
 
 ---
 
@@ -386,7 +386,7 @@ new Redis(process.env.REDIS_URL, {
   enableReadyCheck: false,
   retryStrategy: (times) => Math.min(times * 100, 3000), // retry up to 3s
   reconnectOnError: (err) => err.message.includes('READONLY'),
-});
+}); — **[x] resolved**
 ```
 
 ---
@@ -694,7 +694,7 @@ The Prisma schema has `signature_url` and `signature_name` on the `Stop` model. 
 
 ## 10. Final Flow & Edge Case Audit Findings (3rd Pass)
 
-### 10.1 Web and Mobile Push Notification Triggers (Missing)
+### 10.1 [x] Web and Mobile Push Notification Triggers (Missing)
 
 Server `notification.processor.ts` only logs "TODO: emit via Socket.io". The DB notification record is created (`NotificationsService.create` works), but it is never delivered to anyone in real-time.
 
@@ -754,7 +754,7 @@ Server `notification.processor.ts` only logs "TODO: emit via Socket.io". The DB 
 
 ### 10.2 Order & Route Lifecycle Edge Cases
 
-**Rejecting Routes — Driver has no way to reject an assignment**
+**Rejecting Routes — Driver has no way to reject an assignment [x]**
 
 **Fix logic:**
 1. Add a `PATCH /driver/routes/:routeId/reject` endpoint to `DriverController`.

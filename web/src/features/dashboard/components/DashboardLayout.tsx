@@ -13,6 +13,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { useAuthStore } from "../../../store/authStore";
+import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
 import { useSettingsStore } from "../../../store/settingsStore";
 import {
   Sidebar,
@@ -175,6 +177,35 @@ function DashboardSidebar() {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    // Connect to backend WebSocket
+    const socket: Socket = io(
+      import.meta.env.VITE_API_URL || "http://localhost:3000",
+    );
+
+    socket.on("connect", () => {
+      console.log("Connected to notifications socket");
+      socket.emit("join", user.id);
+    });
+
+    socket.on("notification", (payload: Record<string, unknown>) => {
+      toast(payload.title as string, {
+        description: payload.body as string,
+        action: {
+          label: "View",
+          onClick: () => navigate("/dashboard/notifications"),
+        },
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?.id, navigate]);
 
   return (
     <SidebarProvider>

@@ -11,6 +11,7 @@ import { ProfileController } from './profile.controller';
 import { SettingsController } from './settings.controller';
 import { DriverNotificationsController } from './notifications.controller';
 import { OnboardingController } from './onboarding.controller';
+import { FcmController } from './fcm.controller';
 import { MailModule } from '../mail/mail.module';
 import { MapModule } from '../map/map.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -35,6 +36,7 @@ import { BullModule } from '@nestjs/bull';
     SettingsController,
     DriverNotificationsController,
     OnboardingController,
+    FcmController,
   ],
   providers: [DriverService],
 })

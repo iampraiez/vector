@@ -1,7 +1,17 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { useOrderStore, OrderStatus } from "../../../store/orderStore";
+import { useDriverStore } from "../../../store/driverStore";
 import { copyCustomerTrackingLink } from "../../../utils/trackingLink";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../components/ui/dialog";
 import {
   ArrowLeftIcon,
   UserIcon,
@@ -14,13 +24,28 @@ import {
   TruckIcon,
   PhoneIcon,
   LinkIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { Skeleton } from "../../../components/ui/skeleton";
 
 export function DashboardOrderDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { selectedOrder, fetchOrderDetail, isLoading } = useOrderStore();
+  const {
+    selectedOrder,
+    fetchOrderDetail,
+    isLoading,
+    isMutating,
+    reassignOrder,
+  } = useOrderStore();
+  const { drivers, fetchDrivers } = useDriverStore();
+
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignDriverId, setReassignDriverId] = useState<string>("");
+
+  useEffect(() => {
+    fetchDrivers();
+  }, [fetchDrivers]);
 
   useEffect(() => {
     if (id) {
@@ -191,6 +216,18 @@ export function DashboardOrderDetail() {
               </div>
 
               <div className="flex gap-3">
+                {order.status === "failed" && (
+                  <button
+                    onClick={() => {
+                      setReassignDriverId(order.driver_id || "");
+                      setShowReassignModal(true);
+                    }}
+                    className="px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
+                  >
+                    <ArrowPathIcon className="w-4 h-4" />
+                    Reassign
+                  </button>
+                )}
                 <button className="px-4 py-2 bg-white border border-black/8 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors">
                   Edit Order
                 </button>
@@ -423,6 +460,66 @@ export function DashboardOrderDetail() {
           </div>
         </div>
       </div>
+
+      <Dialog open={showReassignModal} onOpenChange={setShowReassignModal}>
+        <DialogContent className="sm:max-w-md bg-white border-none shadow-2xl rounded-2xl overflow-hidden p-0">
+          <DialogHeader className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+              Reassign Failed Order
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6">
+            <p className="text-[13px] text-gray-500 mb-4">
+              Select a driver to retry delivering order{" "}
+              <strong>{order.customer_name}</strong>, or leave unassigned to
+              send back to the pool.
+            </p>
+            <select
+              className="w-full bg-gray-50 border border-black/8 rounded-xl px-3 py-2.5 text-[13px] text-gray-700 outline-none focus:border-emerald-600 focus:bg-white transition-colors"
+              value={reassignDriverId}
+              onChange={(e) => setReassignDriverId(e.target.value)}
+            >
+              <option value="">-- Leave Unassigned --</option>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+            <button
+              onClick={() => setShowReassignModal(false)}
+              className="px-5 py-2 rounded-xl text-[13px] font-bold text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={isMutating}
+              onClick={async () => {
+                try {
+                  await reassignOrder(order.id, {
+                    driver_id: reassignDriverId || undefined,
+                  });
+                  toast.success("Order reassigned successfully");
+                  setShowReassignModal(false);
+                } catch (err: unknown) {
+                  const error = err as AxiosError<{ message?: string }>;
+                  toast.error(
+                    error.response?.data?.message || "Failed to reassign",
+                  );
+                }
+              }}
+              className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-[13px] font-bold shadow-sm hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isMutating && (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
+              Reassign
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

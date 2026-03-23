@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Param,
   UseGuards,
   HttpCode,
@@ -27,6 +28,14 @@ export class RoutesController {
     @Param('route_id') routeId: string,
   ) {
     return this.driverService.getRoutePreview(userId, routeId);
+  }
+
+  @Patch(':route_id/reject')
+  rejectRoute(
+    @CurrentUser('id') userId: string,
+    @Param('route_id') routeId: string,
+  ) {
+    return this.driverService.rejectRoute(userId, routeId);
   }
 
   @Post(':route_id/start')

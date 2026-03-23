@@ -237,3 +237,9 @@ export class CreateApiKeyDto {
   @IsOptional()
   name?: string;
 }
+
+export class ReassignStopDto {
+  @IsOptional()
+  @IsString()
+  driver_id?: string;
+}

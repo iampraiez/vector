@@ -7,6 +7,9 @@ import 'package:client/core/theme/theme_controller.dart';
 import 'package:client/core/providers/route_progress_provider.dart';
 import 'package:client/core/providers/auth_provider.dart';
 import 'package:client/navigation/router.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:client/core/services/driver_api_service.dart';
 
 final themeController = ThemeController();
 
@@ -20,6 +23,20 @@ final authProvider = AuthProvider();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterForegroundTask.initCommunicationPort();
+
+  // Initialize Firebase (wrapped in try-catch for missing google-services.json)
+  try {
+    await Firebase.initializeApp();
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission();
+    final token = await messaging.getToken();
+    if (token != null) {
+      // Fire and forget - will 401 fail gracefully if authProvider hasn't logged in yet
+      DriverApiService.instance.registerFcmToken(token).catchError((_) {});
+    }
+  } catch (e) {
+    debugPrint('Firebase init failed (missing strict config?): $e');
+  }
 
   // Initialize offline sync (Hive + connectivity monitor)
   await OfflineService.init();

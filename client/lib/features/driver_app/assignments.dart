@@ -181,6 +181,58 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     }
   }
 
+  Future<void> _rejectRoute(BuildContext context, Map<String, dynamic> item) async {
+    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    final isRoute = item['type'] == 'route';
+    if (!isRoute) return;
+
+    final itemId = item['id'] as String;
+
+    if (!context.mounted) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reject Route?'),
+        content: const Text('Are you sure you want to reject this assignment?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _startingRoutes.add(itemId));
+    try {
+      await _api.rejectRoute(itemId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Route rejected')),
+        );
+        _loadData(forceRefresh: true);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to reject: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _startingRoutes.remove(itemId));
+    }
+  }
+
   void _toggleSelection(String id) {
     setState(() {
       if (_selectedStopIds.contains(id)) {
@@ -477,6 +529,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             date: item['date'] ?? '',
             isStarting: _startingRoutes.contains(item['id']),
             onStart: () => _startRoute(context, item),
+            onReject: isRoute ? () => _rejectRoute(context, item) : null,
             onContinue: () {
               RouteProgressScope.of(context).loadStops(stops);
               context.push('/navigation');
@@ -631,6 +684,7 @@ class _RouteCard extends StatelessWidget {
   final bool isSelectionMode;
   final VoidCallback? onLongPress;
   final VoidCallback? onSelectionToggle;
+  final VoidCallback? onReject;
 
   const _RouteCard({
     required this.routeId,
@@ -650,6 +704,7 @@ class _RouteCard extends StatelessWidget {
     this.isSelectionMode = false,
     this.onLongPress,
     this.onSelectionToggle,
+    this.onReject,
   });
 
 
@@ -1010,29 +1065,58 @@ class _RouteCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (isUpcoming && date == DateTime.now().toString().split(' ')[0]) ...[
+                    if (isUpcoming) ...[
                       const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: isStarting ? null : onStart,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2563EB),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Row(
+                        children: [
+                          if (onReject != null) ...[
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: isStarting ? null : onReject,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.error,
+                                  side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                ),
+                                child: const Text(
+                                  'Reject',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 11),
-                          ),
-                          child: const Text(
-                            'Start Early',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 12),
+                          ],
+                          if (date == DateTime.now().toString().split(' ')[0])
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: isStarting ? null : onStart,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                ),
+                                child: const Text(
+                                  'Start Early',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                          if (date != DateTime.now().toString().split(' ')[0] && onReject == null)
+                            const SizedBox.shrink(),
+                        ],
                       ),
                     ],
                   ],
