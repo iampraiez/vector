@@ -7,7 +7,12 @@ import '../constants/api_constants.dart';
 /// Auto-injects the JWT access token on every request, and silently refreshes
 /// on 401 (one retry) before propagating an error.
 class DriverApiService {
-  static final DriverApiService instance = DriverApiService._();
+  static DriverApiService _instance = DriverApiService._();
+  static DriverApiService get instance => _instance;
+
+  @visibleForTesting
+  static set instance(DriverApiService mock) => _instance = mock;
+
   DriverApiService._() {
     _dio.interceptors.add(_AuthInterceptor(_dio, _storage));
   }

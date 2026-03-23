@@ -7,7 +7,7 @@ import { NotificationProcessor } from './notification.processor';
 import { AccountProcessor } from './account.processor';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { Queue } from 'bullmq';
+import * as Bull from 'bull';
 
 @Global()
 @Module({
@@ -39,7 +39,9 @@ import { Queue } from 'bullmq';
   exports: [BullModule],
 })
 export class QueueModule implements OnModuleInit {
-  constructor(@InjectQueue('account') private readonly accountQueue: Queue) {}
+  constructor(
+    @InjectQueue('account') private readonly accountQueue: Bull.Queue,
+  ) {}
 
   async onModuleInit() {
     // Register daily trial expiry check
@@ -47,7 +49,7 @@ export class QueueModule implements OnModuleInit {
       'checkTrialExpiry',
       {},
       {
-        repeat: { pattern: '0 0 * * *' },
+        repeat: { cron: '0 0 * * *' },
         jobId: 'daily-trial-expiry-check',
       },
     );
@@ -57,7 +59,7 @@ export class QueueModule implements OnModuleInit {
       'refreshAllOrderStatuses',
       {},
       {
-        repeat: { pattern: '*/15 * * * *' },
+        repeat: { cron: '*/15 * * * *' },
         jobId: 'periodic-order-status-refresh',
       },
     );

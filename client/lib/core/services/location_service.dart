@@ -4,7 +4,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
 
 class LocationService {
-  static final LocationService instance = LocationService._();
+  static LocationService _instance = LocationService._();
+  static LocationService get instance => _instance;
+
+  @visibleForTesting
+  static set instance(LocationService mock) => _instance = mock;
+
   LocationService._();
 
   /// Check if location services (GPS) are enabled on the device.

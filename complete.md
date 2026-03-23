@@ -669,7 +669,7 @@ The Prisma schema has `signature_url` and `signature_name` on the `Stop` model. 
 
 **Resolved:** `vite.config.ts` test block + `src/test/setup.ts`. **`format.ts`** — `formatTime` / `formatLastUpdatedAgo` extracted from customer tracking page; **`format.test.ts`** covers null input and relative ago strings. **`Tracking.test.tsx`** — mocked `api.get` and `qrcode.react`; asserts **Out for Delivery** / **Delivered** (via description + badge). Run: `pnpm test` in `web/`.
 
-### 8.3 [ ] Flutter — widget tests (still open)
+### 8.3 [x] Flutter — widget tests
 
 **Target:** `client/test/proof_delivery_test.dart`, `client/test/home_test.dart` per scenarios in the original §8 checklist (PoD enablement + duty toggle).
 

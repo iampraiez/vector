@@ -127,56 +127,7 @@ export class RefreshTokenDto {
   device_id?: string;
 }
 
-export class UpdateDriverProfileDto {
-  @IsString()
-  @IsOptional()
-  @MinLength(2)
-  @MaxLength(50)
-  full_name?: string;
-
-  @IsString()
-  @IsOptional()
-  @Matches(/^\+\d{1,3}\d{10}$/, {
-    message: 'Phone number must be in format +2349166072665',
-  })
-  phone?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(2)
-  @MaxLength(30)
-  vehicle_type?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(2)
-  @MaxLength(30)
-  vehicle_make?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(1)
-  @MaxLength(30)
-  vehicle_model?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(2)
-  @MaxLength(15)
-  vehicle_plate?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(3)
-  @MaxLength(20)
-  vehicle_color?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(5)
-  @MaxLength(30)
-  license_number?: string;
-}
+export { UpdateDriverProfileDto } from '../../driver/dto/driver.dto';
 
 export class JoinCompanyDto {
   @IsString()

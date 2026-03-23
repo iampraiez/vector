@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import * as Bull from 'bull';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -27,7 +27,7 @@ export class AccountProcessor {
 
   @Process('clearDataReport')
   async handleClearDataReport(
-    job: Job<{
+    job: Bull.Job<{
       companyId: string;
       email: string;
       /** Optional copy for fleet when a driver clears their own data */
@@ -132,7 +132,7 @@ export class AccountProcessor {
 
   @Process('exportHistory')
   async handleExportHistory(
-    job: Job<{
+    job: Bull.Job<{
       userId: string;
       driverId: string;
       email: string;
@@ -213,7 +213,7 @@ export class AccountProcessor {
   }
 
   @Process('deleteAccount')
-  async handleDeleteAccount(job: Job<{ userId: string }>) {
+  async handleDeleteAccount(job: Bull.Job<{ userId: string }>) {
     const { userId } = job.data;
     this.logger.log(`Running delayed deletion for user ${userId}`);
 

@@ -13,6 +13,7 @@ import { BullModule } from '@nestjs/bull';
 import { MapModule } from '../map/map.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TrackingModule } from '../tracking/tracking.module';
+import { TrackingService } from 'src/tracking/tracking.service';
 
 @Module({
   imports: [
@@ -32,6 +33,6 @@ import { TrackingModule } from '../tracking/tracking.module';
     SettingsController,
     DashboardNotificationsController,
   ],
-  providers: [DashboardService],
+  providers: [DashboardService, TrackingService],
 })
 export class DashboardModule {}

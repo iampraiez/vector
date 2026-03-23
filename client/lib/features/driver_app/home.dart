@@ -74,8 +74,6 @@ class _HomeSummary {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  final _api = DriverApiService.instance;
-  final _locationService = LocationService.instance;
   static const _cacheKey = 'cache_home_summary';
   static const _cacheTtlMinutes = 5;
 
@@ -139,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     try {
       final newStatus = online ? 'active' : 'offline';
-      await _api.updateStatus(newStatus);
+      await DriverApiService.instance.updateStatus(newStatus);
       
       // Reload summary immediately to get the fresh last_active_at from backend
       await _loadData(forceRefresh: true);
@@ -176,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkLocationStatus() async {
-    final isEnabled = await _locationService.isServiceEnabled();
-    final permission = await _locationService.checkPermission();
+    final isEnabled = await LocationService.instance.isServiceEnabled();
+    final permission = await LocationService.instance.checkPermission();
     if (mounted) {
       setState(() {
         _isLocationEnabled = isEnabled;
@@ -188,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _initLocationListener() {
     _locationServiceSubscription =
-        _locationService.getServiceStatusStream().listen((status) {
+        LocationService.instance.getServiceStatusStream().listen((status) {
           if (mounted) {
             setState(() {
               _isLocationEnabled = status == ServiceStatus.enabled;
@@ -224,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     // Fetch from API
     try {
-      final data = await _api.getHomeSummary();
+      final data = await DriverApiService.instance.getHomeSummary();
       final summary = _HomeSummary.fromJson(data);
       await _cache(summary);
       if (mounted) {
@@ -252,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _refreshInBackground() async {
     try {
-      final data = await _api.getHomeSummary();
+      final data = await DriverApiService.instance.getHomeSummary();
       final summary = _HomeSummary.fromJson(data);
       await _cache(summary);
       if (mounted) setState(() => _summary = summary);
@@ -375,41 +373,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                dateStr.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textMuted,
-                                  letterSpacing: 0.66,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _summary?.companyName != null && _summary!.companyName!.isNotEmpty
-                                    ? _summary!.companyName!
-                                    : '$greeting, $userName',
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.6,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              if (_summary?.companyName != null && _summary!.companyName!.isNotEmpty)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  'Logged in as $userName',
+                                  dateStr.toUpperCase(),
                                   style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textMuted,
+                                    letterSpacing: 0.66,
                                   ),
                                 ),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  _summary?.companyName != null && _summary!.companyName!.isNotEmpty
+                                      ? _summary!.companyName!
+                                      : '$greeting, $userName',
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.6,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (_summary?.companyName != null && _summary!.companyName!.isNotEmpty)
+                                  Text(
+                                    'Logged in as $userName',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 12),
                           InkWell(
                             onTap: () => context.push('/notifications'),
                             borderRadius: BorderRadius.circular(12),
@@ -459,18 +464,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (!_isLocationEnabled) {
       message = 'Location services are disabled';
       actionLabel = 'Turn On';
-      onTap = () => _locationService.openLocationSettings();
+      onTap = () => LocationService.instance.openLocationSettings();
     } else if (_locationPermission == LocationPermission.denied) {
       message = 'Location permission is required';
       actionLabel = 'Grant';
       onTap = () async {
-        final p = await _locationService.requestPermission();
+        final p = await LocationService.instance.requestPermission();
         setState(() => _locationPermission = p);
       };
     } else if (_locationPermission == LocationPermission.deniedForever) {
       message = 'Location access is blocked';
       actionLabel = 'Settings';
-      onTap = () => _locationService.openSettings();
+      onTap = () => LocationService.instance.openSettings();
     }
 
     return Container(
@@ -647,7 +652,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Switch.adaptive(
-                      value: s?.status != 'offline',
+                      value: s != null && s.status != 'offline',
                       activeTrackColor: AppColors.primary,
                       onChanged: _toggleDuty,
                     ),
@@ -676,7 +681,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 builder: (_) => const Center(child: CircularProgressIndicator()),
               );
               try {
-                final routeData = await _api.getRoutePreview(s!.activeRouteId!);
+                final routeData = await DriverApiService.instance.getRoutePreview(s!.activeRouteId!);
                 if (!context.mounted) return;
                 Navigator.pop(context); // close dialog
                 final stops = (routeData['stops'] as List? ?? []).cast<Map<String, dynamic>>();

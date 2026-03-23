@@ -145,7 +145,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
     BuildContext context,
     Map<String, dynamic> item,
   ) async {
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     final isRoute = item['type'] == 'route';
     final itemId = item['id'] as String;
     setState(() => _startingRoutes.add(itemId));
@@ -182,7 +182,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   }
 
   Future<void> _rejectRoute(BuildContext context, Map<String, dynamic> item) async {
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     final isRoute = item['type'] == 'route';
     if (!isRoute) return;
 

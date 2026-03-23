@@ -9,6 +9,14 @@ import './driver_api_service.dart';
 /// Lightweight offline helper. Works by attempting a quick HEAD request.
 /// Falls back to catching socket/connection errors from Dio.
 class OfflineService {
+  static OfflineService _instance = OfflineService._();
+  static OfflineService get instance => _instance;
+
+  @visibleForTesting
+  static set instance(OfflineService mock) => _instance = mock;
+
+  OfflineService._();
+
   static const String _boxName = 'pending_deliveries';
 
   static Future<void> init() async {
@@ -19,13 +27,13 @@ class OfflineService {
     // Listen for connectivity changes to trigger sync
     Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
       if (results.any((result) => result != ConnectivityResult.none)) {
-        syncPendingDeliveries();
+        instance.syncPendingDeliveries();
       }
     });
 
   }
 
-  static Future<bool> isOffline() async {
+  Future<bool> isOffline() async {
     try {
       final dio = Dio(
         BaseOptions(
@@ -41,7 +49,7 @@ class OfflineService {
   }
 
   /// Saves a delivery to local Hive box for later sync.
-  static Future<void> queueDelivery({
+  Future<void> queueDelivery({
     required String stopId,
     required String localPhotoPath,
     String? qrCode,
@@ -60,7 +68,7 @@ class OfflineService {
   }
 
   /// Attempts to sync all pending deliveries in the box.
-  static Future<void> syncPendingDeliveries() async {
+  Future<void> syncPendingDeliveries() async {
     final box = Hive.box<PendingDelivery>(_boxName);
     if (box.isEmpty) return;
 
@@ -76,7 +84,7 @@ class OfflineService {
 
       try {
         // 1. Upload photo to Cloudinary
-        final cloudPhotoUrl = await CloudinaryService.upload(
+        final cloudPhotoUrl = await CloudinaryService.instance.upload(
           filePath: pending.localPhotoPath,
         );
 
@@ -104,7 +112,7 @@ class OfflineService {
   }
 
   /// Shows a styled offline snackbar. Returns true if offline.
-  static Future<bool> checkAndShowOfflineSnackBar(BuildContext context) async {
+  Future<bool> checkAndShowOfflineSnackBar(BuildContext context) async {
     final offline = await isOffline();
     if (offline && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +144,7 @@ class OfflineService {
   }
 
   /// Returns an offline banner widget to show at the top of screens.
-  static Widget offlineBanner() {
+  Widget offlineBanner() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -160,4 +168,3 @@ class OfflineService {
     );
   }
 }
-

@@ -283,7 +283,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
             children: [
-              if (_isOffline) OfflineService.offlineBanner(),
+              if (_isOffline) OfflineService.instance.offlineBanner(),
               // Header
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -1144,7 +1144,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _handleExport(BuildContext context, String range) async {
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     if (!context.mounted) return;
     context.pop();
 

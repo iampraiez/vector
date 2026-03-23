@@ -126,7 +126,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markAllAsRead() async {
     // Guard for offline
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     if (!mounted) return;
     // Optimistic UI update
     setState(() {
@@ -201,7 +201,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
             children: [
-              if (_isOffline) OfflineService.offlineBanner(),
+              if (_isOffline) OfflineService.instance.offlineBanner(),
               // Header
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),

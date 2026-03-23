@@ -34,7 +34,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
     if (!_photo || !_qrScanned) return;
 
     if (!context.mounted) return;
-    final isOffline = await OfflineService.isOffline();
+    final isOffline = await OfflineService.instance.isOffline();
     if (!mounted) return;
 
     if (!Env.isCloudinaryConfigured && !isOffline) {
@@ -73,7 +73,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
     try {
       if (isOffline) {
         // Queue for later sync
-        await OfflineService.queueDelivery(
+        await OfflineService.instance.queueDelivery(
           stopId: stop.id,
           localPhotoPath: localPath,
           qrCode: _scannedQrCode,
@@ -82,7 +82,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
               : _notesController.text.trim(),
         );
       } else {
-        cloudPhotoUrl = await CloudinaryService.upload(filePath: localPath);
+        cloudPhotoUrl = await CloudinaryService.instance.upload(filePath: localPath);
         if (!mounted) return;
         setState(() => _uploadingPhoto = false);
 

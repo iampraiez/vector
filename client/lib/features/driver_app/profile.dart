@@ -276,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveVehicleInfo() async {
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     if (!mounted) return;
     setState(() => _isSavingVehicle = true);
     try {
@@ -304,7 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveProfileInfo() async {
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     if (!mounted) return;
     setState(() => _isSavingProfile = true);
     try {
@@ -470,7 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (_isOffline) OfflineService.offlineBanner(),
+            if (_isOffline) OfflineService.instance.offlineBanner(),
             
             // Header
             Container(

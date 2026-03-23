@@ -106,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _handleOtpAction(String action) async {
     // Block dangerous actions if offline
-    if (await OfflineService.checkAndShowOfflineSnackBar(context)) return;
+    if (await OfflineService.instance.checkAndShowOfflineSnackBar(context)) return;
     if (!mounted) return;
     // Show verification dialog immediately
     _showEmailVerificationDialog(action);

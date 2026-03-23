@@ -1,12 +1,18 @@
 import 'package:dio/dio.dart';
-
+import 'package:flutter/foundation.dart';
 import '../config/env.dart';
 
 /// Unsigned image upload to Cloudinary (same flow as web: client uploads, sends URL to API).
 class CloudinaryService {
+  static CloudinaryService _instance = CloudinaryService._();
+  static CloudinaryService get instance => _instance;
+
+  @visibleForTesting
+  static set instance(CloudinaryService mock) => _instance = mock;
+
   CloudinaryService._();
 
-  static final Dio _dio = Dio(
+  final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 60),
@@ -14,7 +20,7 @@ class CloudinaryService {
   );
 
   /// Uploads a local image file; returns `secure_url` from Cloudinary.
-  static Future<String> upload({required String filePath}) async {
+  Future<String> upload({required String filePath}) async {
     if (!Env.isCloudinaryConfigured) {
       throw StateError(
         'Cloudinary is not configured. Build with '
