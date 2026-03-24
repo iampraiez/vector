@@ -195,7 +195,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final unreadCount = _notifications.where((n) => !n.read).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),

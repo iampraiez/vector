@@ -353,9 +353,13 @@ function OtpVerifyModal({
           <button
             onClick={() => onVerify(otp)}
             disabled={otp.length !== 6 || isVerifying}
-            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[13px] rounded-xl shadow-lg transition-all disabled:opacity-50"
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[13px] rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
           >
-            {isVerifying ? "Verifying..." : "Verify"}
+            {isVerifying ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              "Verify"
+            )}
           </button>
         </div>
       </div>
@@ -575,9 +579,13 @@ export function DashboardSettings() {
                 <button
                   onClick={() => regenerateAccessCode()}
                   disabled={isMutating}
-                  className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+                  className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50 min-w-24 flex items-center justify-center"
                 >
-                  {isMutating ? "..." : "Regenerate"}
+                  {isMutating ? (
+                    <div className="w-3.5 h-3.5 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
+                  ) : (
+                    "Regenerate"
+                  )}
                 </button>
               )}
             </div>

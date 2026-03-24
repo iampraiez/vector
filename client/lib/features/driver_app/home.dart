@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final userName = AuthScope.of(context).user?.name.split(' ').first ?? 'Driver';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       bottomNavigationBar: const AppBottomNav(),
       body: SafeArea(
         child: RefreshIndicator(

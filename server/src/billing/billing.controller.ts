@@ -17,11 +17,14 @@ import * as crypto from 'crypto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { BillingService } from './billing.service';
-import { PaystackService } from './paystack.service';
+import type { PaystackWebHookPayload } from './billing.service';
+import {
+  PaystackService,
+  PaystackTransactionVerifyResponse,
+} from './paystack.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
-import type { PaystackWebHookPayload } from './billing.service';
 import type { User } from '@prisma/client';
 
 interface RequestWithRawBody extends Request {
@@ -132,12 +135,12 @@ export class BillingController {
       }
 
       // Verify with Paystack
-      let verification: unknown;
+      let verification: any;
       try {
         verification = await this.paystackService.verifyTransaction(
           body.reference,
         );
-      } catch (error) {
+      } catch (error: any) {
         this.logger.warn(
           `Paystack verification failed for reference: ${body.reference}`,
           error instanceof Error ? error.message : 'Unknown error',
@@ -153,6 +156,24 @@ export class BillingController {
       }
 
       // At this point, verification succeeded and transaction_status is 'success'
+      const metadata = (verification as PaystackTransactionVerifyResponse)
+        .metadata;
+      const planId = metadata?.plan_id || 'starter';
+      const billingCycle = metadata?.billing_cycle || 'monthly';
+
+      // Calculate period end
+      const periodEnd = new Date();
+      if (planId !== 'free') {
+        if (billingCycle === 'annual') {
+          periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        } else {
+          periodEnd.setMonth(periodEnd.getMonth() + 1);
+        }
+      } else {
+        periodEnd.setFullYear(periodEnd.getFullYear() + 10);
+      }
+
+      const seats = planId === 'free' ? 2 : planId === 'starter' ? 5 : 20;
 
       // Get user's company
       const userData = await this.prisma.user.findUnique({
@@ -173,12 +194,12 @@ export class BillingController {
         billingRecord = await this.prisma.billingRecord.create({
           data: {
             company_id: userData.company_id,
-            plan_id: 'starter',
+            plan_id: planId,
             status: 'active',
             paystack_reference: body.reference,
             current_period_start: new Date(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            seats_included: 5,
+            current_period_end: periodEnd,
+            seats_included: seats,
           },
         });
       } else {
@@ -188,22 +209,36 @@ export class BillingController {
           data: {
             paystack_reference: body.reference,
             status: 'active',
+            plan_id: planId,
             current_period_start: new Date(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            current_period_end: periodEnd,
+            seats_included: seats,
           },
         });
       }
+
+      // Update company tier
+      await this.prisma.company.update({
+        where: { id: userData.company_id },
+        data: {
+          subscription_tier: planId,
+          subscription_locked: false,
+        },
+      });
 
       // Create invoice record
       const invoice = await this.prisma.invoice.create({
         data: {
           company_id: userData.company_id,
-          amount_cents: (verification as { amount: number }).amount || 0,
+          amount_cents:
+            (verification as PaystackTransactionVerifyResponse).amount || 0,
           status: 'paid',
+          description: `Plan: ${planId} (${billingCycle})`,
           invoice_pdf_url: '',
           paid_at: new Date(),
           period_start: new Date(),
-          period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          period_end: periodEnd,
+          paystack_invoice_id: body.reference,
         },
       });
 

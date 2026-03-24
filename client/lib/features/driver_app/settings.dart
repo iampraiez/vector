@@ -288,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),

@@ -276,7 +276,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         : combinedBarData.reduce((a, b) => a > b ? a : b).clamp(1, 999);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       bottomNavigationBar: const AppBottomNav(),
       body: SafeArea(
         child: ConstrainedBox(

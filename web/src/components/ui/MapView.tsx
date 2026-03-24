@@ -122,11 +122,26 @@ function MapViewUpdater({
   const map = useMap();
   const hasMovedRef = useRef(false);
 
+  // Safety check: ensure the map instance is fully initialized and has a pane
+  // This prevents "Cannot read properties of undefined (reading '_leaflet_pos')"
+  useEffect(() => {
+    if (!map) return;
+
+    // Invalidate size after a short delay to account for modal/container transitions
+    const timer = setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch (err) {
+        console.warn("Map invalidateSize error caught:", err);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [map, shouldAutoCenter]);
+
   useEffect(() => {
     if (!shouldAutoCenter) return;
 
-    // Safety check: ensure the map instance is fully initialized and has a pane
-    // This prevents "Cannot read properties of undefined (reading '_leaflet_pos')"
     if (!map || !(map as unknown as { _mapPane: unknown })._mapPane) return;
 
     // Only fly to on initial load or when auto-center is explicitly re-enabled

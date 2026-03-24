@@ -220,7 +220,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
         : const LatLng(6.5244, 3.3792); // Lagos default
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
           children: [

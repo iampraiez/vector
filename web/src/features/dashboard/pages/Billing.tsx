@@ -573,10 +573,14 @@ export function DashboardBilling() {
               toast.error("Could not cancel subscription.");
             }
           }}
-          className="text-[12px] font-medium text-gray-400 uppercase tracking-[2px] hover:text-red-500 transition-colors cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed"
+          className="text-[12px] font-medium text-gray-400 uppercase tracking-[2px] hover:text-red-500 transition-colors cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
         >
-          Cancel Fleet Subscription & Services
-          <div className="h-0.5 w-0 group-hover:w-full bg-red-400 transition-all duration-300 mx-auto mt-1" />
+          {isMutating ? (
+            <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+          ) : (
+            "Cancel Fleet Subscription & Services"
+          )}
+          <div className="h-0.5 w-0 group-hover:w-full bg-red-400 transition-all duration-300 mx-auto mt-1 absolute bottom-0 left-0" />
         </button>
       </div>
     </div>

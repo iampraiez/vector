@@ -125,6 +125,23 @@ export function DashboardTracking() {
     setShouldAutoCenter(true);
   };
 
+  // Dispatch resize event when toggling expansion to fix Leaflet gray tiles
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 300); // Wait for transition
+    return () => clearTimeout(timer);
+  }, [isExpanded]);
+
+  // Handle Escape key to exit expanded mode
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsExpanded(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
   return (
     <div className="p-4 md:p-8 max-w-350 mx-auto">
       {/* Header & Toggle */}
@@ -228,14 +245,24 @@ export function DashboardTracking() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
             {/* Map Area */}
             <div
-              className={`${isExpanded ? "fixed inset-0 z-50 p-4 md:p-8 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300" : selectedDriver ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-500`}
+              className={`${isExpanded ? "fixed inset-0 z-100 bg-white flex flex-col animate-in fade-in duration-300" : selectedDriver ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-500`}
             >
               <div
-                className={`bg-white border border-black/8 rounded-2xl overflow-hidden shadow-2xl flex flex-col ${isExpanded ? "w-full h-full max-w-7xl max-h-[90vh]" : "h-[80vh] min-h-150"}`}
+                className={`bg-white ${isExpanded ? "w-full h-full" : "border border-black/8 rounded-2xl overflow-hidden shadow-2xl h-[80vh] min-h-150"} flex flex-col`}
               >
-                {/* Map Toolbar */}
-                <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between shrink-0 bg-linear-to-r from-white to-gray-50/50">
+                {/* Map Toolbar / Header */}
+                <div
+                  className={`px-6 py-4 border-b border-black/5 flex items-center justify-between shrink-0 ${isExpanded ? "bg-white" : "bg-linear-to-r from-white to-gray-50/50"}`}
+                >
                   <div className="flex items-center gap-3">
+                    {isExpanded && (
+                      <button
+                        onClick={() => setIsExpanded(false)}
+                        className="p-2 hover:bg-gray-50 rounded-xl border border-black/5 transition-colors cursor-pointer group mr-2"
+                      >
+                        <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 rotate-180" />
+                      </button>
+                    )}
                     <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center transition-transform hover:rotate-12">
                       <MapPinIcon className="w-4.5 h-4.5 text-emerald-600" />
                     </div>
@@ -256,6 +283,17 @@ export function DashboardTracking() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {isExpanded && (
+                      <div className="hidden sm:block mr-4">
+                        <p className="text-[11px] text-gray-400 font-medium tracking-wide bg-gray-50 px-3 py-1.5 rounded-lg border border-black/5">
+                          Press{" "}
+                          <span className="text-emerald-600 font-bold uppercase">
+                            Esc
+                          </span>{" "}
+                          to return
+                        </p>
+                      </div>
+                    )}
                     <button
                       onClick={handleLocateMe}
                       disabled={isLocating}

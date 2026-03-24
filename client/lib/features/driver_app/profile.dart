@@ -465,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool hasVehicleInfo = user?.vehiclePlate != null && user!.vehiclePlate!.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.white,
       bottomNavigationBar: const AppBottomNav(),
       body: SafeArea(
         child: Column(

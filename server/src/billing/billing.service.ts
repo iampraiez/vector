@@ -11,6 +11,12 @@ interface PaystackEventData {
     email: string;
     customer_code?: string;
   };
+  metadata?: {
+    company_id: string;
+    plan_id: string;
+    plan_name: string;
+    billing_cycle: string;
+  };
 }
 
 export interface PaystackWebHookPayload {
@@ -50,20 +56,34 @@ export class BillingService {
     const reference = data.reference;
     if (!reference) return;
 
-    // Find the company's billing record
-    const billingRecord = await this.prisma.billingRecord.findFirst({
-      where: {
-        company: {
-          users: {
-            some: {
-              email: data.customer.email,
-              role: 'admin',
+    this.logger.log(
+      `Processing successful charge ${reference} with metadata: ${JSON.stringify(data.metadata)}`,
+    );
+
+    // Use metadata if available, fallback to email lookup
+    let billingRecord;
+    if (data.metadata?.company_id) {
+      billingRecord = await this.prisma.billingRecord.findFirst({
+        where: { company_id: data.metadata.company_id },
+        include: { company: true },
+      });
+    }
+
+    if (!billingRecord) {
+      billingRecord = await this.prisma.billingRecord.findFirst({
+        where: {
+          company: {
+            users: {
+              some: {
+                email: data.customer.email,
+                role: 'admin',
+              },
             },
           },
         },
-      },
-      include: { company: true },
-    });
+        include: { company: true },
+      });
+    }
 
     if (!billingRecord) {
       this.logger.warn(
@@ -72,26 +92,42 @@ export class BillingService {
       return;
     }
 
-    // Determine plan details
-    const isPaid = billingRecord.plan_id !== 'free';
-    const periodEnd = isPaid
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-      : new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000); // 10 years
+    // Determine plan details from metadata or current record
+    const planId = data.metadata?.plan_id || billingRecord.plan_id;
+    const billingCycle = data.metadata?.billing_cycle || 'monthly';
+    const isPaid = planId !== 'free';
 
-    const seats =
-      billingRecord.plan_id === 'free'
-        ? 2
-        : billingRecord.plan_id === 'starter'
-          ? 5
-          : 20;
+    // Calculate period end
+    const periodEnd = new Date();
+    if (isPaid) {
+      if (billingCycle === 'annual') {
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      } else {
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+      }
+    } else {
+      periodEnd.setFullYear(periodEnd.getFullYear() + 10); // 10 years for free
+    }
+
+    const seats = planId === 'free' ? 2 : planId === 'starter' ? 5 : 20;
 
     // Update the billing record
     await this.prisma.billingRecord.update({
       where: { id: billingRecord.id },
       data: {
         status: 'active',
+        plan_id: planId,
         current_period_end: periodEnd,
         seats_included: seats,
+        paystack_reference: reference,
+      },
+    });
+
+    await this.prisma.company.update({
+      where: { id: billingRecord.company_id },
+      data: {
+        subscription_tier: planId,
+        subscription_locked: false,
       },
     });
 
@@ -101,15 +137,17 @@ export class BillingService {
         company_id: billingRecord.company_id,
         amount_cents: data.amount,
         status: 'paid',
+        description: `Plan: ${planId} (${billingCycle})`,
         invoice_pdf_url: data.receipt_url || '',
         paid_at: new Date(data.paid_at || Date.now()),
         period_start: new Date(),
         period_end: periodEnd,
+        paystack_invoice_id: reference,
       },
     });
 
     this.logger.log(
-      `Activated billing for company ${billingRecord.company_id}`,
+      `Activated/Renewed billing for company ${billingRecord.company_id} (Plan: ${planId})`,
     );
   }
 

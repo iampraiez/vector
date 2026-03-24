@@ -14,7 +14,7 @@ interface PaystackTransactionInitResponse {
   };
 }
 
-interface PaystackCustomerCreateResponse {
+export interface PaystackCustomerCreateResponse {
   status: boolean;
   message: string;
   data?: {
@@ -23,7 +23,7 @@ interface PaystackCustomerCreateResponse {
   };
 }
 
-interface PaystackTransactionVerifyResponse {
+export interface PaystackTransactionVerifyResponse {
   status: string;
   amount: number;
   currency: string;
@@ -40,6 +40,12 @@ interface PaystackTransactionVerifyResponse {
     country_code: string;
     brand: string;
     should_remember_customer: boolean;
+  };
+  metadata?: {
+    company_id: string;
+    plan_id: string;
+    plan_name: string;
+    billing_cycle: string;
   };
 }
 

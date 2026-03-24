@@ -286,7 +286,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
 
             Expanded(
               child: Container(
-                color: const Color(0xFFF8FAF9),
+                color: AppColors.white,
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
                   children: [

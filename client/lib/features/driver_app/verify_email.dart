@@ -88,7 +88,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

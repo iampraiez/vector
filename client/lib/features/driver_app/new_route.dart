@@ -211,7 +211,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
     bool canCreate = _nameController.text.isNotEmpty && _stops.any((s) => s['address'].isNotEmpty);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
           children: [

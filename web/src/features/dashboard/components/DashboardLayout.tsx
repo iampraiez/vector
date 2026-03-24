@@ -113,7 +113,7 @@ function DashboardSidebar() {
       </SidebarHeader>
 
       {/* ── Nav items ── */}
-      <SidebarContent className="p-3 flex-1">
+      <SidebarContent className="p-3 flex-1 pb-24 md:pb-3">
         <SidebarMenu className="gap-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -173,10 +173,10 @@ function DashboardSidebar() {
               onClick={handleSignOut}
               disabled={isLoggingOut}
               title="Sign out"
-              className="shrink-0 p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-9 min-h-9"
             >
               {isLoggingOut ? (
-                <div className="w-4.5 h-4.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
               ) : (
                 <ArrowRightStartOnRectangleIcon className="w-4.5 h-4.5" />
               )}
