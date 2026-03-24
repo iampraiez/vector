@@ -15,6 +15,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  _hydrated: boolean;
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   completeOnboarding: () => void;
   logout: () => void;
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      _hydrated: false,
 
       setAuth: (user, accessToken, refreshToken) =>
         set({
@@ -51,6 +53,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "vector-auth-storage",
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._hydrated = true;
+        }
+      },
     },
   ),
 );
