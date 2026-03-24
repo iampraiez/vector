@@ -82,17 +82,25 @@ function MapInteractionHandler({
   const map = useMap();
 
   useEffect(() => {
-    if (!onInteraction) return;
+    const handleInteraction = () => {
+      if (onInteraction) onInteraction();
+    };
 
-    const handleDragStart = () => onInteraction();
-    const handleZoom = () => onInteraction();
+    map.on("dragstart", handleInteraction);
+    map.on("zoomstart", handleInteraction);
+    map.on("mousedown", handleInteraction);
+    map.on("touchstart", handleInteraction);
+    map.on("wheel", handleInteraction);
 
-    map.on("dragstart", handleDragStart);
-    map.on("zoomstart", handleZoom);
+    // Also listen to movestart to catch any programmatic moves vs user moves
+    // if we wanted to be even stricter, but start with these.
 
     return () => {
-      map.off("dragstart", handleDragStart);
-      map.off("zoomstart", handleZoom);
+      map.off("dragstart", handleInteraction);
+      map.off("zoomstart", handleInteraction);
+      map.off("mousedown", handleInteraction);
+      map.off("touchstart", handleInteraction);
+      map.off("wheel", handleInteraction);
     };
   }, [map, onInteraction]);
 
@@ -116,13 +124,22 @@ function MapViewUpdater({
 
   useEffect(() => {
     if (!shouldAutoCenter) return;
-    // Only fly to on initial load or when explicitly requested
+
+    // Safety check: ensure the map instance is fully initialized and has a pane
+    // This prevents "Cannot read properties of undefined (reading '_leaflet_pos')"
+    if (!map || !(map as unknown as { _mapPane: unknown })._mapPane) return;
+
+    // Only fly to on initial load or when auto-center is explicitly re-enabled
     if (!hasMovedRef.current) {
       hasMovedRef.current = true;
-      map.flyTo(center, zoom, {
-        duration: 1.5,
-        easeLinearity: 0.25,
-      });
+      try {
+        map.flyTo(center, zoom, {
+          duration: 1.5,
+          easeLinearity: 0.25,
+        });
+      } catch (err) {
+        console.warn("Map movement error caught:", err);
+      }
     }
   }, [shouldAutoCenter, map, center, zoom]);
 

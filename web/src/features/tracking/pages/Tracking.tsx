@@ -303,7 +303,7 @@ export function CustomerTracking() {
               The all-in-one delivery platform for modern logistics fleets.
             </p>
             <a
-              href="https://vector-logistics.com"
+              href="https://vector-route.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-[13px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
@@ -818,7 +818,7 @@ export function CustomerTracking() {
             Real-time logistics and fleet management for modern delivery teams.
           </p>
           <a
-            href="https://vector-logistics.com"
+            href="https://vector-route.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-[13px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"

@@ -368,25 +368,9 @@ export class AuthService {
       STANDARD_QUEUE_OPTIONS,
     );
 
-    let checkoutUrl: string | null = null;
-
-    // Initialize Paystack checkout for starter plan trial
-    try {
-      const paymentResult = await this.paystackService.initializeCheckout(
-        result.user.email,
-        0, // Free trial - 0 amount
-        {
-          company_id: result.company.id,
-          plan_id: 'free',
-          plan_name: 'Free Trial Plan',
-          billing_cycle: 'monthly',
-        },
-      );
-      checkoutUrl = paymentResult.checkout_url;
-    } catch (error) {
-      // If Paystack fails, still allow signup but without checkout
-      console.error('Failed to initialize Paystack checkout:', error);
-    }
+    const checkoutUrl: string | null = null;
+    // We no longer initialize Paystack checkout on signup because amount 0 is invalid.
+    // Users start on a true free trial and can pay later via the billing dashboard.
 
     return {
       message: 'Company and account created. Please verify your email.',

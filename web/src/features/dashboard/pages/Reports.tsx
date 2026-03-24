@@ -8,7 +8,7 @@ import {
   EnvelopeIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import { Zap, TrendingUpIcon } from "lucide-react";
+import { TrendingUpIcon } from "lucide-react";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 import { Skeleton } from "../../../components/ui/skeleton";
@@ -277,14 +277,14 @@ export function DashboardReports() {
 
   return (
     <>
-      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-8 max-w-350 mx-auto">
         {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
+        <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-2xl md:text-[32px] font-bold text-gray-900 mb-2 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
               Reports & Analytics
             </h1>
-            <p className="text-[14px] text-gray-600">
+            <p className="text-[13px] text-gray-600">
               Real-time performance insights across your delivery operations
             </p>
           </div>
@@ -318,7 +318,7 @@ export function DashboardReports() {
         {hasData ? (
           <>
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <KPICard
                 label="Total Deliveries"
                 value={summary?.total_deliveries || 0}
@@ -341,12 +341,6 @@ export function DashboardReports() {
                 label="Total Distance"
                 value={`${(summary?.total_distance_km || 0).toFixed(0)}km`}
                 icon={MapPinIcon}
-                isLoading={isLoading}
-              />
-              <KPICard
-                label="Fuel Savings"
-                value={`$${(summary?.fuel_saved_usd || 0).toFixed(2)}`}
-                icon={Zap}
                 isLoading={isLoading}
               />
             </div>
@@ -507,15 +501,36 @@ export function DashboardReports() {
               </div>
             )}
           </>
+        ) : isLoading ? (
+          <div className="space-y-8 animate-pulse mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm"
+                >
+                  <Skeleton className="w-10 h-10 rounded-xl mb-6" />
+                  <Skeleton className="w-24 h-3 mb-3" />
+                  <Skeleton className="w-16 h-8" />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {[...Array(2)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-black/8 rounded-2xl p-6 h-95 shadow-sm"
+                >
+                  <Skeleton className="w-48 h-5 mb-2" />
+                  <Skeleton className="w-32 h-3 mb-8" />
+                  <Skeleton className="w-full h-62.5 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="bg-white border border-black/8 rounded-3xl shadow-sm">
-            {isLoading ? (
-              <div className="p-12">
-                <Skeleton className="w-full h-64 rounded-lg" />
-              </div>
-            ) : (
-              <EmptyReports />
-            )}
+            <EmptyReports />
           </div>
         )}
       </div>

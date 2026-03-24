@@ -26,7 +26,7 @@ const plans = [
   {
     id: "free",
     name: "Free",
-    price: "$0",
+    price: "₦0",
     period: "/mo",
     drivers: "Up to 2 active drivers",
     highlight: false,
@@ -34,7 +34,7 @@ const plans = [
   {
     id: "starter",
     name: "Starter",
-    price: "$29",
+    price: "₦20,000",
     period: "/mo",
     drivers: "Up to 5 active drivers",
     highlight: false,
@@ -42,7 +42,7 @@ const plans = [
   {
     id: "growth",
     name: "Growth",
-    price: "$89",
+    price: "₦50,000",
     period: "/mo",
     drivers: "Up to 20 active drivers",
     highlight: true,

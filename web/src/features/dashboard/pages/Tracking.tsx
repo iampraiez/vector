@@ -12,6 +12,8 @@ import {
   ChevronRightIcon,
   ArrowPathIcon,
   UsersIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Driver } from "../../../store/driverStore";
@@ -39,6 +41,7 @@ export function DashboardTracking() {
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [shouldAutoCenter, setShouldAutoCenter] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetchDrivers({ limit: 100 });
@@ -86,6 +89,10 @@ export function DashboardTracking() {
         return "text-gray-400";
     }
   };
+  const onMapInteraction = React.useCallback(() => {
+    setShouldAutoCenter(false);
+  }, []);
+
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -189,7 +196,7 @@ export function DashboardTracking() {
 
       {isLoading && drivers.length === 0 ? (
         <>
-          <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm h-150 lg:h-180 mb-12">
+          <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm h-[80vh] min-h-150 mb-12">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <Skeleton className="w-32 h-5" />
               <Skeleton className="w-24 h-8" />
@@ -221,45 +228,72 @@ export function DashboardTracking() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
             {/* Map Area */}
             <div
-              className={`${selectedDriver ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-500`}
+              className={`${isExpanded ? "fixed inset-0 z-50 p-4 md:p-8 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300" : selectedDriver ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-500`}
             >
-              <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-lg shadow-black/5 flex flex-col h-150 lg:h-180">
+              <div
+                className={`bg-white border border-black/8 rounded-2xl overflow-hidden shadow-2xl flex flex-col ${isExpanded ? "w-full h-full max-w-7xl max-h-[90vh]" : "h-[80vh] min-h-150"}`}
+              >
                 {/* Map Toolbar */}
                 <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between shrink-0 bg-linear-to-r from-white to-gray-50/50">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center transition-transform hover:rotate-12">
                       <MapPinIcon className="w-4.5 h-4.5 text-emerald-600" />
                     </div>
-                    <span className="text-[14px] font-semibold text-gray-900 tracking-tight">
-                      {selectedDriver
-                        ? driverHasMapPosition(selectedDriver)
-                          ? `${selectedDriver.name}'s position`
-                          : `${selectedDriver.name} — offline`
-                        : "Live Fleet Map"}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-bold text-gray-900 tracking-tight leading-none mb-1">
+                        {selectedDriver
+                          ? driverHasMapPosition(selectedDriver)
+                            ? `${selectedDriver.name}'s Position`
+                            : `${selectedDriver.name} — Offline`
+                          : "Live Fleet Map"}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                          Real-time updates
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleLocateMe}
                       disabled={isLocating}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-semibold text-gray-700 hover:bg-gray-50 transition-all duration-200 cursor-pointer disabled:opacity-50 hover:border-emerald-200 shadow-sm hover:shadow-md"
+                      title="Locate Me"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-bold text-gray-700 hover:bg-gray-50 transition-all duration-200 cursor-pointer disabled:opacity-50 hover:border-emerald-200 shadow-sm hover:shadow-md"
                     >
                       {isLocating ? (
                         <ArrowPathIcon className="w-3.5 h-3.5 animate-spin text-emerald-600" />
                       ) : (
                         <MapPinIcon className="w-3.5 h-3.5 text-emerald-600" />
                       )}
-                      Locate Me
+                      <span className="hidden sm:inline">Locate Me</span>
                     </button>
                     {(selectedDriver || userLocation) && (
                       <button
                         onClick={handleResetView}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-semibold text-gray-600 hover:bg-gray-50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-bold text-gray-600 hover:bg-gray-50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
                       >
-                        <XMarkIcon className="w-3.5 h-3.5" />
-                        Reset
+                        <XMarkIcon className="w-3.5 h-3.5 font-bold" />
+                        <span className="hidden sm:inline">Reset</span>
                       </button>
                     )}
+                    <div className="w-px h-4 bg-black/5 mx-1" />
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      title={isExpanded ? "Collapse" : "Expand to Full Screen"}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-bold text-gray-700 hover:bg-gray-50 transition-all duration-200 cursor-pointer disabled:opacity-50 hover:border-emerald-200 shadow-sm hover:shadow-md"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ArrowsPointingInIcon className="w-3.5 h-3.5" />
+                        </>
+                      ) : (
+                        <>
+                          <ArrowsPointingOutIcon className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -271,7 +305,7 @@ export function DashboardTracking() {
                     selectedDriverId={selectedDriver?.id}
                     userLocation={userLocation}
                     shouldAutoCenter={shouldAutoCenter}
-                    onMapInteraction={() => setShouldAutoCenter(false)}
+                    onMapInteraction={onMapInteraction}
                   />
                 </div>
               </div>

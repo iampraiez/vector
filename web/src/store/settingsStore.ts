@@ -94,7 +94,11 @@ interface SettingsState {
   // Billing
   fetchBillingInfo: () => Promise<void>;
   fetchInvoices: () => Promise<void>;
-  changePlan: (planId: SubscriptionPlan) => Promise<{
+  changePlan: (
+    planId: SubscriptionPlan,
+    billingCycle?: "monthly" | "annual",
+    expectedAmount?: number,
+  ) => Promise<{
     checkout_url?: string | null;
     message?: string;
     plan_id?: string;
@@ -317,7 +321,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
-  changePlan: async (planId: SubscriptionPlan) => {
+  changePlan: async (
+    planId: SubscriptionPlan,
+    billingCycle: "monthly" | "annual" = "monthly",
+    expectedAmount?: number,
+  ) => {
     set({ isMutating: true, error: null });
     try {
       const res = await api.post<{
@@ -326,6 +334,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         plan_id?: string;
       }>("/dashboard/billing/plan", {
         plan_id: planId,
+        billing_cycle: billingCycle,
+        expected_amount_ngn: expectedAmount,
       });
       const data = res.data;
       if (data.checkout_url) {

@@ -1912,6 +1912,8 @@ components:
           type: string
         billing_cycle:
           type: object
+        expected_amount_ngn:
+          type: number
       required:
         - plan_id
     UpdateCompanySettingsDto:

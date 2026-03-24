@@ -230,6 +230,10 @@ export class ChangePlanDto {
   @IsString()
   @IsOptional()
   billing_cycle?: 'monthly' | 'annual';
+
+  @IsNumber()
+  @IsOptional()
+  expected_amount_ngn?: number;
 }
 
 export class CreateApiKeyDto {

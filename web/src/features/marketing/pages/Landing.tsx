@@ -49,7 +49,7 @@ const features = [
   {
     icon: ChartBarIcon,
     title: "Fleet Analytics",
-    desc: "Deep reports on performance, fuel cost, on-time rates, and driver efficiency — all in one dashboard.",
+    desc: "Deep reports on performance, route completion, on-time rates, and driver efficiency — all in one dashboard.",
   },
   {
     icon: UsersIcon,
@@ -125,8 +125,8 @@ const plans = [
   },
   {
     name: "Starter",
-    priceMonthly: "29",
-    priceYearly: "24",
+    priceMonthly: "20,000",
+    priceYearly: "15,000",
     desc: "For small local fleets",
     drivers: "Up to 5 drivers",
     features: [
@@ -142,8 +142,8 @@ const plans = [
   },
   {
     name: "Growth",
-    priceMonthly: "89",
-    priceYearly: "74",
+    priceMonthly: "50,000",
+    priceYearly: "40,000",
     desc: "For growing delivery operations",
     drivers: "Up to 20 drivers",
     features: [
@@ -860,7 +860,7 @@ export function WebLanding() {
                           plan.highlighted ? "text-white/70" : "text-gray-400"
                         }`}
                       >
-                        $
+                        ₦
                       </span>
                       <span
                         className={`text-[42px] font-black tracking-tighter leading-none ${

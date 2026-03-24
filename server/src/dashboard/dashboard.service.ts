@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, DriverStatus } from '@prisma/client';
@@ -43,6 +44,7 @@ import { PaystackService } from '../billing/paystack.service';
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -1203,21 +1205,36 @@ export class DashboardService {
       });
 
       if (user) {
-        const planPrices: Record<string, number> = {
-          starter: 2900,
-          growth: 8900,
-        }; // in cents (USD)
-        const amount = (planPrices[dto.plan_id] || 0) * 100; // Convert to kobo
+        const isYearly = dto.billing_cycle === 'annual';
+        const planPrices: Record<string, { monthly: number; annual: number }> =
+          {
+            starter: { monthly: 20000, annual: 180000 },
+            growth: { monthly: 50000, annual: 480000 },
+          }; // in NGN
+        const amountNGN =
+          planPrices[dto.plan_id]?.[isYearly ? 'annual' : 'monthly'] || 0;
+
+        // Security: Verify the expected amount from the frontend matches the server calculation
+        if (
+          dto.expected_amount_ngn !== undefined &&
+          dto.expected_amount_ngn !== amountNGN
+        ) {
+          this.logger.error(
+            `CRITICAL: Price mismatch for ${dto.plan_id} (${dto.billing_cycle}). Modal showed ₦${dto.expected_amount_ngn.toLocaleString()}, Server calculated ₦${amountNGN.toLocaleString()}`,
+          );
+        }
+
+        const amountKobo = amountNGN * 100; // Convert to kobo
 
         const result = await this.paystackService.initializeCheckout(
           user.email,
-          amount,
+          amountKobo,
           {
             company_id: companyId,
             plan_id: dto.plan_id,
             plan_name:
               dto.plan_id === 'starter' ? 'Starter Plan' : 'Growth Plan',
-            billing_cycle: 'monthly',
+            billing_cycle: dto.billing_cycle || 'monthly',
           },
         );
 

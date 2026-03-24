@@ -31,6 +31,7 @@ import {
 } from "../../../components/ui/sidebar";
 import { OnboardingTour } from "../../../components/ui/OnboardingTour";
 import { Toaster } from "../../../components/ui/sonner";
+import { Skeleton } from "../../../components/ui/skeleton";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -148,12 +149,24 @@ function DashboardSidebar() {
               {getInitial(user?.full_name || "User")}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold text-gray-900 leading-none truncate mb-1">
-                {company?.name || "Loading..."}
-              </p>
-              <p className="text-[10px] text-gray-400 truncate font-medium tracking-tight">
-                {user?.email || "manager@vector.com"}
-              </p>
+              <div className="mb-1.5">
+                {!company?.name ? (
+                  <Skeleton className="h-3 w-24 bg-black/5" />
+                ) : (
+                  <p className="text-[12px] font-bold text-gray-900 leading-none truncate">
+                    {company.name}
+                  </p>
+                )}
+              </div>
+              <div>
+                {!user?.email ? (
+                  <Skeleton className="h-2.5 w-32 bg-black/5" />
+                ) : (
+                  <p className="text-[10px] text-gray-400 truncate font-medium tracking-tight">
+                    {user.email}
+                  </p>
+                )}
+              </div>
             </div>
             {/* Sign out icon button */}
             <button
@@ -184,12 +197,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     // Connect to backend WebSocket
     const socket: Socket = io(
-      import.meta.env.VITE_API_URL || "http://localhost:3000",
+      import.meta.env.VITE_API_URL || "http://localhost:8080",
+      {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+      },
     );
 
     socket.on("connect", () => {
-      console.log("Connected to notifications socket");
+      console.log("Connected to notifications socket (ID:", socket.id, ")");
       socket.emit("join", user.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.warn("Socket connection error:", err.message);
     });
 
     socket.on("notification", (payload: Record<string, unknown>) => {
