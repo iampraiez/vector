@@ -97,12 +97,45 @@ import { AuthGuard } from "./features/auth/guards/AuthGuard";
 import { GuestGuard } from "./features/auth/guards/GuestGuard";
 import { ErrorPage } from "./features/errors/pages/ErrorPage";
 import { NotFound } from "./features/errors/pages/NotFound";
-import { LoadingSpinner } from "./components/LoadingSpinner";
+import { Skeleton } from "./components/ui/skeleton";
 
-// Suspense fallback component
+// Suspense fallback component with skeleton matching page layouts
 const PageLoader = () => (
-  <div className="flex items-center justify-center h-screen">
-    <LoadingSpinner />
+  <div className="min-h-screen bg-gray-50/50 p-4 md:p-8">
+    <div className="max-w-300 mx-auto">
+      {/* Header skeleton */}
+      <div className="mb-8">
+        <Skeleton className="h-10 w-48 mb-2" />
+        <Skeleton className="h-5 w-96 max-w-full" />
+      </div>
+
+      {/* Content grid skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white rounded-lg p-6 space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/6" />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg p-6 space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+            </div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-6">
+            <Skeleton className="h-6 w-24 mb-4" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 );
 
@@ -121,9 +154,7 @@ export const router = createBrowserRouter([
         path: "/dashboard/signin",
         element: (
           <GuestGuard>
-            <Suspense fallback={<PageLoader />}>
-              <DashboardSignIn />
-            </Suspense>
+            <DashboardSignIn />
           </GuestGuard>
         ),
       },
@@ -131,9 +162,7 @@ export const router = createBrowserRouter([
         path: "/dashboard/signup",
         element: (
           <GuestGuard>
-            <Suspense fallback={<PageLoader />}>
-              <DashboardSignUp />
-            </Suspense>
+            <DashboardSignUp />
           </GuestGuard>
         ),
       },
@@ -141,9 +170,7 @@ export const router = createBrowserRouter([
         path: "/dashboard/forgot-password",
         element: (
           <GuestGuard>
-            <Suspense fallback={<PageLoader />}>
-              <ForgotPassword />
-            </Suspense>
+            <ForgotPassword />
           </GuestGuard>
         ),
       },
@@ -151,9 +178,7 @@ export const router = createBrowserRouter([
         path: "/reset-password",
         element: (
           <GuestGuard>
-            <Suspense fallback={<PageLoader />}>
-              <ResetPassword />
-            </Suspense>
+            <ResetPassword />
           </GuestGuard>
         ),
       },
@@ -161,9 +186,7 @@ export const router = createBrowserRouter([
         path: "/dashboard/verify-email",
         element: (
           <GuestGuard>
-            <Suspense fallback={<PageLoader />}>
-              <VerifyEmail />
-            </Suspense>
+            <VerifyEmail />
           </GuestGuard>
         ),
       },
