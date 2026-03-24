@@ -15,6 +15,7 @@ import {
   MapPinIcon,
   ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
 import { Skeleton } from "../../../components/ui/skeleton";
 
 function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
@@ -552,9 +553,15 @@ export function DashboardSettings() {
                     )}
                     {!isLoadingInitial && (
                       <button
-                        onClick={() =>
-                          navigator.clipboard.writeText(companyCode)
-                        }
+                        onClick={async () => {
+                          if (!companyCode) return;
+                          try {
+                            await navigator.clipboard.writeText(companyCode);
+                            toast.success("Fleet code copied");
+                          } catch {
+                            toast.error("Could not copy");
+                          }
+                        }}
                         className="p-2 text-gray-300 hover:text-emerald-600 transition-colors"
                         title="Copy code"
                       >

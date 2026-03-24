@@ -6,7 +6,6 @@ import {
 import { useDriverStore } from "../../../store/driverStore";
 
 import {
-  CreditCardIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
   SparklesIcon,
@@ -119,8 +118,9 @@ export function DashboardBilling() {
     ...p,
     current: p.id === activePlanId,
   }));
+  console.log({ dynamicPlans });
 
-  // In a real app, these would come from the backend or a billing store
+  // Usage items from backend and live data
   const usageItems = [
     {
       label: "Active Drivers",
@@ -130,47 +130,35 @@ export function DashboardBilling() {
     },
     {
       label: "Deliveries This Month",
-      used: 0,
-      total: 100,
+      used: billing?.total_deliveries_this_month || 0,
+      total: billing?.plan?.monthly_delivery_limit || 100,
       color: "bg-emerald-400",
     },
   ];
 
   const isLoadingInitial = isLoading && !billing;
 
-  const handlePaystackSetup = async () => {
-    try {
-      const res = await api.post<{ setup_url?: string }>(
-        "/dashboard/billing/payment-method",
-      );
-      if (res.data.setup_url) {
-        window.location.href = res.data.setup_url;
-      } else {
-        toast.message("Payment setup is not available yet.");
-      }
-    } catch {
-      toast.error("Could not start payment method setup.");
-    }
-  };
-
   return (
     <div className="p-4 md:p-8 max-w-300 mx-auto">
       {/* Header */}
-      <div className="mb-8 font-inter">
-        <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+      <div className="mb-10 font-inter">
+        <h1 className="text-3xl md:text-[32px] font-bold text-gray-900 mb-2 tracking-tight">
           Billing & Subscription
         </h1>
-        <p className="text-[14px] text-gray-500">
+        <p className="text-[15px] text-gray-500 font-medium">
           Manage your plan, payment methods, and invoices
         </p>
       </div>
 
       {billing?.cancel_at_period_end && billing.current_period_end && (
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
-          <p className="font-semibold">Subscription ending</p>
-          <p className="mt-1 text-amber-800/90">
+        <div className="mb-8 rounded-2xl border border-amber-200/60 bg-linear-to-r from-amber-50/80 to-orange-50/50 px-5 py-4 text-[13px] text-amber-900 shadow-sm shadow-amber-500/5 backdrop-blur-sm">
+          <p className="font-semibold flex items-center gap-2">
+            <ExclamationCircleIcon className="w-5 h-5 text-amber-600" />
+            Subscription ending
+          </p>
+          <p className="mt-2 text-amber-800/90 font-medium">
             Your plan will cancel on{" "}
-            <span className="font-bold">
+            <span className="font-bold text-amber-900">
               {new Date(billing.current_period_end).toLocaleDateString()}
             </span>
             . You can change to a new plan anytime before then.
@@ -179,9 +167,9 @@ export function DashboardBilling() {
       )}
 
       {/* Current Plan Section */}
-      <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
+      <div className="bg-linear-to-br from-white to-gray-50/50 border border-black/6 rounded-3xl p-7 md:p-10 mb-10 shadow-lg shadow-black/5 relative overflow-hidden">
         {/* Subtle Background Glow */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/4 rounded-full -mr-40 -mt-40 blur-3xl pointer-events-none" />
 
         <div className="flex flex-wrap items-center justify-between gap-6 relative z-10">
           <div className="flex-1 min-w-60">
@@ -246,16 +234,34 @@ export function DashboardBilling() {
                 Billed monthly
               </p>
             </div>
-            <button
-              onClick={() => setShowChangePlan(!showChangePlan)}
-              disabled={isLoadingInitial}
-              className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center gap-2 disabled:opacity-50"
-            >
-              {showChangePlan ? "Hide Plans" : "Change Plan"}
-              <ChevronRightIcon
-                className={`w-4 h-4 transition-transform duration-300 ${showChangePlan ? "rotate-90" : ""}`}
-              />
-            </button>
+            {isTrial ? (
+              <button
+                onClick={async () => {
+                  const res = await api.post<{ checkout_url?: string }>(
+                    "/dashboard/billing/plan",
+                    { plan_id: activePlanId },
+                  );
+                  if (res.data.checkout_url) {
+                    window.location.href = res.data.checkout_url;
+                  }
+                }}
+                disabled={isLoadingInitial}
+                className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                Pay Now
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowChangePlan(!showChangePlan)}
+                disabled={isLoadingInitial}
+                className="px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                {showChangePlan ? "Hide Plans" : "Change Plan"}
+                <ChevronRightIcon
+                  className={`w-4 h-4 transition-transform duration-300 ${showChangePlan ? "rotate-90" : ""}`}
+                />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -268,12 +274,12 @@ export function DashboardBilling() {
           {dynamicPlans.map((plan) => (
             <div
               key={plan.id}
-              className={`group relative bg-white border-2 rounded-3xl p-8 transition-all hover:shadow-2xl hover:-translate-y-1 text-center ${
+              className={`group relative bg-linear-to-br rounded-3xl p-8 transition-all hover:shadow-2xl hover:-translate-y-1.5 text-center overflow-hidden ${
                 plan.current
-                  ? "border-emerald-600 shadow-xl shadow-emerald-600/5"
+                  ? "from-white to-emerald-50/40 border-2 border-emerald-500/30 shadow-xl shadow-emerald-600/10"
                   : plan.highlight
-                    ? "border-amber-400/50 shadow-lg"
-                    : "border-black/5 hover:border-emerald-200"
+                    ? "from-white to-amber-50/30 border-2 border-amber-400/40 shadow-lg shadow-amber-500/5"
+                    : "from-white to-gray-50/40 border border-black/6 shadow-md shadow-black/3"
               }`}
             >
               {plan.current && (
@@ -364,40 +370,17 @@ export function DashboardBilling() {
       </div>
 
       {/* Grid and Usage */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Payment Method */}
-        <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col justify-center">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        {/* Usage Metrics */}
+        <div className="bg-linear-to-br from-white to-gray-50/50 border border-black/6 rounded-3xl p-7 md:p-8 shadow-lg shadow-black/5">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-semibold text-gray-800 tracking-tight">
-              Payment Method
+              Capacity & Usage
             </h2>
-          </div>
-
-          <div className="text-center py-4">
-            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-black/5">
-              <CreditCardIcon className="w-8 h-8 text-gray-300" />
+            <div className="w-10 h-10 bg-amber-100/60 rounded-xl flex items-center justify-center">
+              <DocumentTextIcon className="w-5 h-5 text-amber-600" />
             </div>
-            <p className="text-[14px] font-semibold text-gray-400 mb-1">
-              No payment method added
-            </p>
-            <p className="text-[12px] text-gray-300 mb-6">
-              Connect your card to start your subscription
-            </p>
-            <button
-              type="button"
-              onClick={() => void handlePaystackSetup()}
-              className="w-full py-3.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
-            >
-              Set up with Paystack
-            </button>
           </div>
-        </div>
-
-        {/* Usage Metrics */}
-        <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800 tracking-tight mb-8">
-            Capacity & Usage
-          </h2>
           <div className="space-y-6">
             {usageItems.map((item) => {
               const pct =
@@ -458,12 +441,14 @@ export function DashboardBilling() {
       </div>
 
       {/* Invoices */}
-      <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
+      <div className="bg-linear-to-br from-white to-gray-50/50 border border-black/6 rounded-3xl p-7 md:p-8 mb-10 shadow-lg shadow-black/5">
         <div className="flex items-center justify-between gap-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 tracking-tight">
             Invoices
           </h2>
-          <DocumentTextIcon className="w-5 h-5 text-gray-300" aria-hidden />
+          <div className="w-10 h-10 bg-blue-100/60 rounded-xl flex items-center justify-center">
+            <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+          </div>
         </div>
         {invoices.length === 0 ? (
           <p className="text-[13px] text-gray-400 mb-1">

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -55,6 +55,8 @@ interface MapViewProps {
   selectedDriverId?: string | null;
   userLocation?: { lat: number; lng: number } | null;
   onLocationDetected?: (lat: number, lng: number) => void;
+  onMapInteraction?: () => void;
+  shouldAutoCenter?: boolean;
   className?: string;
 }
 
@@ -70,22 +72,67 @@ const getDriverColor = (driverId: string | null) => {
 };
 
 /**
+ * Component to detect map interactions (pan/zoom)
+ */
+function MapInteractionHandler({
+  onInteraction,
+}: {
+  onInteraction?: () => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!onInteraction) return;
+
+    const handleDragStart = () => onInteraction();
+    const handleZoom = () => onInteraction();
+
+    map.on("dragstart", handleDragStart);
+    map.on("zoomstart", handleZoom);
+
+    return () => {
+      map.off("dragstart", handleDragStart);
+      map.off("zoomstart", handleZoom);
+    };
+  }, [map, onInteraction]);
+
+  return null;
+}
+
+/**
  * Internal helper component to handle map movements
  */
 function MapViewUpdater({
   center,
   zoom,
+  shouldAutoCenter = true,
 }: {
   center: [number, number];
   zoom: number;
+  shouldAutoCenter?: boolean;
 }) {
   const map = useMap();
+  const hasMovedRef = useRef(false);
+
   useEffect(() => {
-    map.flyTo(center, zoom, {
-      duration: 1.5,
-      easeLinearity: 0.25,
-    });
-  }, [center, zoom, map]);
+    if (!shouldAutoCenter) return;
+    // Only fly to on initial load or when explicitly requested
+    if (!hasMovedRef.current) {
+      hasMovedRef.current = true;
+      map.flyTo(center, zoom, {
+        duration: 1.5,
+        easeLinearity: 0.25,
+      });
+    }
+  }, [shouldAutoCenter, map, center, zoom]);
+
+  // Reset the moved flag when shouldAutoCenter becomes true again
+  useEffect(() => {
+    if (shouldAutoCenter) {
+      hasMovedRef.current = false;
+    }
+  }, [shouldAutoCenter]);
+
   return null;
 }
 
@@ -98,6 +145,8 @@ const MapView: React.FC<MapViewProps> = ({
   selectedDriverId,
   userLocation,
   onLocationDetected,
+  onMapInteraction,
+  shouldAutoCenter = true,
   className,
 }) => {
   const [isLocating, setIsLocating] = React.useState(false);
@@ -262,7 +311,12 @@ const MapView: React.FC<MapViewProps> = ({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapViewUpdater center={center} zoom={zoom} />
+        <MapInteractionHandler onInteraction={onMapInteraction} />
+        <MapViewUpdater
+          center={center}
+          zoom={zoom}
+          shouldAutoCenter={shouldAutoCenter}
+        />
 
         {userLocation && (
           <Marker

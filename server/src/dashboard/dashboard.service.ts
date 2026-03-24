@@ -1018,30 +1018,54 @@ export class DashboardService {
       orderBy: { created_at: 'desc' },
     });
 
+    // Define plan details with delivery limits
+    const planLimits: Record<
+      string,
+      { name: string; price: number; monthly_delivery_limit: number }
+    > = {
+      free: { name: 'Free Plan', price: 0, monthly_delivery_limit: 100 },
+      starter: { name: 'Starter Plan', price: 29, monthly_delivery_limit: 500 },
+      growth: { name: 'Growth Plan', price: 89, monthly_delivery_limit: 5000 },
+    };
+
+    // Get current month's delivery count
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const deliveryCount = await this.prisma.stop.count({
+      where: {
+        company_id: companyId,
+        created_at: {
+          gte: monthStart,
+          lte: monthEnd,
+        },
+        status: { in: ['completed', 'in_progress'] },
+      },
+    });
+
     if (!record) {
+      const planDetails = planLimits['free'];
       return {
         plan: {
           id: 'free',
-          name: 'Free Plan',
-          price_usd: 0,
-          billing_cycle: 'monthly',
+          name: planDetails.name,
+          price_usd: planDetails.price,
+          monthly_delivery_limit: planDetails.monthly_delivery_limit,
         },
         status: 'active',
         current_period_end: new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000,
         ).toISOString(),
-        payment_method: null,
+        cancel_at_period_end: false,
+        total_deliveries_this_month: deliveryCount,
       };
     }
 
-    const priceMap: Record<string, { name: string; price: number }> = {
-      free: { name: 'Free Plan', price: 0 },
-      starter: { name: 'Starter Plan', price: 29 },
-      growth: { name: 'Growth Plan', price: 89 },
-    };
-    const planDetails = priceMap[record.plan_id] || {
+    const planDetails = planLimits[record.plan_id] || {
       name: 'Custom Plan',
       price: 0,
+      monthly_delivery_limit: 1000,
     };
 
     return {
@@ -1049,10 +1073,12 @@ export class DashboardService {
         id: record.plan_id,
         name: planDetails.name,
         price_usd: planDetails.price,
+        monthly_delivery_limit: planDetails.monthly_delivery_limit,
       },
       status: record.status,
       current_period_end: record.current_period_end,
       cancel_at_period_end: record.cancel_at_period_end,
+      total_deliveries_this_month: deliveryCount,
     };
   }
 

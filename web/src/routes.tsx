@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router";
 import { lazy, Suspense } from "react";
 import { WebLanding as Landing } from "./features/marketing/pages/Landing";
 import { CustomerTracking as TrackingPage } from "./features/tracking/pages/Tracking";
+import { BillingVerify } from "./features/dashboard/pages/BillingVerify";
 
 // Lazy load dashboard pages for better code splitting
 const DashboardOverview = lazy(() =>
@@ -164,6 +165,14 @@ export const router = createBrowserRouter([
               <VerifyEmail />
             </Suspense>
           </GuestGuard>
+        ),
+      },
+      {
+        path: "/dashboard/billing/verify",
+        element: (
+          <AuthGuard>
+            <BillingVerify />
+          </AuthGuard>
         ),
       },
 

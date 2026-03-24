@@ -127,7 +127,9 @@ export class PaystackService {
    */
   async verifyTransaction(
     reference: string,
-  ): Promise<PaystackTransactionVerifyResponse> {
+  ): Promise<
+    PaystackTransactionVerifyResponse & { transaction_status: string }
+  > {
     try {
       const response = await axios.get(
         `${this.baseUrl}/transaction/verify/${reference}`,
@@ -147,15 +149,26 @@ export class PaystackService {
       }
 
       const data = response.data as Record<string, unknown>;
-      if (!data.status) {
-        throw new Error('Transaction verification failed');
+      // Check if the API response itself was successful
+      if (data.status !== true) {
+        throw new Error('Transaction verification failed from Paystack API');
       }
 
       if (!('data' in data) || !data.data) {
         throw new Error('No transaction data returned');
       }
 
-      return data.data as PaystackTransactionVerifyResponse;
+      const txData = data.data as Record<string, unknown>;
+      // Check the transaction status - should be 'success' for successful payments
+      const txStatus = txData.status as string;
+      if (txStatus !== 'success') {
+        throw new Error(`Transaction status is ${txStatus}, not success`);
+      }
+
+      return {
+        ...(txData as unknown as PaystackTransactionVerifyResponse),
+        transaction_status: txStatus,
+      };
     } catch (error) {
       const errorMessage = this.extractErrorMessage(error);
       throw new HttpException(

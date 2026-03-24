@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   ChevronRightIcon,
   ArrowPathIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Driver } from "../../../store/driverStore";
@@ -37,6 +38,7 @@ export function DashboardTracking() {
     lng: number;
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [shouldAutoCenter, setShouldAutoCenter] = useState(true);
 
   useEffect(() => {
     fetchDrivers({ limit: 100 });
@@ -98,6 +100,7 @@ export function DashboardTracking() {
           lng: position.coords.longitude,
         });
         setSelectedDriver(null); // Clear selected driver to focus on user
+        setShouldAutoCenter(true); // Re-enable auto-centering when user clicks locate
         setIsLocating(false);
       },
       (error) => {
@@ -112,6 +115,7 @@ export function DashboardTracking() {
   const handleResetView = () => {
     setSelectedDriver(null);
     setUserLocation(null);
+    setShouldAutoCenter(true);
   };
 
   return (
@@ -219,39 +223,41 @@ export function DashboardTracking() {
             <div
               className={`${selectedDriver ? "lg:col-span-8" : "lg:col-span-12"} transition-all duration-500`}
             >
-              <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm flex flex-col h-150 lg:h-180">
+              <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-lg shadow-black/5 flex flex-col h-150 lg:h-180">
                 {/* Map Toolbar */}
-                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2">
-                    <MapPinIcon className="w-5 h-5 text-emerald-600" />
-                    <span className="text-[14px] font-bold text-gray-900 tracking-tight">
+                <div className="px-6 py-4 border-b border-black/5 flex items-center justify-between shrink-0 bg-linear-to-r from-white to-gray-50/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <MapPinIcon className="w-4.5 h-4.5 text-emerald-600" />
+                    </div>
+                    <span className="text-[14px] font-semibold text-gray-900 tracking-tight">
                       {selectedDriver
                         ? driverHasMapPosition(selectedDriver)
-                          ? `${selectedDriver.name}'s current position`
-                          : `${selectedDriver.name} — position unknown`
-                        : "Fleet Overview"}
+                          ? `${selectedDriver.name}'s position`
+                          : `${selectedDriver.name} — offline`
+                        : "Live Fleet Map"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleLocateMe}
                       disabled={isLocating}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-[11px] font-bold text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-semibold text-gray-700 hover:bg-gray-50 transition-all duration-200 cursor-pointer disabled:opacity-50 hover:border-emerald-200 shadow-sm hover:shadow-md"
                     >
                       {isLocating ? (
-                        <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                        <ArrowPathIcon className="w-3.5 h-3.5 animate-spin text-emerald-600" />
                       ) : (
-                        <MapPinIcon className="w-3.5 h-3.5" />
+                        <MapPinIcon className="w-3.5 h-3.5 text-emerald-600" />
                       )}
                       Locate Me
                     </button>
                     {(selectedDriver || userLocation) && (
                       <button
                         onClick={handleResetView}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-black/5 rounded-xl text-[11px] font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-semibold text-gray-600 hover:bg-gray-50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
                       >
                         <XMarkIcon className="w-3.5 h-3.5" />
-                        Reset View
+                        Reset
                       </button>
                     )}
                   </div>
@@ -264,6 +270,8 @@ export function DashboardTracking() {
                     routes={routes}
                     selectedDriverId={selectedDriver?.id}
                     userLocation={userLocation}
+                    shouldAutoCenter={shouldAutoCenter}
+                    onMapInteraction={() => setShouldAutoCenter(false)}
                   />
                 </div>
               </div>
@@ -570,15 +578,32 @@ function StatCard({
   isLoading?: boolean;
 }) {
   const colorClasses = {
-    emerald: "text-emerald-600 border-emerald-100 shadow-emerald-600/5",
-    amber: "text-amber-600 border-amber-100 shadow-amber-600/5",
+    emerald: {
+      icon: "bg-emerald-100 text-emerald-600",
+      text: "text-emerald-600",
+      border: "border-emerald-100",
+    },
+    amber: {
+      icon: "bg-amber-100 text-amber-600",
+      text: "text-amber-600",
+      border: "border-amber-100",
+    },
   };
 
   return (
-    <div
-      className={`bg-white border rounded-2xl p-6 transition-all hover:shadow-md border-black/8 ${colorClasses[color]}`}
-    >
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+    <div className="bg-white border border-black/8 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 group">
+      <div className="flex items-start justify-between mb-4">
+        <div
+          className={`w-10 h-10 rounded-xl ${colorClasses[color].icon} flex items-center justify-center`}
+        >
+          {color === "emerald" ? (
+            <UsersIcon className="w-5 h-5" />
+          ) : (
+            <ClockIcon className="w-5 h-5" />
+          )}
+        </div>
+      </div>
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
         {label}
       </p>
       {isLoading ? (
@@ -589,7 +614,7 @@ function StatCard({
             {value}
           </p>
           {total && (
-            <p className="text-[14px] font-bold text-gray-300">/ {total}</p>
+            <p className="text-[13px] font-semibold text-gray-400">/ {total}</p>
           )}
         </div>
       )}

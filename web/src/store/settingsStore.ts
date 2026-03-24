@@ -46,11 +46,13 @@ interface BillingInfo {
     id: SubscriptionPlan;
     name: string;
     price_usd: number;
+    monthly_delivery_limit?: number;
   };
   subscription_id?: string;
   current_period_start?: string;
   current_period_end: string;
   cancel_at_period_end?: boolean;
+  total_deliveries_this_month?: number;
 }
 
 export interface BillingInvoice {
