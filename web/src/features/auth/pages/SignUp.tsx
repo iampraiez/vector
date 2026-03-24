@@ -81,16 +81,33 @@ export function DashboardSignUp() {
   const emailValid = !errors.email && emailValue?.length > 0;
   const currentPlan = useWatch({ control, name: "plan_id" });
 
+  // Watch values for button enabling
+  const fullNameValue = useWatch({ control, name: "full_name" });
+  const passwordValue = useWatch({ control, name: "password" });
+  const companyNameValue = useWatch({ control, name: "company_name" });
+
+  // Step 1: Continue button enabled only when all fields are filled and valid
+  const isStep1Valid =
+    fullNameValue?.trim().length > 0 &&
+    emailValid &&
+    passwordValue?.length > 0 &&
+    !errors.full_name &&
+    !errors.email &&
+    !errors.password;
+
+  // Step 2: Choose Plan button enabled only when company name + size selected
+  const isStep2Valid = companyNameValue?.trim().length > 0 && !!companySize;
+
   const handleNextToCompany = async () => {
-    const isStep1Valid = await trigger(["full_name", "email", "password"]);
-    if (isStep1Valid) {
+    const isValid = await trigger(["full_name", "email", "password"]);
+    if (isValid) {
       setStep("company");
     }
   };
 
   const handleNextToPlan = async () => {
-    const isStep2Valid = await trigger(["company_name"]);
-    if (isStep2Valid && companySize) {
+    const isValid = await trigger(["company_name"]);
+    if (isValid && companySize) {
       if (companySize === "1–2") {
         setValue("plan_id", "free");
       } else if (companySize === "3–5") {
@@ -113,7 +130,6 @@ export function DashboardSignUp() {
         plan_id: data.plan_id,
       });
 
-      // Immediately navigate to email verification; don't wait
       navigate(
         `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
       );
@@ -323,7 +339,12 @@ export function DashboardSignUp() {
                   <button
                     type="button"
                     onClick={handleNextToCompany}
-                    className="w-full h-12 mt-1 rounded-xl bg-emerald-600 text-white font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5"
+                    disabled={!isStep1Valid}
+                    className={`w-full h-12 mt-1 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
+                      isStep1Valid
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5"
+                        : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                    }`}
                   >
                     Continue
                     <ArrowRightIcon className="w-4 h-4" />
@@ -407,9 +428,9 @@ export function DashboardSignUp() {
                   <button
                     type="button"
                     onClick={handleNextToPlan}
-                    disabled={!companySize}
+                    disabled={!isStep2Valid}
                     className={`w-full h-12 mt-1 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
-                      companySize
+                      isStep2Valid
                         ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 hover:-translate-y-0.5"
                         : "bg-gray-100 text-gray-300 cursor-not-allowed"
                     }`}
@@ -502,9 +523,7 @@ export function DashboardSignUp() {
                   }`}
                 >
                   {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    </>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
                       Launch Workspace

@@ -18,9 +18,9 @@ interface LegalModalProps {
 export function LegalModal({ type, open, onOpenChange }: LegalModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0 border-none shadow-2xl">
-        <DialogHeader className="p-6 pb-5 sticky top-0 bg-white/95 backdrop-blur-md z-10 border-b border-gray-100 mb-0 flex-row justify-between items-start space-y-0">
-          <div className="flex-1">
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto p-0 gap-0 border-none shadow-2xl">
+        <DialogHeader className="p-6 pb-5 sticky top-0 bg-white/95 backdrop-blur-md z-10 border-b border-gray-100 flex flex-row justify-between items-start space-y-0">
+          <div>
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
               {type === "terms" ? "Terms of Service" : "Privacy Policy"}
             </DialogTitle>
@@ -30,6 +30,7 @@ export function LegalModal({ type, open, onOpenChange }: LegalModalProps) {
                 : "We are committed to protecting your personal data and your right to privacy."}
             </DialogDescription>
           </div>
+
           <button
             onClick={() => onOpenChange(false)}
             className="p-2 rounded-xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 cursor-pointer -mt-1 -mr-1 group"
@@ -38,17 +39,10 @@ export function LegalModal({ type, open, onOpenChange }: LegalModalProps) {
             <XMarkIcon className="w-5 h-5 transition-transform group-hover:rotate-90" />
           </button>
         </DialogHeader>
+
         <div className="px-6 pb-10">
-          {type === "terms" && (
-            <div className="-mt-8">
-              <TermsContent className="py-8 space-y-8" />
-            </div>
-          )}
-          {type === "privacy" && (
-            <div className="-mt-8">
-              <PrivacyContent className="py-8 space-y-8" />
-            </div>
-          )}
+          {type === "terms" && <TermsContent />}
+          {type === "privacy" && <PrivacyContent />}
         </div>
       </DialogContent>
     </Dialog>

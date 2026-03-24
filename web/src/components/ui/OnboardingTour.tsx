@@ -130,7 +130,7 @@ export function OnboardingTour() {
         targetPath = "/dashboard/tracking";
       } else if (nextIndex === 7) {
         targetPath = "/dashboard/drivers";
-      } else if (nextIndex >= 0 && nextIndex <= 2) {
+      } else if ((nextIndex >= 0 && nextIndex <= 2) || nextIndex > 8) {
         targetPath = "/dashboard";
       }
 

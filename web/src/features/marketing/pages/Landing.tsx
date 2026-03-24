@@ -108,8 +108,8 @@ const testimonials = [
 const plans = [
   {
     name: "Free",
-    price: "0",
-    period: "/mo",
+    priceMonthly: "0",
+    priceYearly: "0",
     desc: "Perfect for testing the platform",
     drivers: "Up to 2 drivers",
     features: [
@@ -121,11 +121,12 @@ const plans = [
     ],
     cta: "Start for free",
     highlighted: false,
+    save: "",
   },
   {
     name: "Starter",
-    price: "29",
-    period: "/mo",
+    priceMonthly: "29",
+    priceYearly: "24",
     desc: "For small local fleets",
     drivers: "Up to 5 drivers",
     features: [
@@ -137,15 +138,16 @@ const plans = [
     ],
     cta: "Get started",
     highlighted: true,
+    save: "Save 17%",
   },
   {
     name: "Growth",
-    price: "89",
-    period: "/mo",
+    priceMonthly: "89",
+    priceYearly: "74",
     desc: "For growing delivery operations",
     drivers: "Up to 20 drivers",
     features: [
-      "Everything in Professional",
+      "Everything in Starter",
       "Custom reporting",
       "API access",
       "Multi-fleet support",
@@ -153,6 +155,7 @@ const plans = [
     ],
     cta: "Scale now",
     highlighted: false,
+    save: "Save 17%",
   },
 ];
 
@@ -163,6 +166,9 @@ export function WebLanding() {
   const [legalModalType, setLegalModalType] = useState<
     "terms" | "privacy" | null
   >(null);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -208,7 +214,7 @@ export function WebLanding() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            {["Features", "How it works", "Pricing"].map((item) => (
+            {["Features", "How it works", "Pricing", "Demo"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(" ", "-")}`}
@@ -287,16 +293,18 @@ export function WebLanding() {
                   </button>
                 </div>
                 <div className="px-6 pb-6 flex flex-col gap-5">
-                  {["Features", "How it works", "Pricing"].map((item) => (
-                    <a
-                      key={item}
-                      href={`#${item.toLowerCase().replace(" ", "-")}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-semibold text-[#212121] no-underline"
-                    >
-                      {item}
-                    </a>
-                  ))}
+                  {["Features", "How it works", "Pricing", "Demo"].map(
+                    (item) => (
+                      <a
+                        key={item}
+                        href={`#${item.toLowerCase().replace(" ", "-")}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-lg font-semibold text-[#212121] no-underline"
+                      >
+                        {item}
+                      </a>
+                    ),
+                  )}
                   <div className="h-px bg-black/5 my-3" />
                   <div className="mt-auto flex flex-col gap-3">
                     <button
@@ -409,6 +417,7 @@ export function WebLanding() {
                 src={DELIVERY_IMAGE}
                 alt="Delivery fleet on city route"
                 className="w-full h-full object-cover"
+                loading="eager"
               />
             </div>
 
@@ -584,7 +593,7 @@ export function WebLanding() {
       </section>
 
       {/* ── Dashboard Preview ──────────────────────────────────────── */}
-      <section className="py-24 max-w-300 mx-auto px-6">
+      <section id="demo" className="py-24 max-w-300 mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -637,6 +646,7 @@ export function WebLanding() {
               src={MAP_IMAGE}
               alt="Route optimization map"
               className="w-full aspect-4/3 object-cover block"
+              loading="lazy"
             />
           </motion.div>
         </div>
@@ -769,38 +779,82 @@ export function WebLanding() {
             <p className="text-[17px] text-gray-500">
               Start free, scale as you grow. No hidden fees.
             </p>
+
+            {/* Billing Toggle – premium UX upgrade */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="flex justify-center mt-8"
+            >
+              <div className="inline-flex rounded-full bg-white border border-black/10 p-1 shadow-sm">
+                <button
+                  onClick={() => setBillingPeriod("monthly")}
+                  className={clsx(
+                    "px-6 py-2 text-sm font-semibold rounded-full transition-all duration-200",
+                    billingPeriod === "monthly"
+                      ? "bg-emerald-600 text-white shadow"
+                      : "text-gray-500 hover:text-gray-700",
+                  )}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingPeriod("yearly")}
+                  className={clsx(
+                    "px-6 py-2 text-sm font-semibold rounded-full transition-all duration-200",
+                    billingPeriod === "yearly"
+                      ? "bg-emerald-600 text-white shadow"
+                      : "text-gray-500 hover:text-gray-700",
+                  )}
+                >
+                  Yearly{" "}
+                  <span className="text-[10px] opacity-70">
+                    (save up to 17%)
+                  </span>
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {plans.map((plan, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -5 }}
-                className={`rounded-[20px] p-8 relative transition-all duration-300 text-center ${
-                  plan.highlighted
-                    ? "bg-emerald-600 border-none shadow-[0_20px_60px_rgba(5,150,105,0.3)] scale-[1.03] z-10"
-                    : "bg-white border border-black/8 shadow-sm"
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-400 text-emerald-900 px-4 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest whitespace-nowrap">
-                    Most popular
-                  </div>
-                )}
-                <div className="mb-6">
-                  <p
-                    className={`text-sm font-bold uppercase tracking-widest mb-1.5 ${
-                      plan.highlighted ? "text-white/80" : "text-gray-400"
-                    }`}
-                  >
-                    {plan.name}
-                  </p>
-                  <div className="flex items-baseline justify-center gap-1 mb-2">
-                    {plan.price !== "Custom" && (
+            {plans.map((plan, i) => {
+              const price =
+                billingPeriod === "monthly"
+                  ? plan.priceMonthly
+                  : plan.priceYearly;
+              const periodText =
+                billingPeriod === "monthly" ? "/mo" : "/mo billed yearly";
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -5 }}
+                  className={`rounded-[20px] p-8 relative transition-all duration-300 text-center ${
+                    plan.highlighted
+                      ? "bg-emerald-600 border-none shadow-[0_20px_60px_rgba(5,150,105,0.3)] scale-[1.03] z-10"
+                      : "bg-white border border-black/8 shadow-sm"
+                  }`}
+                >
+                  {plan.highlighted && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-400 text-emerald-900 px-4 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest whitespace-nowrap">
+                      Most popular
+                    </div>
+                  )}
+                  <div className="mb-6">
+                    <p
+                      className={`text-sm font-bold uppercase tracking-widest mb-1.5 ${
+                        plan.highlighted ? "text-white/80" : "text-gray-400"
+                      }`}
+                    >
+                      {plan.name}
+                    </p>
+                    <div className="flex items-baseline justify-center gap-1 mb-2">
                       <span
                         className={`text-base font-semibold ${
                           plan.highlighted ? "text-white/70" : "text-gray-400"
@@ -808,69 +862,80 @@ export function WebLanding() {
                       >
                         $
                       </span>
-                    )}
-                    <span
-                      className={`text-[42px] font-black tracking-tighter leading-none ${
-                        plan.highlighted ? "text-white" : "text-[#121212]"
-                      }`}
-                    >
-                      {plan.price}
-                    </span>
-                    {plan.period && (
+                      <span
+                        className={`text-[42px] font-black tracking-tighter leading-none ${
+                          plan.highlighted ? "text-white" : "text-[#121212]"
+                        }`}
+                      >
+                        {price}
+                      </span>
                       <span
                         className={`text-sm ${
                           plan.highlighted ? "text-white/60" : "text-gray-400"
                         }`}
                       >
-                        {plan.period}
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className={`text-[13px] ${
-                      plan.highlighted ? "text-white/70" : "text-gray-400"
-                    }`}
-                  >
-                    {plan.drivers}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => navigate("/dashboard/signup")}
-                  className={`w-full py-3 rounded-xl text-sm font-bold cursor-pointer mb-6 transition-all duration-200 hover:opacity-90 tap-scale ${
-                    plan.highlighted
-                      ? "bg-white text-emerald-600"
-                      : "bg-emerald-600 text-white"
-                  }`}
-                >
-                  {plan.cta}
-                </button>
-
-                <div className="flex flex-col gap-2.5">
-                  {plan.features.map((feature) => (
-                    <div
-                      key={feature}
-                      className="flex items-center justify-center gap-2"
-                    >
-                      <CheckCircleIcon
-                        className={`w-3.75 h-3.75 shrink-0 ${
-                          plan.highlighted
-                            ? "text-emerald-300"
-                            : "text-emerald-600"
-                        }`}
-                      />
-                      <span
-                        className={`text-[13px] font-medium ${
-                          plan.highlighted ? "text-white/85" : "text-gray-600"
-                        }`}
-                      >
-                        {feature}
+                        {periodText}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
+
+                    {billingPeriod === "yearly" && plan.save && (
+                      <div
+                        className={`inline-block text-xs font-bold px-3 py-0.5 rounded-full mb-2 ${
+                          plan.highlighted
+                            ? "bg-white/20 text-white"
+                            : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {plan.save}
+                      </div>
+                    )}
+
+                    <p
+                      className={`text-[13px] ${
+                        plan.highlighted ? "text-white/70" : "text-gray-400"
+                      }`}
+                    >
+                      {plan.drivers}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => navigate("/dashboard/signup")}
+                    className={`w-full py-3 rounded-xl text-sm font-bold cursor-pointer mb-6 transition-all duration-200 hover:opacity-90 tap-scale ${
+                      plan.highlighted
+                        ? "bg-white text-emerald-600"
+                        : "bg-emerald-600 text-white"
+                    }`}
+                  >
+                    {plan.cta}
+                  </button>
+
+                  <div className="flex flex-col gap-2.5">
+                    {plan.features.map((feature) => (
+                      <div
+                        key={feature}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <CheckCircleIcon
+                          className={`w-3.75 h-3.75 shrink-0 ${
+                            plan.highlighted
+                              ? "text-emerald-300"
+                              : "text-emerald-600"
+                          }`}
+                        />
+                        <span
+                          className={`text-[13px] font-medium ${
+                            plan.highlighted ? "text-white/85" : "text-gray-600"
+                          }`}
+                        >
+                          {feature}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

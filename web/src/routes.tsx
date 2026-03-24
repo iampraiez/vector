@@ -145,7 +145,6 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", Component: Landing },
 
-      // ── Marketing & Public Pages ──────────────────────────────
       { path: "/track", Component: TrackingPage },
       { path: "/privacy", Component: Privacy },
       { path: "/terms", Component: Terms },

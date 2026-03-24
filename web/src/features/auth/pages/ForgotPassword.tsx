@@ -100,7 +100,7 @@ export function ForgotPassword() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                      placeholder="you@company.com"
+                      placeholder="name@company.com"
                       className={`w-full h-12 pl-11 pr-11 bg-white border rounded-xl text-[14px] font-medium text-gray-900 focus:outline-none transition-all ${
                         emailValid
                           ? "border-emerald-500 ring-4 ring-emerald-600/5"
