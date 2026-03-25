@@ -87,7 +87,7 @@ class DriverApiService {
 
   Future<Map<String, dynamic>> getRoutePreview(String routeId) async {
     try {
-      final res = await _dio.get('/driver/routes/$routeId');
+      final res = await _dio.get('/driver/routes/$routeId/preview');
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);

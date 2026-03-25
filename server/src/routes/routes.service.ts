@@ -41,7 +41,10 @@ export class RoutesService {
         where,
         skip,
         take: limit,
-        include: { driver: { include: { user: true } } },
+        include: {
+          driver: { include: { user: true } },
+          stops: { orderBy: { sequence: 'asc' } },
+        },
         orderBy: { created_at: 'desc' },
       }),
       this.prisma.route.count({ where }),

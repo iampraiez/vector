@@ -14,6 +14,13 @@ import { renderToString } from "react-dom/server";
 import { Route, RouteStop } from "../../store/routeStore";
 import { Driver } from "../../store/driverStore";
 
+interface MapRouteStop extends Omit<RouteStop, "lat" | "lng"> {
+  lat?: number | null;
+  lng?: number | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
+}
+
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -369,11 +376,16 @@ const MapView: React.FC<MapViewProps> = ({
           if (!route.stops || route.stops.length === 0) return null;
           const driverColor = getDriverColor(route.driver_id);
           const points = (route.stops || [])
-            .filter(
-              (s: RouteStop): s is RouteStop & { lat: number; lng: number } =>
-                hasValidCoords(s.lat, s.lng),
+            .filter((s: MapRouteStop) =>
+              hasValidCoords(s.lat ?? s.location_lat, s.lng ?? s.location_lng),
             )
-            .map((s) => [s.lat!, s.lng!] as [number, number]);
+            .map(
+              (s: MapRouteStop) =>
+                [s.lat ?? s.location_lat, s.lng ?? s.location_lng] as [
+                  number,
+                  number,
+                ],
+            );
 
           return (
             <React.Fragment key={route.id}>
@@ -386,8 +398,10 @@ const MapView: React.FC<MapViewProps> = ({
                   dashArray={route.status === "pending" ? "10, 10" : undefined}
                 />
               )}
-              {route.stops.map((stop, stopIdx) => {
-                if (!hasValidCoords(stop.lat, stop.lng)) return null;
+              {route.stops.map((stop: MapRouteStop, stopIdx) => {
+                const sLat = stop.lat ?? stop.location_lat;
+                const sLng = stop.lng ?? stop.location_lng;
+                if (!hasValidCoords(sLat, sLng)) return null;
                 const isCompleted = stop.status === "completed";
                 const isFailed = stop.status === "failed";
                 const markerColor = isCompleted
@@ -399,7 +413,10 @@ const MapView: React.FC<MapViewProps> = ({
                 return (
                   <Marker
                     key={stop.id}
-                    position={[stop.lat!, stop.lng!]}
+                    position={[
+                      stop.lat ?? stop.location_lat!,
+                      stop.lng ?? stop.location_lng!,
+                    ]}
                     icon={L.divIcon({
                       html: renderToString(
                         <div
