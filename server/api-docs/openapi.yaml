@@ -479,6 +479,10 @@ paths:
       responses:
         "200":
           description: ""
+          content:
+            application/json:
+              schema:
+                type: object
       tags: *a7
   /dashboard/orders/bulk:
     post:

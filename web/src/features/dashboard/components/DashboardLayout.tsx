@@ -16,6 +16,7 @@ import { useAuthStore } from "../../../store/authStore";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { useSettingsStore } from "../../../store/settingsStore";
+import { useNotificationsStore } from "../../../store/notificationsStore";
 import {
   Sidebar,
   SidebarContent,
@@ -191,6 +192,14 @@ function DashboardSidebar() {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { addNotificationToState, fetchNotifications } =
+    useNotificationsStore();
+
+  React.useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id, fetchNotifications]);
 
   React.useEffect(() => {
     if (!user?.id) return;
@@ -207,7 +216,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     );
 
     socket.on("connect", () => {
-      console.log("Connected to notifications socket (ID:", socket.id, ")");
+      // console.log("Connected to notifications socket (ID:", socket.id, ")");
       socket.emit("join", user.id);
     });
 
@@ -216,6 +225,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     });
 
     socket.on("notification", (payload: Record<string, unknown>) => {
+      addNotificationToState(payload);
       toast(payload.title as string, {
         description: payload.body as string,
         action: {
@@ -228,7 +238,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => {
       socket.disconnect();
     };
-  }, [user?.id, navigate]);
+  }, [user?.id, navigate, addNotificationToState]);
 
   const location = useLocation();
 

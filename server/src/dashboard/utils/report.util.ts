@@ -1,14 +1,18 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { ReportQueryDto } from '../dto/dashboard.dto';
 
 export async function generateReportCsv(
   prisma: PrismaClient,
   companyId: string,
   query: ReportQueryDto,
+  driverId?: string,
 ): Promise<string> {
-  const where: Record<string, any> = { company_id: companyId };
+  const where: Prisma.StopWhereInput = { company_id: companyId };
+  if (driverId) {
+    where.driver_id = driverId;
+  }
   if (query.start_date || query.end_date) {
-    const createdAt: Record<string, any> = {};
+    const createdAt: Prisma.DateTimeFilter = {};
     if (query.start_date) createdAt.gte = new Date(query.start_date);
     if (query.end_date) createdAt.lte = new Date(query.end_date);
     where.created_at = createdAt;

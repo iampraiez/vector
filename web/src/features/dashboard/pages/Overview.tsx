@@ -12,7 +12,6 @@ import {
   ChevronRightIcon,
   ClipboardDocumentIcon,
   RocketLaunchIcon,
-  PlusIcon,
 } from "@heroicons/react/24/outline";
 import { NewOrderModal } from "../components/NewOrderModal";
 import { Skeleton } from "../../../components/ui/skeleton";
@@ -201,7 +200,6 @@ export function DashboardOverview() {
                   }
                   className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
                 >
-                  <PlusIcon className="w-3.5 h-3.5 stroke-2" />
                   New Order
                 </button>
               </div>

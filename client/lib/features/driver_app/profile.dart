@@ -5,6 +5,8 @@ import 'package:client/main.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
+
+import '../../shared/widgets/offline_banner.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -470,7 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (_isOffline) OfflineService.instance.offlineBanner(),
+            OfflineBanner(apiOffline: _isOffline),
             
             // Header
             Container(

@@ -10,7 +10,10 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, DriverStatus, StopPriority } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
-import { settingsOtpTemplate } from '../common/template';
+import {
+  settingsOtpTemplate,
+  accountDeletionScheduledTemplate,
+} from '../common/template';
 import {
   OnboardingDto,
   ExportHistoryDto,
@@ -166,6 +169,30 @@ export class DriverService {
         last_active_at: new Date(),
       },
     });
+
+    // Notify fleet manager when driver comes online or goes offline
+    if (dto.status === 'active' || dto.status === 'offline') {
+      const manager = await this.prisma.user.findFirst({
+        where: {
+          company_id: driver.company_id,
+          role: { in: ['admin', 'manager'] },
+        },
+        orderBy: { created_at: 'asc' },
+      });
+      if (manager) {
+        const isOnline = dto.status === 'active';
+        await this.notificationsService.create({
+          userId: manager.id,
+          companyId: driver.company_id,
+          type: 'system_alert',
+          title: isOnline ? 'Driver Online' : 'Driver Offline',
+          body: `${driver.user.full_name} is now ${
+            isOnline ? 'online and ready for deliveries' : 'offline'
+          }.`,
+        });
+      }
+    }
+
     return { status: updated.status };
   }
 
@@ -617,6 +644,24 @@ export class DriverService {
       }),
     ]);
 
+    // Notify fleet manager of completed delivery
+    const manager = await this.prisma.user.findFirst({
+      where: {
+        company_id: stop.company_id,
+        role: { in: ['admin', 'manager'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+    if (manager) {
+      await this.notificationsService.create({
+        userId: manager.id,
+        companyId: stop.company_id,
+        type: 'system_alert',
+        title: 'Delivery Completed',
+        body: `${driver.user.full_name} completed a delivery for "${stop.customer_name}".`,
+      });
+    }
+
     if (stop.route_id) {
       await this.checkAndUpdateRouteStatus(stop.route_id);
     } else {
@@ -727,6 +772,40 @@ export class DriverService {
           }
         }
       });
+
+      // Notify driver and fleet manager of route completion
+      if (route.driver_id) {
+        const driverUser = await this.prisma.driver.findUnique({
+          where: { id: route.driver_id },
+          select: { user_id: true, company_id: true },
+        });
+        if (driverUser) {
+          await this.notificationsService.create({
+            userId: driverUser.user_id,
+            companyId: route.company_id,
+            type: 'route_completed',
+            title: 'Route Completed',
+            body: `You have completed route "${route.name}". Great work!`,
+          });
+          // Notify fleet manager as well
+          const manager = await this.prisma.user.findFirst({
+            where: {
+              company_id: route.company_id,
+              role: { in: ['admin', 'manager'] },
+            },
+            orderBy: { created_at: 'asc' },
+          });
+          if (manager && manager.id !== driverUser.user_id) {
+            await this.notificationsService.create({
+              userId: manager.id,
+              companyId: route.company_id,
+              type: 'route_completed',
+              title: 'Route Completed',
+              body: `Route "${route.name}" has been completed successfully.`,
+            });
+          }
+        }
+      }
     }
   }
 
@@ -1105,6 +1184,18 @@ export class DriverService {
         'deleteAccount',
         { userId },
         { ...STANDARD_QUEUE_OPTIONS, delay: tenDaysMs },
+      );
+
+      // Send confirmation email with grace period details and recovery instructions
+      const deletionDate = new Date(Date.now() + tenDaysMs).toLocaleDateString(
+        'en-GB',
+        { day: '2-digit', month: 'long', year: 'numeric' },
+      );
+      await this.mailService.sendMail(
+        driver.user.email,
+        'Your Vector account is scheduled for deletion',
+        accountDeletionScheduledTemplate(driver.user.full_name, deletionDate),
+        `Your account will be permanently deleted on ${deletionDate}. Log in and verify your email to cancel.`,
       );
 
       return { message: 'Account scheduled for deletion in 10 days' };

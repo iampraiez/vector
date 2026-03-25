@@ -10,18 +10,21 @@ import {
   CheckIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
+import { useNotificationsStore } from "../../../store/notificationsStore";
+
+const formatTimeAgo = (dateStr: string): string => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+};
 
 type NotifCategory = "all" | "orders" | "drivers" | "system";
-
-interface Notification {
-  id: number;
-  type: "order" | "driver" | "alert" | "success" | "system";
-  title: string;
-  body: string;
-  time: string;
-  read: boolean;
-  category: "orders" | "drivers" | "system";
-}
 
 const iconMap = {
   order: ArchiveBoxIcon,
@@ -47,36 +50,35 @@ const CATEGORIES: { key: NotifCategory; label: string }[] = [
 ];
 
 export function DashboardNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAll,
+  } = useNotificationsStore();
+
   const [activeCategory, setActiveCategory] = useState<NotifCategory>("all");
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  // We map the backend type to category here to support filtering
+  const getCategory = (type: string): "orders" | "drivers" | "system" => {
+    if (type.includes("order") || type === "new_assignment") return "orders";
+    if (type.includes("driver") || type === "route_completed") return "drivers";
+    return "system";
+  };
+
+  const getIconType = (type: string) => {
+    if (type.includes("system") || type === "new_assignment") return "system";
+    if (type.includes("driver") || type === "route_completed") return "driver";
+    if (type === "delivery_failed") return "alert";
+    return "order";
+  };
 
   const filtered = notifications.filter(
-    (n) => activeCategory === "all" || n.category === activeCategory,
+    (n) => activeCategory === "all" || getCategory(n.type) === activeCategory,
   );
-
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const markRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  };
-
-  const remove = (id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
-
-  const clearCurrent = () => {
-    setNotifications((prev) =>
-      prev.filter((n) =>
-        activeCategory === "all" ? false : n.category !== activeCategory,
-      ),
-    );
-  };
 
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto pb-24">
@@ -100,7 +102,7 @@ export function DashboardNotifications() {
         <div className="flex gap-3">
           {unreadCount > 0 && (
             <button
-              onClick={markAllRead}
+              onClick={markAllAsRead}
               className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-black/5 rounded-xl text-[12px] font-semibold text-gray-600 hover:bg-white hover:shadow-lg hover:border-emerald-600/30 hover:text-emerald-600 transition-all cursor-pointer"
             >
               <CheckIcon className="w-4 h-4" />
@@ -109,7 +111,7 @@ export function DashboardNotifications() {
           )}
           {filtered.length > 0 && (
             <button
-              onClick={clearCurrent}
+              onClick={clearAll}
               className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-black/5 rounded-xl text-[12px] font-semibold text-gray-500 hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all cursor-pointer"
             >
               <TrashIcon className="w-4 h-4" />
@@ -125,7 +127,8 @@ export function DashboardNotifications() {
           const count =
             cat.key === "all"
               ? notifications.length
-              : notifications.filter((n) => n.category === cat.key).length;
+              : notifications.filter((n) => getCategory(n.type) === cat.key)
+                  .length;
           return (
             <button
               key={cat.key}
@@ -169,14 +172,18 @@ export function DashboardNotifications() {
       ) : (
         <div className="space-y-3">
           {filtered.map((n) => {
-            const Icon = iconMap[n.type];
-            const colorClass = categoryColors[n.type];
+            const mappedType = getIconType(n.type) as keyof typeof iconMap;
+            const Icon = iconMap[mappedType] || InformationCircleIcon;
+            const colorClass =
+              categoryColors[mappedType] || categoryColors.system;
+            const timeAgo = formatTimeAgo(n.created_at);
+
             return (
               <div
                 key={n.id}
-                onClick={() => markRead(n.id)}
+                onClick={() => !n.is_read && markAsRead(n.id)}
                 className={`group flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
-                  n.read
+                  n.is_read
                     ? "bg-white border-black/5 hover:border-black/10"
                     : "bg-white border-emerald-600/15 shadow-sm shadow-emerald-600/5 hover:border-emerald-600/25"
                 }`}
@@ -190,15 +197,15 @@ export function DashboardNotifications() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <p
-                      className={`text-[14px] leading-snug ${n.read ? "font-medium text-gray-600" : "font-medium text-gray-700"}`}
+                      className={`text-[14px] leading-snug ${n.is_read ? "font-medium text-gray-600" : "font-medium text-gray-700"}`}
                     >
                       {n.title}
-                      {!n.read && (
+                      {!n.is_read && (
                         <span className="ml-2 inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full align-middle" />
                       )}
                     </p>
                     <span className="shrink-0 text-[11px] text-gray-400 font-medium whitespace-nowrap">
-                      {n.time}
+                      {timeAgo}
                     </span>
                   </div>
                   <p className="text-[13px] text-gray-400 mt-1 leading-relaxed">
@@ -209,7 +216,7 @@ export function DashboardNotifications() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    remove(n.id);
+                    deleteNotification(n.id);
                   }}
                   className="self-start shrink-0 p-1.5 rounded-lg text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 transition-all cursor-pointer"
                 >

@@ -35,7 +35,10 @@ import { Queue } from 'bullmq';
 import { generateReportCsv } from './utils/report.util';
 import { MailService } from '../mail/mail.service';
 import { MapService } from '../map/map.service';
-import { settingsOtpTemplate } from '../common/template';
+import {
+  settingsOtpTemplate,
+  accountDeletionScheduledTemplate,
+} from '../common/template';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { generateCompanyCode } from '../common/utils/generate-company-code';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -307,7 +310,7 @@ export class DashboardService {
       },
     });
 
-    // Queue "Order Received" notification
+    // Queue "Order Received" notification to customer
     if (stop.customer_email) {
       const appUrl = this.configService.getOrThrow<string>('APP_URL');
       await this.emailQueue.add(
@@ -321,6 +324,21 @@ export class DashboardService {
         },
         STANDARD_QUEUE_OPTIONS,
       );
+    }
+
+    // Notify the fleet manager who created the order (in-app)
+    const manager = await this.prisma.user.findFirst({
+      where: { company_id: companyId, role: { in: ['admin', 'manager'] } },
+      orderBy: { created_at: 'asc' },
+    });
+    if (manager) {
+      await this.notificationsService.create({
+        userId: manager.id,
+        companyId,
+        type: 'new_assignment',
+        title: 'New Order Created',
+        body: `Order for "${stop.customer_name}" (${stop.external_id}) has been created and is ready to be assigned.`,
+      });
     }
 
     return stop;
@@ -422,7 +440,7 @@ export class DashboardService {
       );
     }
 
-    return this.prisma.stop.update({
+    const updatedStop = await this.prisma.stop.update({
       where: { id: stopId },
       data: {
         status: dto.driver_id ? 'assigned' : 'unassigned',
@@ -432,7 +450,21 @@ export class DashboardService {
         arrived_at: null,
         completed_at: null,
       },
+      include: { driver: { include: { user: true } } },
     });
+
+    // Notify driver of reassignment
+    if (dto.driver_id && updatedStop.driver?.user?.id) {
+      await this.notificationsService.create({
+        userId: updatedStop.driver.user.id,
+        companyId,
+        type: 'new_assignment',
+        title: 'Order Re-assigned to You',
+        body: `You have been re-assigned the delivery for "${updatedStop.customer_name}".`,
+      });
+    }
+
+    return updatedStop;
   }
 
   private async getOrderStats(companyId: string) {
@@ -703,6 +735,15 @@ export class DashboardService {
           },
         },
       },
+    });
+
+    // Welcome notification for the new driver
+    await this.notificationsService.create({
+      userId: user.id,
+      companyId: companyId,
+      type: 'system_alert',
+      title: '👋 Welcome to Vector!',
+      body: 'Your account has been created by your fleet manager. Start accepting deliveries.',
     });
 
     return {
@@ -1560,6 +1601,18 @@ export class DashboardService {
         'deleteAccount',
         { userId },
         { ...STANDARD_QUEUE_OPTIONS, delay: tenDaysMs },
+      );
+
+      // Send confirmation email with recovery instructions
+      const deletionDate = new Date(Date.now() + tenDaysMs).toLocaleDateString(
+        'en-GB',
+        { day: '2-digit', month: 'long', year: 'numeric' },
+      );
+      await this.mailService.sendMail(
+        admin.email,
+        'Your Vector workspace is scheduled for deletion',
+        accountDeletionScheduledTemplate(admin.full_name, deletionDate),
+        `Your workspace will be permanently deleted on ${deletionDate}. Log in and verify your email to cancel.`,
       );
 
       return {

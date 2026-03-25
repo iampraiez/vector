@@ -232,3 +232,23 @@ export function trialExpiredTemplate(companyName: string) {
   `;
   return generateBaseTemplate(content, 'Trial Period Ended');
 }
+
+export function accountDeletionScheduledTemplate(
+  fullName: string,
+  deletionDate: string,
+) {
+  const content = `
+    <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800;">Account Scheduled for Deletion</h2>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Hi ${fullName},</p>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 20px;">Your account has been scheduled for <b>permanent deletion</b> on <b>${deletionDate}</b>.</p>
+
+    <div style="background-color: #fef2f2; padding: 24px; border-radius: 16px; border: 1px solid #fee2e2; margin-bottom: 32px;">
+      <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">⚠️ All your data — routes, deliveries, ratings, and settings — will be permanently erased and cannot be recovered.</p>
+    </div>
+
+    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Changed your mind? <b>You can cancel this deletion</b> by simply logging in and verifying your email address before ${deletionDate}. Once verified, the deletion will be cancelled automatically.</p>
+    
+    <p style="font-size: 14px; color: #64748b; margin-top: 32px; font-weight: 500;">If you did not request this, please log in immediately and verify your email to secure your account.</p>
+  `;
+  return generateBaseTemplate(content, 'Account Deletion Scheduled');
+}

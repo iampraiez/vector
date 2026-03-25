@@ -612,7 +612,6 @@ export function DashboardOrders() {
                                 onClick={() => setShowNewOrderModal(true)}
                                 className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-bold text-white shadow-lg shadow-emerald-600/15 hover:bg-emerald-700 transition-colors cursor-pointer"
                               >
-                                <PlusIcon className="w-4 h-4" />
                                 Create order
                               </button>
                             )}

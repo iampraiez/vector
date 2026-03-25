@@ -9,6 +9,7 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
+import '../../shared/widgets/offline_banner.dart';
 
 import '../../main.dart' show RouteProgressScope;
 
@@ -304,29 +305,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Offline banner
-              if (_isOffline)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: const Color(0xFFFEF3C7),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.wifi_off,
-                          size: 16, color: Color(0xFFD97706)),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Showing cached data – you appear to be offline',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF92400E),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+OfflineBanner(apiOffline: _isOffline),
 
               // Header
               Container(

@@ -9,12 +9,14 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
 import { BillingModule } from '../billing/billing.module';
 import { BullModule } from '@nestjs/bull';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     PrismaModule,
     RedisModule,
     BillingModule,
+    NotificationsModule,
     PassportModule,
     BullModule.registerQueue({ name: 'email' }),
     JwtModule.registerAsync({

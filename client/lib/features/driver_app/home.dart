@@ -10,7 +10,8 @@ import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/location_service.dart';
-import '../../main.dart' show AuthScope, RouteProgressScope;
+import '../../main.dart' show AuthScope, RouteProgressScope, NotificationScope;
+import '../../shared/widgets/offline_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -139,7 +140,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final newStatus = online ? 'active' : 'offline';
       await DriverApiService.instance.updateStatus(newStatus);
       
-      // Reload summary immediately to get the fresh last_active_at from backend
+      // If going online, try to get current location and update backend immediately
+      if (online && _isLocationEnabled && (_locationPermission == LocationPermission.whileInUse || _locationPermission == LocationPermission.always)) {
+        try {
+          final pos = await LocationService.instance.getCurrentPosition();
+          if (pos != null) {
+            await DriverApiService.instance.updateLocation(pos.latitude, pos.longitude);
+          }
+        } catch (e) {
+          debugPrint('Failed to send initial location: $e');
+        }
+      }
+
+      // Reload summary immediately to get the fresh last_active_at and position from backend
       await _loadData(forceRefresh: true);
       
       if (online) {
@@ -305,6 +318,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ];
     final dateStr = '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
     final userName = AuthScope.of(context).user?.name.split(' ').first ?? 'Driver';
+    final unreadCount = NotificationScope.of(context).unreadCount;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -322,34 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Offline banner
-                    if (_isOffline)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        color: const Color(0xFFFEF3C7),
-                        child: Row(
-                          children: const [
-                            Icon(
-                              Icons.wifi_off,
-                              size: 16,
-                              color: Color(0xFFD97706),
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Showing cached data – you appear to be offline',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF92400E),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    OfflineBanner(apiOffline: _isOffline),
 
                     // Location banner
                     if (_showLocationBanner) _buildLocationBanner(),
@@ -418,19 +405,49 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           InkWell(
                             onTap: () => context.push('/notifications'),
                             borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: AppColors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_none,
-                                size: 20,
-                                color: AppColors.textSecondary,
-                              ),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: const Icon(
+                                    Icons.notifications_none,
+                                    size: 20,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                if (unreadCount > 0)
+                                  Positioned(
+                                    top: -4,
+                                    right: -4,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.error,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        unreadCount > 9 ? '9+' : '$unreadCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ],

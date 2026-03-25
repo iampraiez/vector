@@ -44,9 +44,15 @@ export class AccountProcessor {
     this.logger.log(`Generating clear data report for company ${companyId}`);
 
     try {
-      // For simplicity, we just generate the standard CSV report
-      // If targetRole is driver, we could filter by driverId, but for now just send the workspace report
-      const csvContent = await generateReportCsv(this.prisma, companyId, {});
+      // For driver clears, scope the CSV to that driver's data only.
+      const csvDriverId = targetRole === 'driver' ? targetId : undefined;
+
+      const csvContent = await generateReportCsv(
+        this.prisma,
+        companyId,
+        {},
+        csvDriverId,
+      );
 
       const attachments = [
         {
@@ -60,6 +66,7 @@ export class AccountProcessor {
       const textPlain =
         'Attached is the final data report before permanent clearance.';
 
+      // 1. Send report email FIRST — only clear data after email queued
       await this.mailService.sendMail(
         email,
         subject,
@@ -86,14 +93,16 @@ export class AccountProcessor {
         );
       }
 
-      // Now actually clear the data
+      // 2. Now actually clear the data (after confirming email was queued)
       if (targetRole === 'workspace') {
-        // Delete all stops, routes, ratings for company
         await this.prisma.stop.deleteMany({ where: { company_id: companyId } });
         await this.prisma.route.deleteMany({
           where: { company_id: companyId },
         });
         await this.prisma.deliveryRating.deleteMany({
+          where: { company_id: companyId },
+        });
+        await this.prisma.notification.deleteMany({
           where: { company_id: companyId },
         });
       } else if (targetRole === 'driver') {
@@ -213,7 +222,13 @@ export class AccountProcessor {
   }
 
   @Process('deleteAccount')
-  async handleDeleteAccount(job: Bull.Job<{ userId: string }>) {
+  async handleDeleteAccount(
+    job: Bull.Job<{
+      userId: string;
+      userFullName?: string;
+      userEmail?: string;
+    }>,
+  ) {
     const { userId } = job.data;
     this.logger.log(`Running delayed deletion for user ${userId}`);
 

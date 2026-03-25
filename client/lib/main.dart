@@ -10,6 +10,7 @@ import 'package:client/navigation/router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:client/core/services/driver_api_service.dart';
+import 'package:client/core/services/notification_service.dart';
 
 final themeController = ThemeController();
 
@@ -19,6 +20,9 @@ final routeProgressProvider = RouteProgressProvider();
 
 /// Global auth provider — handles login state and token persistence.
 final authProvider = AuthProvider();
+
+/// Global notification service
+final notificationService = NotificationService.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +48,21 @@ void main() async {
   // Initialize auth state before app startup
   await authProvider.initialize();
 
+  // Initialize notification state and load local cache
+  await notificationService.init();
+
+  // Listen to FCM push notifications while app is in foreground
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    if (message.notification != null) {
+      notificationService.handleIncomingSocketNotification({
+        'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'title': message.notification?.title ?? '',
+        'body': message.notification?.body ?? '',
+        ...message.data,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    }
+  });
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -68,15 +87,18 @@ class VectorApp extends StatelessWidget {
       builder: (context, _) {
         return AuthScope(
           provider: authProvider,
-          child: RouteProgressScope(
-            provider: routeProgressProvider,
-            child: MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              title: 'Vector',
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeController.themeMode,
-              routerConfig: appRouter,
+          child: NotificationScope(
+            provider: notificationService,
+            child: RouteProgressScope(
+              provider: routeProgressProvider,
+              child: MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                title: 'Vector',
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeController.themeMode,
+                routerConfig: appRouter,
+              ),
             ),
           ),
         );
@@ -96,6 +118,22 @@ class AuthScope extends InheritedNotifier<AuthProvider> {
   static AuthProvider of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AuthScope>();
     assert(scope != null, 'No AuthScope found in the widget tree.');
+    return scope!.notifier!;
+  }
+}
+
+/// InheritedWidget for NotificationService
+class NotificationScope extends InheritedNotifier<NotificationService> {
+  const NotificationScope({
+    super.key,
+    required NotificationService provider,
+    required super.child,
+  }) : super(notifier: provider);
+
+  static NotificationService of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<NotificationScope>();
+    assert(scope != null, 'No NotificationScope found in the widget tree.');
     return scope!.notifier!;
   }
 }

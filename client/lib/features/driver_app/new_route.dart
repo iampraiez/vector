@@ -25,6 +25,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
   final TextEditingController _nameController = TextEditingController();
   final List<Map<String, dynamic>> _stops = [
     {
+      'id': UniqueKey().toString(),
       'customerName': '', 
       'customerEmail': '',
       'customerPhone': '',
@@ -33,7 +34,9 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
       'notes': '',
       'externalId': '',
       'priority': 'normal',
-      'date': DateTime.now()
+      'date': DateTime.now(),
+      'timeWindowStart': '09:00',
+      'timeWindowEnd': '17:00'
     }
   ];
   bool _creating = false;
@@ -84,6 +87,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
             if (address.isEmpty) continue;
             
             _stops.add({
+              'id': UniqueKey().toString(),
               'customerName': nameIdx != -1 && row.length > nameIdx ? row[nameIdx].toString().trim() : '',
               'customerEmail': emailIdx != -1 && row.length > emailIdx ? row[emailIdx].toString().trim() : '',
               'customerPhone': phoneIdx != -1 && row.length > phoneIdx ? row[phoneIdx].toString().trim() : '',
@@ -93,6 +97,8 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
               'externalId': orderIdx != -1 && row.length > orderIdx ? row[orderIdx].toString().trim() : '',
               'priority': priorityIdx != -1 && row.length > priorityIdx ? _parsePriority(row[priorityIdx].toString()) : 'normal',
               'date': DateTime.now(),
+              'timeWindowStart': '09:00',
+              'timeWindowEnd': '17:00'
             });
           }
         });
@@ -116,6 +122,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
 
   void _addStop() {
     setState(() => _stops.add({
+      'id': UniqueKey().toString(),
       'customerName': '', 
       'customerEmail': '',
       'customerPhone': '',
@@ -124,7 +131,9 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
       'notes': '',
       'externalId': '',
       'priority': 'normal',
-      'date': DateTime.now()
+      'date': DateTime.now(),
+      'timeWindowStart': '09:00',
+      'timeWindowEnd': '17:00'
     }));
   }
 
@@ -152,6 +161,8 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
           'externalId': s['externalId'],
           'priority': s['priority'],
           'delivery_date': (s['date'] as DateTime).toIso8601String(),
+          'time_window_start': s['timeWindowStart'],
+          'time_window_end': s['timeWindowEnd'],
         }).toList(),
       );
 
@@ -332,57 +343,33 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     
                     const SizedBox(height: AppSpacing.p4),
 
-                    // Auto-optimize: runs optimize + persists stop order after create
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => setState(() => _autoOptimize = !_autoOptimize),
+                    // Simplified Auto-optimize Toggle
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.p4, vertical: AppSpacing.p2),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.p4),
-                          decoration: BoxDecoration(
-                            color: _autoOptimize ? AppColors.primaryLight : AppColors.primaryLight.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: _autoOptimize ? AppColors.primary : Colors.transparent,
-                              width: 1.5,
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
+                          const SizedBox(width: AppSpacing.p3),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text('Auto-optimize route', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                Text('AI organizes stops efficiently', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.autorenew, color: AppColors.white, size: 18),
-                              ),
-                              const SizedBox(width: AppSpacing.p3),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Auto-optimize route',
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary),
-                                    ),
-                                    Text(
-                                      'AI will calculate the best order',
-                                      style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Switch(
-                                value: _autoOptimize,
-                                onChanged: (v) => setState(() => _autoOptimize = v),
-                                activeThumbColor: AppColors.primary,
-                              ),
-                            ],
+                          Switch.adaptive(
+                            value: _autoOptimize,
+                            activeTrackColor: AppColors.primary,
+                            onChanged: (v) => setState(() => _autoOptimize = v),
                           ),
-                        ),
+                        ],
                       ),
                     ),
 
@@ -402,7 +389,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     ),
                     const SizedBox(height: AppSpacing.p4),
                     AppButton(
-                      label: _creating ? 'Creating...' : 'Create & optimize route',
+                      label: _creating ? 'Creating...' : 'Create route',
                       isFullWidth: true,
                       onPressed: canCreate ? _createRoute : () {},
                     ),
@@ -559,6 +546,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
           int idx = e.key;
           var s = e.value;
           return Container(
+            key: ValueKey(s['id']),
             margin: const EdgeInsets.only(bottom: AppSpacing.p3),
             padding: const EdgeInsets.all(AppSpacing.p4),
             decoration: BoxDecoration(
@@ -694,7 +682,7 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                   ],
                 ),
                 const Divider(color: AppColors.border, height: 24),
-                // Per-stop Date
+                // Per-stop Date and Time Range
                 InkWell(
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -705,24 +693,83 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
                     );
                     if (picked != null) setState(() => _stops[idx]['date'] = picked);
                   },
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Delivery Date',
-                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.p2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Delivery Date',
+                            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                          ),
                         ),
-                      ),
-                      Text(
-                        DateFormat('MMM dd, yyyy').format(s['date']),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
-                    ],
+                        Text(
+                          DateFormat('MMM dd, yyyy').format(s['date']),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
+                      ],
+                    ),
                   ),
+                ),
+                const SizedBox(height: AppSpacing.p2),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Time Window',
+                        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: () async {
+                            final TimeOfDay? time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay(
+                                hour: int.parse(s['timeWindowStart'].split(':')[0]),
+                                minute: int.parse(s['timeWindowStart'].split(':')[1]),
+                              ),
+                            );
+                            if (time != null) {
+                              setState(() => _stops[idx]['timeWindowStart'] = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border)),
+                            child: Text(s['timeWindowStart'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          ),
+                        ),
+                        const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('to', style: TextStyle(fontSize: 12, color: AppColors.textHint))),
+                        InkWell(
+                          onTap: () async {
+                            final TimeOfDay? time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay(
+                                hour: int.parse(s['timeWindowEnd'].split(':')[0]),
+                                minute: int.parse(s['timeWindowEnd'].split(':')[1]),
+                              ),
+                            );
+                            if (time != null) {
+                              setState(() => _stops[idx]['timeWindowEnd'] = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border)),
+                            child: Text(s['timeWindowEnd'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),

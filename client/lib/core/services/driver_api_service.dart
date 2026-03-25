@@ -301,6 +301,14 @@ class DriverApiService {
     }
   }
 
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _dio.delete('/driver/notifications/$notificationId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ── Driver status / location ──────────────────────────────────────────────
 
   Future<void> updateStatus(String status) async {

@@ -29,6 +29,7 @@ import { JwtPayload } from './interfaces/auth.interface';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { generateCompanyCode } from '../common/utils/generate-company-code';
 import { PaystackService } from '../billing/paystack.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -39,6 +40,7 @@ export class AuthService {
     private configService: ConfigService,
     @InjectQueue('email') private emailQueue: Queue,
     private paystackService: PaystackService,
+    private notificationsService: NotificationsService,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -137,7 +139,30 @@ export class AuthService {
 
     // Require email verification before logging in
     if (!user.email_verified) {
-      // Generate a new OTP and queue email since the old one might have expired
+      // Check if this is a deactivation-pending account (email_verified = false but was verified before)
+      const isPendingDeletion =
+        user.is_active &&
+        !user.email_verified &&
+        (user.driver_profile?.status === 'suspended' || user.role !== 'driver');
+
+      if (isPendingDeletion) {
+        // Re-send a recovery OTP so they can cancel account deletion
+        const token = Math.floor(100000 + Math.random() * 900000).toString();
+        await this.redis.set(`verify:${user.email}`, token, 3600);
+        await this.emailQueue.add(
+          'sendVerification',
+          { email: user.email, token, isRecovery: true },
+          STANDARD_QUEUE_OPTIONS,
+        );
+        throw new UnauthorizedException({
+          statusCode: 403,
+          message: 'ACCOUNT_PENDING_DELETION',
+          error:
+            'Your account is scheduled for deletion. A recovery code has been sent to your email. Verify to cancel the deletion.',
+        });
+      }
+
+      // Normal unverified: resend OTP
       const token = Math.floor(100000 + Math.random() * 900000).toString();
       await this.redis.set(`verify:${user.email}`, token, 3600);
       await this.emailQueue.add(
@@ -270,15 +295,43 @@ export class AuthService {
       },
     });
 
+    // Welcome notification for the new driver
+    await this.notificationsService.create({
+      userId: user.id,
+      companyId: company.id,
+      type: 'system_alert',
+      title: '👋 Welcome to Vector!',
+      body: 'Your account has been created. Start accepting deliveries from your fleet.',
+    });
+
+    // Notify fleet manager that a new driver signed up
+    const manager = await this.prisma.user.findFirst({
+      where: {
+        company_id: company.id,
+        role: { in: ['admin', 'manager'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+    if (manager) {
+      await this.notificationsService.create({
+        userId: manager.id,
+        companyId: company.id,
+        type: 'system_alert',
+        title: 'New Driver Joined',
+        body: `${user.full_name} has signed up and joined your fleet.`,
+      });
+    }
+
     // Generate OTP
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     await this.redis.set(`verify:${user.email}`, token, 3600);
 
-    await this.emailQueue.add(
-      'sendVerification',
-      { email: user.email, token },
-      STANDARD_QUEUE_OPTIONS,
-    );
+    // await this.emailQueue.add(
+    //   'sendVerification',
+    //   { email: user.email, token },
+    //   STANDARD_QUEUE_OPTIONS,
+    // );
+    console.log(token);
 
     return {
       message: 'Account created. Please verify your email.',
@@ -357,6 +410,15 @@ export class AuthService {
       return { company, user };
     });
 
+    // Welcome notification for the fleet manager
+    await this.notificationsService.create({
+      userId: result.user.id,
+      companyId: result.company.id,
+      type: 'system_alert',
+      title: '🎉 Welcome aboard, Fleet Manager!',
+      body: 'Your workspace is ready. Invite drivers and create your first route.',
+    });
+
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     await this.redis.set(`verify:${result.user.email}`, token, 3600);
     await this.emailQueue.add(
@@ -409,6 +471,15 @@ export class AuthService {
       is_onboarded: user.is_onboarded,
       full_name: user.full_name,
     });
+
+    // Restore email_verified in case this was a recovery from pending deletion
+    // (already set to true above — also unblock any suspended driver)
+    if (user.driver_profile?.status === 'suspended') {
+      await this.prisma.driver.update({
+        where: { id: user.driver_profile.id },
+        data: { status: 'offline' },
+      });
+    }
 
     return {
       message: 'Email verified successfully.',
