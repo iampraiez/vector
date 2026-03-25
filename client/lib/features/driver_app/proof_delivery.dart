@@ -296,18 +296,42 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                   if (!_photo)
                     InkWell(
                       onTap: () async {
-                        final picker = ImagePicker();
-                        final XFile? image = await picker.pickImage(
-                          source: ImageSource.camera,
-                          maxWidth: 1024,
-                          maxHeight: 1024,
-                          imageQuality: 70,
-                        );
-                        if (image != null && mounted) {
-                          setState(() {
-                            _photo = true;
-                            _capturedPhotoPath = image.path;
-                          });
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            final picker = ImagePicker();
+                            final XFile? image = await picker.pickImage(
+                              source: ImageSource.camera,
+                              maxWidth: 1024,
+                              maxHeight: 1024,
+                              imageQuality: 70,
+                            );
+                            if (image != null && mounted) {
+                              setState(() {
+                                _photo = true;
+                                _capturedPhotoPath = image.path;
+                              });
+                            } else if (mounted) {
+                              // Camera was cancelled or failed
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Camera access denied or cancelled',
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: AppColors.warning,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to capture photo: $e'),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            }
                         }
                       },
                       borderRadius: BorderRadius.circular(16),

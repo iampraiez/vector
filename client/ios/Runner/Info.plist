@@ -70,5 +70,9 @@
 	<string>Vector needs your location to track your position on the map during active deliveries.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Vector uses your location in the background to keep your delivery progress synced.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Vector needs camera access to capture delivery photos and scan QR codes for proof of delivery.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Vector needs access to your photo library to capture and upload delivery evidence photos.</string>
 </dict>
 </plist>

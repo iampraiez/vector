@@ -77,7 +77,10 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
 
         setState(() {
           _importedFileName = file.name;
-          _nameController.text = _nameController.text.isNotEmpty ? _nameController.text : 'Import-${DateFormat('MMM-dd').format(DateTime.now())}';
+          // Keep the name field empty so user can enter a proper route name
+          if (_nameController.text.isEmpty) {
+            _nameController.text = '';
+          }
           _stops.clear();
           
           for (int i = 1; i < rowsAsListOfValues.length; i++) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart' show ServiceStatus, LocationPermission;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/bottom_nav.dart';
@@ -104,6 +105,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     _checkLocationStatus();
     _initLocationListener();
+    _requestNotificationPermission();
+  }
+
+  /// Request notification permission for push notifications on device
+  Future<void> _requestNotificationPermission() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission(
+        alert: true,
+        announcement: true,
+        badge: true,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        debugPrint(
+          '[Notifications] Permission granted: ${settings.authorizationStatus}',
+        );
+      } else {
+        debugPrint('[Notifications] Permission denied or not granted');
+      }
+    } catch (e) {
+      debugPrint('[Notifications] Failed to request permission: $e');
+    }
   }
 
   void _startTimer() {

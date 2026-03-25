@@ -540,6 +540,7 @@ export class DriverService {
             priority: (s.priority as StopPriority) || StopPriority.normal,
             sequence: idx,
             status: 'assigned',
+            assigned_at: new Date(), // Mark when driver assigns the stop
             delivery_date: s.delivery_date || today,
           })),
         },
@@ -563,6 +564,7 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const stop = await this.prisma.stop.findUnique({
       where: { id: stopId, driver_id: driver.id },
+      include: { company: true },
     });
     if (!stop) throw new NotFoundException('Stop not found');
 
@@ -570,6 +572,24 @@ export class DriverService {
       where: { id: stopId },
       data: { status: 'in_progress', arrived_at: new Date() },
     });
+
+    // Notify company/manager that driver has arrived at delivery point
+    const manager = await this.prisma.user.findFirst({
+      where: {
+        company_id: stop.company_id,
+        role: { in: ['admin', 'manager'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+    if (manager) {
+      await this.notificationsService.create({
+        userId: manager.id,
+        companyId: stop.company_id,
+        type: 'system_alert',
+        title: 'Driver Arrived',
+        body: `${driver.user.full_name} has arrived at ${stop.customer_name}'s location for delivery.`,
+      });
+    }
 
     return { message: 'Arrived at stop' };
   }
@@ -623,6 +643,7 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const stop = await this.prisma.stop.findUnique({
       where: { id: stopId, driver_id: driver.id },
+      include: { company: true },
     });
     if (!stop) throw new NotFoundException('Stop not found');
     if (stop.status === 'completed')

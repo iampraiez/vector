@@ -693,9 +693,11 @@ export function CustomerTracking() {
                       deliveries
                     </span>
                   </div>
-                  <p className="text-[12px] text-gray-300 mt-1">
-                    {delivery.driver.vehicle}
-                  </p>
+                  {delivery.driver.vehicle && (
+                    <p className="text-[12px] text-gray-300 mt-1">
+                      {delivery.driver.vehicle}
+                    </p>
+                  )}
                 </div>
                 {status === "out_for_delivery" && (
                   <a
