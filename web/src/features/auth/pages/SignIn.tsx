@@ -61,7 +61,8 @@ export function DashboardSignIn() {
 
       if (
         msg === "EMAIL_NOT_VERIFIED" ||
-        msg.toLowerCase().includes("verify your email")
+        msg.toLowerCase().includes("verify your email") ||
+        msg === "ACCOUNT_PENDING_DELETION"
       ) {
         navigate(
           `/dashboard/verify-email?email=${encodeURIComponent(data.email)}`,
