@@ -683,6 +683,15 @@ export class DriverService {
       });
     }
 
+    // Notify driver
+    await this.notificationsService.create({
+      userId: userId,
+      companyId: stop.company_id,
+      type: 'system_alert',
+      title: 'Delivery Completed',
+      body: `You successfully delivered to "${stop.customer_name}".`,
+    });
+
     if (stop.route_id) {
       await this.checkAndUpdateRouteStatus(stop.route_id);
     } else {

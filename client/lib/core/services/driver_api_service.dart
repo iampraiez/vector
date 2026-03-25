@@ -146,7 +146,7 @@ class DriverApiService {
   }) async {
     try {
       await _dio.post(
-        '/driver/stops/$stopId/complete',
+        '/driver/delivery/$stopId/complete',
         data: {
           if (photoUrl != null) 'photo_urls': [photoUrl],
           'qr_code': qrCode,

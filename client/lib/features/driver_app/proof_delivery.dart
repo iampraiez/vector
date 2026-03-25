@@ -443,22 +443,14 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          OutlinedButton.icon(
+                          TextButton.icon(
                             onPressed: () => setState(() => _photo = false),
-                            icon: const Icon(Icons.refresh_rounded, size: 20),
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
                             label: const Text('Retake Photo'),
-                            style: OutlinedButton.styleFrom(
+                            style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
-                              side: const BorderSide(
-                                color: AppColors.primary,
-                                width: 1.5,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              minimumSize: const Size.fromHeight(52),
+                              minimumSize: const Size.fromHeight(48),
                               textStyle: const TextStyle(
-                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
