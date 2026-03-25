@@ -76,7 +76,6 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
         await OfflineService.instance.queueDelivery(
           stopId: stop.id,
           localPhotoPath: localPath,
-          qrCode: _scannedQrCode,
           notes: _notesController.text.trim().isEmpty
               ? null
               : _notesController.text.trim(),
@@ -89,7 +88,6 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
         await _api.completeDelivery(
           stop.id,
           photoUrl: cloudPhotoUrl,
-          qrCode: _scannedQrCode,
           notes: _notesController.text.trim().isEmpty
               ? null
               : _notesController.text.trim(),

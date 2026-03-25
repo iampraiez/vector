@@ -141,7 +141,6 @@ class DriverApiService {
   Future<void> completeDelivery(
     String stopId, {
     String? photoUrl,
-    String? qrCode,
     String? notes,
   }) async {
     try {
@@ -149,7 +148,6 @@ class DriverApiService {
         '/driver/delivery/$stopId/complete',
         data: {
           if (photoUrl != null) 'photo_urls': [photoUrl],
-          'qr_code': qrCode,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
         },
       );
@@ -165,7 +163,7 @@ class DriverApiService {
   }) async {
     try {
       await _dio.post(
-        '/driver/stops/$stopId/fail',
+        '/driver/delivery/$stopId/fail',
         data: {
           'reason': reason,
           if (notes != null && notes.isNotEmpty) 'notes': notes,

@@ -655,8 +655,9 @@ export class DriverService {
         data: {
           status: 'completed',
           completed_at: new Date(),
-          notes: dto.notes,
-          photo_url: dto.photo_urls?.[0] || null,
+          // Store first photo_url if multiple are provided, for simplicity
+          photo_url: dto.photo_urls?.[0] ?? null,
+          notes: dto.notes ?? null,
         },
       }),
       this.prisma.driver.update({

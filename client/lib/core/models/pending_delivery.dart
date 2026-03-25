@@ -11,18 +11,14 @@ class PendingDelivery extends HiveObject {
   final String localPhotoPath;
 
   @HiveField(2)
-  final String? qrCode;
-
-  @HiveField(3)
   final String? notes;
 
-  @HiveField(4)
+  @HiveField(3)
   final DateTime createdAt;
 
   PendingDelivery({
     required this.stopId,
     required this.localPhotoPath,
-    this.qrCode,
     this.notes,
     required this.createdAt,
   });

@@ -19,25 +19,22 @@ class PendingDeliveryAdapter extends TypeAdapter<PendingDelivery> {
     return PendingDelivery(
       stopId: fields[0] as String,
       localPhotoPath: fields[1] as String,
-      qrCode: fields[2] as String?,
-      notes: fields[3] as String?,
-      createdAt: fields[4] as DateTime,
+      notes: fields[2] as String?,
+      createdAt: fields[3] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, PendingDelivery obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.stopId)
       ..writeByte(1)
       ..write(obj.localPhotoPath)
       ..writeByte(2)
-      ..write(obj.qrCode)
-      ..writeByte(3)
       ..write(obj.notes)
-      ..writeByte(4)
+      ..writeByte(3)
       ..write(obj.createdAt);
   }
 

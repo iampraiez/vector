@@ -52,14 +52,12 @@ class OfflineService {
   Future<void> queueDelivery({
     required String stopId,
     required String localPhotoPath,
-    String? qrCode,
     String? notes,
   }) async {
     final box = Hive.box<PendingDelivery>(_boxName);
     final pending = PendingDelivery(
       stopId: stopId,
       localPhotoPath: localPhotoPath,
-      qrCode: qrCode,
       notes: notes,
       createdAt: DateTime.now(),
     );
@@ -92,7 +90,6 @@ class OfflineService {
         await DriverApiService.instance.completeDelivery(
           pending.stopId,
           photoUrl: cloudPhotoUrl,
-          qrCode: pending.qrCode,
           notes: pending.notes,
         );
 
