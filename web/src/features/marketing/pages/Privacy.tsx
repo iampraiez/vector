@@ -2,52 +2,56 @@ import { useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 mt-10">
+      {children}
+    </h2>
+  );
+}
+
 export function PrivacyContent() {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16 text-[15px] leading-relaxed text-gray-700">
-      <h2 className="text-xl font-bold text-gray-900 mb-8">1. Introduction</h2>
-      <p className="mb-8">
+    <div className="max-w-3xl mx-auto px-6 py-14 text-[15px] leading-relaxed text-gray-600">
+      <SectionHeading>1. Introduction</SectionHeading>
+      <p className="mb-6 text-gray-700">
         This Privacy Policy explains how Vector Logistics Technologies Inc.
-        (“Vector”, “we”, “us”, or “our”) collects, uses, and protects your
+        ("Vector", "we", "us", or "our") collects, uses, and protects your
         personal information when you use our fleet management platform,
         including the website, mobile applications, and related services.
       </p>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-8">
-        2. Information We Collect
-      </h2>
-      <p className="mb-6">
+      <SectionHeading>2. Information We Collect</SectionHeading>
+      <p className="mb-4">
         We collect the following categories of information:
       </p>
-      <ul className="list-disc pl-6 space-y-4 mb-8 text-gray-600">
+      <ul className="list-disc pl-6 space-y-3 mb-6">
         <li>
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-gray-800">
             Personal Information:
           </span>{" "}
           name, email address, phone number, and billing details provided during
           account registration or subscription.
         </li>
         <li>
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-gray-800">
             Fleet and Operational Data:
           </span>{" "}
           GPS coordinates, delivery addresses, route information, driver
           performance metrics, and proof-of-delivery records.
         </li>
         <li>
-          <span className="font-medium text-gray-900">Technical Data:</span> IP
+          <span className="font-medium text-gray-800">Technical Data:</span> IP
           address, device type, browser information, and usage logs
           automatically collected when you access our services.
         </li>
       </ul>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-8">
-        3. How We Use Your Information
-      </h2>
-      <p className="mb-8">
+      <SectionHeading>3. How We Use Your Information</SectionHeading>
+      <p className="mb-4">
         We use the collected information solely for the following purposes:
       </p>
-      <ul className="list-disc pl-6 space-y-4 mb-8 text-gray-600">
+      <ul className="list-disc pl-6 space-y-3 mb-6">
         <li>
           Providing and improving our route optimization and fleet management
           services
@@ -60,14 +64,12 @@ export function PrivacyContent() {
         <li>Complying with applicable legal and regulatory requirements</li>
       </ul>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-8">
-        4. Data Sharing and Disclosure
-      </h2>
-      <p className="mb-8">
+      <SectionHeading>4. Data Sharing and Disclosure</SectionHeading>
+      <p className="mb-4">
         We do not sell your personal data. We may share information only in the
         following limited circumstances:
       </p>
-      <ul className="list-disc pl-6 space-y-4 mb-8 text-gray-600">
+      <ul className="list-disc pl-6 space-y-3 mb-6">
         <li>
           With trusted service providers who assist us in operating the platform
           (e.g., mapping, SMS delivery, payment processors)
@@ -78,9 +80,9 @@ export function PrivacyContent() {
         </li>
       </ul>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-8">5. Your Rights</h2>
-      <p className="mb-8">You have the right to:</p>
-      <ul className="list-disc pl-6 space-y-4 mb-8 text-gray-600">
+      <SectionHeading>5. Your Rights</SectionHeading>
+      <p className="mb-4">You have the right to:</p>
+      <ul className="list-disc pl-6 space-y-3 mb-6">
         <li>Access and obtain a copy of the personal data we hold about you</li>
         <li>Request correction of inaccurate or incomplete data</li>
         <li>
@@ -90,14 +92,14 @@ export function PrivacyContent() {
         <li>Opt out of certain processing activities where applicable</li>
       </ul>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-8">6. Data Security</h2>
-      <p className="mb-12">
+      <SectionHeading>6. Data Security</SectionHeading>
+      <p className="mb-6">
         We implement appropriate technical and organizational measures to
         protect your information against unauthorized access, alteration, or
         destruction.
       </p>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-8">7. Contact Us</h2>
+      <SectionHeading>7. Contact Us</SectionHeading>
       <p>
         If you have any questions about this Privacy Policy, please contact us
         at{" "}
@@ -133,8 +135,9 @@ export function Privacy() {
         </div>
 
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-emerald-600 transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
         >
           <ArrowLeftIcon className="w-4 h-4" />
           Back to site
@@ -142,15 +145,22 @@ export function Privacy() {
       </nav>
 
       {/* Hero */}
-      <header className="pt-32 pb-12 px-6 max-w-3xl mx-auto border-b border-black/5">
-        <h1 className="text-5xl font-black tracking-tight">Privacy Policy</h1>
-        <p className="mt-4 text-lg text-gray-500">Last updated: March 2026</p>
+      <header className="pt-28 pb-10 px-6 max-w-3xl mx-auto border-b border-black/5">
+        <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mb-3">
+          Legal
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+          Privacy Policy
+        </h1>
+        <p className="mt-2 text-[13px] text-gray-400">
+          Last updated: March 2026
+        </p>
       </header>
 
       <PrivacyContent />
 
       {/* Footer */}
-      <footer className="bg-gray-50 border-t border-black/5 py-12 text-center">
+      <footer className="bg-gray-50 border-t border-black/5 py-10 text-center">
         <p className="text-xs text-gray-400">
           © {new Date().getFullYear()} Vector Logistics Technologies Inc. All
           rights reserved.

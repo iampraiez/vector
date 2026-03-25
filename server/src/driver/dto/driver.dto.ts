@@ -131,6 +131,14 @@ export class AdHocStopDto {
   @IsString()
   @IsOptional()
   delivery_date?: string;
+
+  @IsString()
+  @IsOptional()
+  time_window_start?: string;
+
+  @IsString()
+  @IsOptional()
+  time_window_end?: string;
 }
 
 export class CreateAdHocRouteDto {

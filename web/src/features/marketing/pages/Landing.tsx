@@ -380,7 +380,7 @@ export function WebLanding() {
                 <ArrowRightIcon className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigate("/driver")}
+                onClick={() => navigate("/download")}
                 className="flex items-center gap-2 px-7 py-3.5 bg-transparent border border-black/12 rounded-xl text-[15px] font-semibold text-[#212121] cursor-pointer transition-all duration-250 hover:border-emerald-600 hover:text-emerald-600"
               >
                 <LocalShippingIcon size={18} className="text-current" />
@@ -682,11 +682,11 @@ export function WebLanding() {
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <button
-              onClick={() => navigate("/driver")}
+              onClick={() => navigate("/download")}
               className="flex items-center gap-2 px-7 py-3 bg-emerald-400 border-none rounded-xl text-[15px] font-bold text-emerald-900 cursor-pointer transition-all duration-250 hover:bg-emerald-300 hover:-translate-y-0.5 tap-scale"
             >
               <LocalShippingIcon size={18} className="text-emerald-900" />
-              Open driver app
+              Download driver app
             </button>
             <button
               onClick={() => navigate("/driver")}
@@ -1068,13 +1068,13 @@ export function WebLanding() {
             </p>
             <div className="flex items-center gap-6">
               <button
-                onClick={() => setLegalModalType("privacy")}
+                onClick={() => navigate("/privacy")}
                 className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
               >
                 Privacy Policy
               </button>
               <button
-                onClick={() => setLegalModalType("terms")}
+                onClick={() => navigate("/terms")}
                 className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
               >
                 Terms of Service

@@ -91,6 +91,11 @@ const Terms = lazy(() =>
     default: m.Terms,
   })),
 );
+const DownloadApp = lazy(() =>
+  import("./features/marketing/pages/DownloadApp").then((m) => ({
+    default: m.DownloadApp,
+  })),
+);
 
 import { DashboardLayout } from "./features/dashboard/components/DashboardLayout";
 import { AuthGuard } from "./features/auth/guards/AuthGuard";
@@ -116,6 +121,7 @@ export const router = createBrowserRouter([
       { path: "/track", Component: TrackingPage },
       { path: "/privacy", Component: Privacy },
       { path: "/terms", Component: Terms },
+      { path: "/download", Component: DownloadApp },
 
       {
         path: "/dashboard/signin",

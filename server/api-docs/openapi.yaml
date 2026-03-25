@@ -1807,6 +1807,16 @@ components:
           type: string
         notes:
           type: string
+        status:
+          type: string
+        assigned_to:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        id:
+          type: string
       required:
         - customer_name
         - address
@@ -2078,6 +2088,10 @@ components:
         priority:
           type: string
         delivery_date:
+          type: string
+        time_window_start:
+          type: string
+        time_window_end:
           type: string
       required:
         - address

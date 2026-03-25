@@ -249,10 +249,11 @@ export function DashboardSignIn() {
             <p className="text-[12px] text-gray-300 font-medium">
               Are you a driver?{" "}
               <button
-                onClick={() => navigate("/signin")}
-                className="text-gray-400 hover:text-gray-700 transition-colors font-semibold"
+                type="button"
+                onClick={() => navigate("/download")}
+                className="text-gray-400 hover:text-emerald-600 transition-colors font-semibold cursor-pointer"
               >
-                Go to Mobile Sign In →
+                Download the driver app →
               </button>
             </p>
           </div>

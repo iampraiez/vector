@@ -113,57 +113,54 @@ function MapInteractionHandler({
 function MapViewUpdater({
   center,
   zoom,
-  shouldAutoCenter = true,
+  shouldAutoCenter = false,
 }: {
   center: [number, number];
   zoom: number;
   shouldAutoCenter?: boolean;
 }) {
   const map = useMap();
-  const hasMovedRef = useRef(false);
+  // Track previous center values to avoid flying when nothing actually changed
+  const prevCenterRef = useRef<[number, number] | null>(null);
 
-  // Safety check: ensure the map instance is fully initialized and has a pane
-  // This prevents "Cannot read properties of undefined (reading '_leaflet_pos')"
+  // Invalidate map size on mount/toggle only
   useEffect(() => {
     if (!map) return;
-
-    // Invalidate size after a short delay to account for modal/container transitions
     const timer = setTimeout(() => {
       try {
         map.invalidateSize();
       } catch (err) {
-        console.warn("Map invalidateSize error caught:", err);
+        console.warn("Map invalidateSize error:", err);
       }
     }, 100);
-
     return () => clearTimeout(timer);
-  }, [map, shouldAutoCenter]);
+  }, [map]);
 
+  // Only fly to when shouldAutoCenter is true AND the actual coordinate values changed
   useEffect(() => {
     if (!shouldAutoCenter) return;
-
     if (!map || !(map as unknown as { _mapPane: unknown })._mapPane) return;
 
-    // Only fly to on initial load or when auto-center is explicitly re-enabled
-    if (!hasMovedRef.current) {
-      hasMovedRef.current = true;
-      try {
-        map.flyTo(center, zoom, {
-          duration: 1.5,
-          easeLinearity: 0.25,
-        });
-      } catch (err) {
-        console.warn("Map movement error caught:", err);
-      }
-    }
-  }, [shouldAutoCenter, map, center, zoom]);
+    const [lat, lng] = center;
+    const prev = prevCenterRef.current;
 
-  // Reset the moved flag when shouldAutoCenter becomes true again
-  useEffect(() => {
-    if (shouldAutoCenter) {
-      hasMovedRef.current = false;
+    // Skip the fly if coordinates haven't meaningfully changed (avoids re-render thrashing)
+    if (
+      prev &&
+      Math.abs(prev[0] - lat) < 0.00001 &&
+      Math.abs(prev[1] - lng) < 0.00001
+    ) {
+      return;
     }
-  }, [shouldAutoCenter]);
+
+    prevCenterRef.current = [lat, lng];
+    try {
+      map.flyTo([lat, lng], zoom, { duration: 1.2, easeLinearity: 0.25 });
+    } catch (err) {
+      console.warn("Map movement error:", err);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldAutoCenter, map, center[0], center[1], zoom]);
 
   return null;
 }

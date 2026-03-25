@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../shared/widgets/buttons.dart';
@@ -368,7 +369,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => context.go('/'),
+                                    onTap: () => launchUrl(
+                                      Uri.parse(
+                                        'https://vector-route.vercel.app/dashboard/signin',
+                                      ),
+                                      mode: LaunchMode.externalApplication,
+                                    ),
                                 child: const Text(
                                   'Go to the dashboard →',
                                   style: TextStyle(

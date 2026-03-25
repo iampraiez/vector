@@ -40,7 +40,7 @@ export function DashboardTracking() {
     lng: number;
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const [shouldAutoCenter, setShouldAutoCenter] = useState(true);
+  const [shouldAutoCenter, setShouldAutoCenter] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export function DashboardTracking() {
           lng: position.coords.longitude,
         });
         setSelectedDriver(null); // Clear selected driver to focus on user
-        setShouldAutoCenter(true); // Re-enable auto-centering when user clicks locate
+        // Intentionally NOT forcing auto-center to prevent aggressive snapping/reloads
         setIsLocating(false);
       },
       (error) => {
@@ -295,6 +295,7 @@ export function DashboardTracking() {
                       </div>
                     )}
                     <button
+                      type="button"
                       onClick={handleLocateMe}
                       disabled={isLocating}
                       title="Locate Me"
@@ -309,6 +310,7 @@ export function DashboardTracking() {
                     </button>
                     {(selectedDriver || userLocation) && (
                       <button
+                        type="button"
                         onClick={handleResetView}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-black/8 rounded-lg text-[11px] font-bold text-gray-600 hover:bg-gray-50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
                       >

@@ -228,12 +228,6 @@ export function DashboardOrderDetail() {
                     Reassign
                   </button>
                 )}
-                <button className="px-4 py-2 bg-white border border-black/8 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors">
-                  Edit Order
-                </button>
-                <button className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors">
-                  Print Label
-                </button>
               </div>
             </div>
 
@@ -249,7 +243,11 @@ export function DashboardOrderDetail() {
               />
               <DetailItem
                 label="Service Time"
-                value={`${order.service_time_min || 10} mins`}
+                value={
+                  order.service_time_min
+                    ? `${order.service_time_min} mins`
+                    : "Not specified"
+                }
               />
             </div>
           </div>
@@ -319,40 +317,38 @@ export function DashboardOrderDetail() {
                 </div>
               </div>
             )}
-          </div>
 
-          {trackingRows.length > 0 && (
-            <div className="bg-white border border-black/8 rounded-2xl p-6 md:p-8 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">
-                Customer tracking
-              </h2>
-              <p className="text-[13px] text-gray-500 mb-6">
-                Share a link so customers can follow delivery status. Each stop
-                has its own link when a route has multiple deliveries.
-              </p>
-              <ul className="space-y-3">
-                {trackingRows.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-black/8 bg-gray-50/50"
-                  >
-                    <span className="text-[13px] font-semibold text-gray-800">
-                      {row.label}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyCustomerTrackingLink(row.token)}
-                      disabled={!row.token}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            {trackingRows.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    Customer Tracking Links
+                  </h3>
+                </div>
+                <ul className="space-y-2">
+                  {trackingRows.map((row) => (
+                    <li
+                      key={row.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-lg border border-black/5 bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
-                      <LinkIcon className="w-4 h-4" />
-                      Copy link
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                      <span className="text-[13px] font-medium text-gray-700 truncate">
+                        {row.label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyCustomerTrackingLink(row.token)}
+                        disabled={!row.token}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        Copy Link
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Driver & Route Assignment */}
@@ -416,7 +412,13 @@ export function DashboardOrderDetail() {
                 <p className="text-sm font-bold text-gray-400 mb-4">
                   No driver assigned
                 </p>
-                <button className="px-5 py-2 bg-white border border-emerald-600 text-emerald-600 rounded-xl text-xs font-bold hover:bg-emerald-50 transition-colors">
+                <button
+                  onClick={() => {
+                    setReassignDriverId("");
+                    setShowReassignModal(true);
+                  }}
+                  className="px-5 py-2 bg-white border border-emerald-600 text-emerald-600 rounded-xl text-xs font-bold hover:bg-emerald-50 transition-colors cursor-pointer"
+                >
                   Assign Driver
                 </button>
               </div>
@@ -424,38 +426,42 @@ export function DashboardOrderDetail() {
           </div>
 
           {/* Time & Performance */}
-          <div className="bg-emerald-900 rounded-2xl p-6 text-white shadow-xl shadow-emerald-900/20">
-            <h2 className="text-lg font-bold mb-6 opacity-90">Timing</h2>
+          {/* Time & Performance */}
+          <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Timing</h2>
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Target Window
                 </p>
-                <p className="text-base font-medium">
-                  {order.time_window_start || "08:00"} -{" "}
-                  {order.time_window_end || "18:00"}
+                <p className="text-sm font-bold text-gray-900">
+                  {order.time_window_start || "Flexible"} -{" "}
+                  {order.time_window_end || "Flexible"}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">
-                  Estimated Delivery
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                  Delivery Date
                 </p>
-                <p className="text-base font-medium">
-                  {order.delivery_date || "Today"}, ~14:30
+                <p className="text-sm font-bold text-gray-900">
+                  {order.delivery_date
+                    ? new Date(order.delivery_date).toLocaleDateString()
+                    : "Not specified"}
                 </p>
               </div>
-              <div className="pt-6 border-t border-white/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <ClockIcon className="w-4 h-4 text-emerald-400" />
-                  <span className="text-sm font-bold text-emerald-400">
-                    On Schedule
-                  </span>
+
+              {["in_progress", "completed"].includes(order.status) && (
+                <div className="pt-6 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-600">
+                      {order.status === "completed"
+                        ? "Successfully Delivered"
+                        : "Currently on route"}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs opacity-60 leading-relaxed">
-                  Driver is currently 1.2km away from this location according to
-                  last telemetry.
-                </p>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -470,7 +476,7 @@ export function DashboardOrderDetail() {
           </DialogHeader>
           <div className="p-6">
             <p className="text-[13px] text-gray-500 mb-4">
-              Select a driver to retry delivering order{" "}
+              Select a driver to assign to order{" "}
               <strong>{order.customer_name}</strong>, or leave unassigned to
               send back to the pool.
             </p>

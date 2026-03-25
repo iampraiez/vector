@@ -74,6 +74,27 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  // Add optional metadata fields that the frontend might send in creation
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @IsString()
+  @IsOptional()
+  assigned_to?: string;
+
+  @IsNumber()
+  @IsOptional()
+  lat?: number;
+
+  @IsNumber()
+  @IsOptional()
+  lng?: number;
+
+  @IsString()
+  @IsOptional()
+  id?: string;
 }
 
 export class UpdateOrderDto {
