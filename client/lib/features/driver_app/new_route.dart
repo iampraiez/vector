@@ -147,11 +147,33 @@ class _NewRouteScreenState extends State<NewRouteScreen> {
   }
 
   Future<void> _createRoute() async {
-    if (_nameController.text.isEmpty) return;
+    if (_nameController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a name for this route'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    final validStops = _stops.where((s) => (s['address'] as String).trim().isNotEmpty).toList();
+    if (validStops.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('At least one stop must have a valid address'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
     
     setState(() => _creating = true);
     try {
-      final validStops = _stops.where((s) => (s['address'] as String).isNotEmpty).toList();
       final route = await DriverApiService.instance.createRoute(
         name: _nameController.text,
         stops: validStops.map((s) => {

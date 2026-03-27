@@ -308,7 +308,9 @@ export function DashboardOverview() {
                   <div
                     key={i}
                     className="flex items-center gap-4 p-3.5 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
-                    onClick={() => navigate("/dashboard/tracking")}
+                    onClick={() =>
+                      navigate(`/dashboard/driver-detail/${driver.id}`)
+                    }
                   >
                     {/* Avatar/ID Container */}
                     <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 relative border border-black/5 transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100 group-hover:shadow-sm">
@@ -420,7 +422,8 @@ export function DashboardOverview() {
                   return (
                     <div
                       key={i}
-                      className="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
+                      className="flex items-center gap-4 p-3.5 rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-50 group border border-transparent hover:border-black/5"
+                      onClick={() => navigate(`/dashboard/orders/${order.id}`)}
                     >
                       <div className="w-10 h-10 rounded-xl bg-gray-50 border border-black/5 flex items-center justify-center shrink-0 transition-all group-hover:bg-amber-50 group-hover:border-amber-100">
                         <ArchiveBoxIcon className="w-5 h-5 text-gray-400 group-hover:text-amber-600" />

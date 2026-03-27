@@ -31,6 +31,7 @@ export interface Order {
   driver_name?: string;
   assigned_to?: string;
   notes?: string;
+  photo_url?: string | null;
   route_name?: string;
   /** Present when loaded from GET /dashboard/orders/:id (Prisma include). */
   route?: {

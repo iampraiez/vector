@@ -184,7 +184,22 @@ export class AccountProcessor {
         orderBy: { completed_at: 'desc' },
       });
 
-      if (routes.length === 0) {
+      const standaloneStops = await this.prisma.stop.findMany({
+        where: {
+          driver_id: job.data.driverId,
+          route_id: null,
+          status: { in: ['completed', 'failed', 'returned'] },
+          completed_at: {
+            gte: start,
+            lte: end,
+          },
+        },
+        orderBy: { completed_at: 'desc' },
+      });
+
+      const totalItems = routes.length + standaloneStops.length;
+
+      if (totalItems === 0) {
         await this.mailService.sendMail(
           email,
           'Vector History Export',
@@ -194,16 +209,48 @@ export class AccountProcessor {
         return;
       }
 
-      // Generate simple CSV
-      let csv = 'Date,Route Name,Stops,Distance (km),Completed At\n';
-      routes.forEach((r) => {
-        csv += `${r.date},"${r.name.replace(/"/g, '""')}",${r.stops.length},${r.total_distance_km || 0},${r.completed_at?.toISOString() || ''}\n`;
-      });
+      // Generate CSV
+      let csv =
+        'Date,Type,Name/Address,Stops,Distance (km),Earnings,Rating,Completed At\n';
+
+      for (const r of routes) {
+        let earnings = 0;
+        let totalRating = 0;
+        let ratedStops = 0;
+        if (r.stops) {
+          for (const s of r.stops) {
+            earnings += Number(s.delivery_fee) || 0;
+            if (s.customer_rating) {
+              totalRating += Number(s.customer_rating);
+              ratedStops++;
+            }
+          }
+        }
+        const avgRating =
+          ratedStops > 0 ? (totalRating / ratedStops).toFixed(1) : '5.0';
+        csv += `${r.date},Route,"${r.name.replace(/"/g, '""')}",${
+          r.stops.length
+        },${r.total_distance_km || 0},${earnings.toFixed(2)},${avgRating},${
+          r.completed_at?.toISOString() || ''
+        }\n`;
+      }
+
+      for (const s of standaloneStops) {
+        const rating = s.customer_rating
+          ? Number(s.customer_rating).toFixed(1)
+          : '5.0';
+        csv += `${s.delivery_date},Stop,"${s.address.replace(
+          /"/g,
+          '""',
+        )}",1,0,${Number(s.delivery_fee || 0).toFixed(2)},${rating},${
+          s.completed_at?.toISOString() || ''
+        }\n`;
+      }
 
       await this.mailService.sendMail(
         email,
         'Vector History Export',
-        historyExportTemplate(range, routes.length),
+        historyExportTemplate(range, totalItems),
         `Your history report for ${range} is attached.`,
         [
           {

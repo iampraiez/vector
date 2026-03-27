@@ -922,6 +922,13 @@ paths:
           description: ""
       tags: &a13
         - DashboardNotifications
+    delete:
+      operationId: DashboardNotificationsController_clearAll
+      parameters: []
+      responses:
+        "204":
+          description: ""
+      tags: *a13
   /dashboard/notifications/{notification_id}/read:
     patch:
       operationId: DashboardNotificationsController_markNotificationRead
@@ -1418,6 +1425,13 @@ paths:
           description: ""
       tags: &a24
         - DriverNotifications
+    delete:
+      operationId: DriverNotificationsController_clearAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a24
   /driver/notifications/{notification_id}/read:
     patch:
       operationId: DriverNotificationsController_markRead
@@ -1437,6 +1451,19 @@ paths:
       parameters: []
       responses:
         "201":
+          description: ""
+      tags: *a24
+  /driver/notifications/{notification_id}:
+    delete:
+      operationId: DriverNotificationsController_deleteNotification
+      parameters:
+        - name: notification_id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
           description: ""
       tags: *a24
   /driver/onboarding:
@@ -1946,6 +1973,10 @@ components:
         state:
           type: string
         timezone:
+          type: string
+        price_per_km:
+          type: number
+        currency:
           type: string
     UpdateNotificationsDto:
       type: object

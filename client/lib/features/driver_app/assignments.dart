@@ -25,7 +25,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   static const _cacheKey = 'cache_assignments_today';
   static const _cacheTtlMinutes = 10;
 
-  int _activeTab = 0; // 0 = Active, 1 = Upcoming, 2 = Completed (today)
+  int _activeTab = 0; // 0 = Active, 1 = Upcoming
 
   bool _isLoading = true;
   bool _isOffline = false;
@@ -34,7 +34,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   // Assignments from API
   List<Map<String, dynamic>> _activeAssignments = [];
   List<Map<String, dynamic>> _upcomingAssignments = [];
-  List<Map<String, dynamic>> _completedAssignments = [];
 
   // Track which routes are being started (spinner per card)
   final Set<String> _startingRoutes = {};
@@ -101,8 +100,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   void _applyData(Map<String, dynamic> data) {
     _activeAssignments = (data['active'] as List? ?? []).cast<Map<String, dynamic>>();
     _upcomingAssignments = (data['upcoming'] as List? ?? []).cast<Map<String, dynamic>>();
-    _completedAssignments =
-        (data['completed'] as List? ?? []).cast<Map<String, dynamic>>();
   }
 
   Future<void> _refreshInBackground() async {
@@ -340,7 +337,7 @@ OfflineBanner(apiOffline: _isOffline),
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Your delivery schedule and orders',
+                            'Your schedule for the next 7 days',
                             style: TextStyle(
                               fontSize: 13,
                               color: AppColors.textMuted,
@@ -389,15 +386,6 @@ OfflineBanner(apiOffline: _isOffline),
                         count: _upcomingAssignments.length,
                         isActive: _activeTab == 1,
                         onTap: () => setState(() => _activeTab = 1),
-                      ),
-                      _Tab(
-                        label: 'Done',
-                        count: _completedAssignments.length,
-                        isActive: _activeTab == 2,
-                        onTap: () => setState(() {
-                          _activeTab = 2;
-                          _clearSelection();
-                        }),
                       ),
                     ],
                   ),
@@ -460,17 +448,11 @@ OfflineBanner(apiOffline: _isOffline),
       emptyTitle = 'No active assignments';
       emptyMessage = 'Your routes for today will appear here.';
       emptyIcon = Icons.local_shipping_outlined;
-    } else if (_activeTab == 1) {
+    } else {
       currentList = _upcomingAssignments;
       emptyTitle = 'No upcoming routes';
-      emptyMessage = 'Future assignments will appear here.';
+      emptyMessage = 'Assignments for the next 7 days will appear here.';
       emptyIcon = Icons.calendar_today_outlined;
-    } else {
-      currentList = _completedAssignments;
-      emptyTitle = 'Nothing completed yet today';
-      emptyMessage =
-          'Finished or cancelled routes and stops from today show here.';
-      emptyIcon = Icons.check_circle_outline;
     }
 
     if (currentList.isEmpty) {
@@ -495,7 +477,6 @@ OfflineBanner(apiOffline: _isOffline),
         final item = currentList[i];
         final isRoute = item['type'] == 'route';
 
-        final isCompletedTab = _activeTab == 2;
         if (isRoute) {
           final stops = (item['stops'] as List? ?? []);
           return _RouteCard(
@@ -514,17 +495,13 @@ OfflineBanner(apiOffline: _isOffline),
               context.push('/navigation');
             },
             isUpcoming: _activeTab == 1,
-            isCompleted: isCompletedTab,
+            isCompleted: false,
             stops: stops,
             isSelected: _selectedStopIds.contains(item['id']),
 
-            isSelectionMode: _isSelectionMode && !isCompletedTab,
-            onLongPress: isCompletedTab
-                ? null
-                : () => _toggleSelection(item['id'] as String),
-            onSelectionToggle: isCompletedTab
-                ? null
-                : () => _toggleSelection(item['id'] as String),
+            isSelectionMode: _isSelectionMode,
+            onLongPress: () => _toggleSelection(item['id'] as String),
+            onSelectionToggle: () => _toggleSelection(item['id'] as String),
           );
         } else {
           // Standalone Stop
@@ -546,17 +523,13 @@ OfflineBanner(apiOffline: _isOffline),
             },
             isUpcoming: _activeTab == 1,
             isStandalone: true,
-            isCompleted: isCompletedTab,
+            isCompleted: false,
             stops: [item],
             isSelected: _selectedStopIds.contains(item['id']),
 
-            isSelectionMode: _isSelectionMode && !isCompletedTab,
-            onLongPress: isCompletedTab
-                ? null
-                : () => _toggleSelection(item['id'] as String),
-            onSelectionToggle: isCompletedTab
-                ? null
-                : () => _toggleSelection(item['id'] as String),
+            isSelectionMode: _isSelectionMode,
+            onLongPress: () => _toggleSelection(item['id'] as String),
+            onSelectionToggle: () => _toggleSelection(item['id'] as String),
           );
         }
       },

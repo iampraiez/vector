@@ -204,12 +204,19 @@ export function CustomerTracking() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
-  const handleSubmitRating = async () => {
-    if (selectedRating === 0 || !token) return;
+  const handleSubmitRating = async (
+    ratingOverride?: number,
+    commentOverride?: string,
+  ) => {
+    const finalRating = ratingOverride || selectedRating;
+    const finalComment =
+      commentOverride !== undefined ? commentOverride : comment;
+
+    if (finalRating === 0 || !token) return;
     try {
       await api.post(`/track/rate?token=${token}`, {
-        rating: selectedRating,
-        comment,
+        rating: finalRating,
+        comment: finalComment,
       });
       setSubmitted(true);
     } catch (err: unknown) {
@@ -727,7 +734,10 @@ export function CustomerTracking() {
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
-                  onClick={() => setSelectedRating(star)}
+                  onClick={() => {
+                    setSelectedRating(star);
+                    void handleSubmitRating(star);
+                  }}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
                   className={`bg-none border-none cursor-pointer p-1 transition-transform duration-150 ${

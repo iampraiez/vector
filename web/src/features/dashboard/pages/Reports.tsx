@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowDownTrayIcon,
   ClockIcon,
@@ -12,7 +12,11 @@ import { TrendingUpIcon } from "lucide-react";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { api } from "../../../lib/api";
 import { Skeleton } from "../../../components/ui/skeleton";
-import { useReportsStore } from "../../../store/reportsStore";
+import {
+  useReportsStore,
+  DriverPerformanceData,
+} from "../../../store/reportsStore";
+import { useDriverStore } from "../../../store/driverStore";
 import {
   LineChart,
   Line,
@@ -256,18 +260,28 @@ function KPICard({
 export function DashboardReports() {
   const [activePeriodDays, setActivePeriodDays] = useState(30);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("all");
 
   const { summary, charts, driverPerformance, isLoading, fetchAllData } =
     useReportsStore();
+  const { drivers, fetchDrivers } = useDriverStore();
 
-  // Fetch data on mount and when period changes
+  // Fetch drivers on mount
+  useEffect(() => {
+    void fetchDrivers({ limit: 100 });
+  }, [fetchDrivers]);
+
+  // Fetch data on mount and when period/driver changes
   useEffect(() => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - activePeriodDays);
     const startDateStr = startDate.toISOString().split("T")[0];
 
-    void fetchAllData(startDateStr);
-  }, [activePeriodDays, fetchAllData]);
+    void fetchAllData(
+      startDateStr,
+      selectedDriverId === "all" ? undefined : selectedDriverId,
+    );
+  }, [activePeriodDays, selectedDriverId, fetchAllData]);
 
   const hasData =
     summary &&
@@ -289,6 +303,37 @@ export function DashboardReports() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            {/* Driver Filter */}
+            <div className="relative group min-w-48">
+              <select
+                value={selectedDriverId}
+                onChange={(e) => setSelectedDriverId(e.target.value)}
+                className="w-full appearance-none bg-white border border-black/8 rounded-xl px-4 py-2.5 text-[13px] font-bold text-gray-700 outline-none focus:border-emerald-600 focus:shadow-md transition-all cursor-pointer"
+              >
+                <option value="all">All Drivers</option>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-emerald-600 transition-colors">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+
             {/* Period Selector */}
             <div className="flex bg-gray-100/80 p-1.5 rounded-xl border border-black/5">
               {PERIODS.map((period) => (
@@ -457,44 +502,47 @@ export function DashboardReports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {driverPerformance.data.map((driver) => (
-                        <tr
-                          key={driver.driver_id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="py-4 px-4 font-normal text-gray-900">
-                            {driver.name}
-                          </td>
-                          <td className="py-4 px-4 text-center text-gray-600">
-                            {driver.deliveries_completed}
-                          </td>
-                          <td className="py-4 px-4 text-center">
-                            <span
-                              className={`inline-block px-3 py-1 rounded-full text-[11px] font-semibold ${
-                                driver.on_time_rate && driver.on_time_rate >= 80
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : driver.on_time_rate &&
-                                      driver.on_time_rate >= 60
-                                    ? "bg-yellow-50 text-yellow-700"
-                                    : "bg-red-50 text-red-700"
-                              }`}
-                            >
-                              {driver.on_time_rate
-                                ? `${driver.on_time_rate.toFixed(1)}%`
-                                : "—"}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-center">
-                            {driver.rating ? (
-                              <span className="text-yellow-500 font-medium">
-                                ★ {driver.rating.toFixed(1)}
+                      {driverPerformance.data.map(
+                        (driver: DriverPerformanceData) => (
+                          <tr
+                            key={driver.driver_id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="py-4 px-4 font-normal text-gray-900">
+                              {driver.name}
+                            </td>
+                            <td className="py-4 px-4 text-center text-gray-600">
+                              {driver.deliveries_completed}
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <span
+                                className={`inline-block px-3 py-1 rounded-full text-[11px] font-semibold ${
+                                  driver.on_time_rate &&
+                                  driver.on_time_rate >= 80
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : driver.on_time_rate &&
+                                        driver.on_time_rate >= 60
+                                      ? "bg-yellow-50 text-yellow-700"
+                                      : "bg-red-50 text-red-700"
+                                }`}
+                              >
+                                {driver.on_time_rate
+                                  ? `${driver.on_time_rate.toFixed(1)}%`
+                                  : "—"}
                               </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              {driver.rating ? (
+                                <span className="text-yellow-500 font-medium">
+                                  ★ {driver.rating.toFixed(1)}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 </div>

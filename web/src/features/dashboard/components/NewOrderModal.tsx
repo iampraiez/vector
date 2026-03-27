@@ -54,6 +54,7 @@ export function NewOrderModal({
   });
 
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
   const lastGeocodeRef = useRef<{ lat: number; lng: number } | null>(null);
 
@@ -86,8 +87,24 @@ export function NewOrderModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData?.id]);
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.customer_name) newErrors.customer_name = "Required";
+    if (!form.address) newErrors.address = "Required";
+
+    if (form.deliveryDate) {
+      const today = new Date().toISOString().split("T")[0];
+      if (form.deliveryDate < today) {
+        newErrors.deliveryDate = "Cannot be in the past";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleCreate = () => {
-    if (!form.customer_name || !form.address) return;
+    if (!validate()) return;
     setLoading(true);
     setTimeout(() => {
       onCreate({
@@ -125,6 +142,7 @@ export function NewOrderModal({
         lat: undefined,
         lng: undefined,
       });
+      setErrors({});
       onOpenChange(false);
     }, 1200);
   };
@@ -196,6 +214,7 @@ export function NewOrderModal({
                 onChange={(v: string) => setForm({ ...form, customer_name: v })}
                 placeholder="Acme Corp"
                 icon={<UserIcon className="w-4 h-4 text-emerald-600" />}
+                error={errors.customer_name}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ModalInput
@@ -252,6 +271,7 @@ export function NewOrderModal({
                 placeholder="742 Evergreen Terrace"
                 icon={<MapPinIcon className="w-4 h-4 text-emerald-600" />}
                 loading={isReverseGeocoding}
+                error={errors.address}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ModalInput
@@ -276,24 +296,14 @@ export function NewOrderModal({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  Delivery Date
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all">
-                    <CalendarIcon className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <input
-                    type="date"
-                    value={form.deliveryDate}
-                    onChange={(e) =>
-                      setForm({ ...form, deliveryDate: e.target.value })
-                    }
-                    className="w-full bg-gray-50/50 border border-black/8 rounded-xl pl-12 pr-4 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
+              <ModalInput
+                label="Delivery Date"
+                type="date"
+                value={form.deliveryDate}
+                onChange={(v: string) => setForm({ ...form, deliveryDate: v })}
+                icon={<CalendarIcon className="w-4 h-4 text-emerald-600" />}
+                error={errors.deliveryDate}
+              />
               <div className="space-y-1.5 flex-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
                   Time Window
@@ -477,6 +487,7 @@ export function ModalInput({
   placeholder,
   icon,
   loading,
+  error,
 }: {
   label: string;
   value: string;
@@ -485,15 +496,25 @@ export function ModalInput({
   placeholder?: string;
   icon?: React.ReactNode;
   loading?: boolean;
+  error?: string;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-        {label}
-      </label>
+    <div className="space-y-1.5 flex-1">
+      <div className="flex items-center justify-between ml-1">
+        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+          {label}
+        </label>
+        {error && (
+          <span className="text-[10px] font-bold text-red-500 uppercase tracking-tight animate-in fade-in slide-in-from-right-1">
+            {error}
+          </span>
+        )}
+      </div>
       <div className="relative group">
         {icon && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-100/80 rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all">
+          <div
+            className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border ${error ? "border-red-100" : "border-gray-100/80"} rounded-full flex items-center justify-center shadow-sm group-focus-within:border-emerald-200 group-focus-within:bg-emerald-50 transition-all`}
+          >
             {loading ? (
               <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
             ) : (
@@ -506,7 +527,7 @@ export function ModalInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full bg-gray-50/50 border border-black/8 rounded-xl ${
+          className={`w-full bg-gray-50/50 border ${error ? "border-red-500/50 bg-red-50/30" : "border-black/8"} rounded-xl ${
             icon ? "pl-12" : "px-4"
           } pr-4 py-2.5 text-[13.5px] font-medium outline-none focus:border-emerald-600 focus:bg-white transition-all placeholder:text-gray-300`}
         />

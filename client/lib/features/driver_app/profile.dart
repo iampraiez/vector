@@ -41,6 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _fleetName;
   String? _fleetCode;
   String? _memberSince;
+  String? _currency;
+  double? _pricePerKm;
   bool _isOffline = false;
   static const String _cacheKey = 'driver_profile_cache';
   static const int _cacheTtlMs = 3600000; // 1 hour
@@ -247,6 +249,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _rating = (profile['rating'] as num?)?.toDouble() ?? 0.0;
     _fleetName = profile['fleet_name'] as String?;
     _fleetCode = profile['fleet_code'] as String?;
+    _currency = profile['currency'] as String? ?? 'USD';
+    _pricePerKm = (profile['price_per_km'] as num?)?.toDouble();
     // Parse joined date
     final raw = profile['joined_at'] as String?
         ?? profile['created_at'] as String?;
@@ -651,6 +655,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                               ),
                             ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Rates Info
+                  if (_currency != null && _pricePerKm != null)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.payments_outlined, color: AppColors.primary, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Fleet Earnings Rate', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$_currency ${_pricePerKm!.toStringAsFixed(2)} / KM',
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),

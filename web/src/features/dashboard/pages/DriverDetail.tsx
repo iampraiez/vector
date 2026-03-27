@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useDriverStore } from "../../../store/driverStore";
 
@@ -18,6 +18,7 @@ import { maskEmail, maskPhone } from "../../../utils/masking";
 
 interface DeliveryHistory {
   id: string;
+  externalId: string;
   customerName: string;
   address: string;
   completedAt: string;
@@ -29,7 +30,7 @@ interface DeliveryHistory {
 export function DashboardDriverDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { selectedDriver, recentRoutes, fetchDriverDetail, isLoading } =
+  const { selectedDriver, recentStops, fetchDriverDetail, isLoading } =
     useDriverStore();
   const [timeFilter, setTimeFilter] = useState<
     "today" | "week" | "month" | "all"
@@ -74,22 +75,6 @@ export function DashboardDriverDetail() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Stats Grid Skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <Skeleton className="w-11 h-11 rounded-xl" />
-                <Skeleton className="w-16 h-8" />
-              </div>
-              <Skeleton className="w-24 h-4" />
-            </div>
-          ))}
         </div>
 
         {/* Delivery History Table Skeleton */}
@@ -149,39 +134,20 @@ export function DashboardDriverDetail() {
     onTimeRate: 100, // Stubbed
   };
 
-  const historyData: DeliveryHistory[] = recentRoutes.map((route) => ({
-    id: route.id,
-    customerName: route.name || "Route",
-    address: route.start_location_name || "Multiple stops",
-    completedAt: route.completed_at
-      ? new Date(route.completed_at).toLocaleTimeString()
+  const historyData: DeliveryHistory[] = recentStops.map((stop) => ({
+    id: stop.id,
+    externalId: stop.external_id,
+    customerName: stop.customer_name,
+    address: stop.address,
+    completedAt: stop.completed_at
+      ? new Date(stop.completed_at).toLocaleTimeString()
       : "Pending",
-    packages: route.total_stops || 0,
+    packages: 1, // Stop represents a single delivery in this context
     signature: false,
-    timeWindow: route.date || "—",
+    timeWindow: stop.delivery_date || "—",
   }));
 
   const currentHistory = historyData; // Simplify for now as we don't have filtered history from API yet
-
-  const stats = {
-    today: {
-      completed: 0,
-      onTime: 0,
-      rating: "—",
-    },
-    week: {
-      completed: 0,
-      onTime: 0,
-      rating: "—",
-    },
-    month: {
-      completed: 0,
-      onTime: 0,
-      rating: "—",
-    },
-  };
-
-  const currentStats = stats[timeFilter as keyof typeof stats] || stats.today;
 
   return (
     <div className="p-4 md:p-8 max-w-300 mx-auto">
@@ -291,28 +257,6 @@ export function DashboardDriverDetail() {
         </div>
       </div>
 
-      {/* Responsive Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
-        <StatCard
-          label="Completed"
-          value={currentStats.completed}
-          icon={CheckCircleIcon}
-          color="emerald"
-        />
-        <StatCard
-          label="On-Time"
-          value={currentStats.onTime}
-          icon={ClockIcon}
-          color="emerald"
-        />
-        <StatCard
-          label="Rating"
-          value={currentStats.rating || "—"}
-          icon={StarIcon}
-          color="amber"
-        />
-      </div>
-
       {/* Delivery History */}
       <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm">
         <div className="p-5 md:p-6 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
@@ -383,7 +327,7 @@ export function DashboardDriverDetail() {
                   >
                     <td className="px-6 py-4">
                       <span className="text-[13px] font-semibold text-gray-900">
-                        {delivery.id}
+                        {delivery.externalId}
                       </span>
                     </td>
                     <td className="px-6 py-4 min-w-37.5">
@@ -439,42 +383,6 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       </p>
       <p className="text-[15px] font-semibold text-gray-900 tracking-tight">
         {value}
-      </p>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: "emerald" | "amber";
-}) {
-  const colorClasses = {
-    emerald:
-      "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-emerald-600/5",
-    amber: "bg-amber-50 text-amber-600 border-amber-100 shadow-amber-600/5",
-  };
-
-  return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 hover:-translate-y-0.5">
-      <div className="flex items-center gap-4 mb-5">
-        <div
-          className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-sm transition-all group-hover:scale-110 ${colorClasses[color]}`}
-        >
-          <Icon className="w-6 h-6" />
-        </div>
-        <p className="text-3xl font-semibold text-gray-900 tracking-tight leading-none">
-          {value}
-        </p>
-      </div>
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-emerald-600">
-        {label}
       </p>
     </div>
   );

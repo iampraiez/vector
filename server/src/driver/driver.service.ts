@@ -7,7 +7,13 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, DriverStatus, StopPriority } from '@prisma/client';
+import {
+  Prisma,
+  DriverStatus,
+  StopPriority,
+  Stop,
+  Route,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -31,7 +37,6 @@ import {
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bullmq';
 import { MailService } from '../mail/mail.service';
-import { Route, Stop } from '@prisma/client';
 import { MapService } from '../map/map.service';
 import { STANDARD_QUEUE_OPTIONS } from '../queue/bull-job-options';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -151,7 +156,7 @@ export class DriverService {
     // Get company settings for pricing
     const company = await this.prisma.company.findUnique({
       where: { id: driver.company_id },
-      select: { price_per_km: true, currency: true, name: true },
+      select: { currency: true, name: true },
     });
 
     return {
@@ -164,7 +169,6 @@ export class DriverService {
       rating: driver.avg_rating,
       last_active_at: driver.last_active_at,
       company_name: company?.name || null,
-      price_per_km: company?.price_per_km || 0,
       currency: company?.currency || 'NGN',
     };
   }
@@ -194,10 +198,12 @@ export class DriverService {
           userId: manager.id,
           companyId: driver.company_id,
           type: 'system_alert',
-          title: isOnline ? 'Driver Online' : 'Driver Offline',
-          body: `${driver.user.full_name} is now ${
-            isOnline ? 'online and ready for deliveries' : 'offline'
-          }.`,
+          title: isOnline
+            ? 'Telemetry: Driver Online'
+            : 'Telemetry: Driver Offline',
+          body: isOnline
+            ? `${driver.user.full_name} has connected and is now active.`
+            : `${driver.user.full_name} has disconnected and is now offline.`,
         });
       }
     }
@@ -275,20 +281,28 @@ export class DriverService {
 
   async getAssignments(userId: string) {
     const driver = await this.getDriverOrThrow(userId);
-    const today = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split('T')[0];
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoStart = new Date(sevenDaysAgo.setHours(0, 0, 0, 0));
+
+    const sevenDaysLater = new Date();
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+    const sevenDaysLaterStr = sevenDaysLater.toISOString().split('T')[0];
+
+    const today = todayStr;
     const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
 
-    // 1. Fetch all routes for this driver (Active + Today + Future)
+    // 1. Fetch all routes for this driver (Active + Next 7 Days + Last 7 Days Completed)
     const routes = await this.prisma.route.findMany({
       where: {
         driver_id: driver.id,
         OR: [
           { status: 'active' },
-          { date: today },
-          { date: { gt: today } },
+          { date: { gte: todayStr, lte: sevenDaysLaterStr } },
           {
             status: { in: ['completed', 'cancelled'] },
-            updated_at: { gte: todayStart },
+            completed_at: { gte: sevenDaysAgoStart },
           },
         ],
       },
@@ -308,8 +322,7 @@ export class DriverService {
         route_id: null,
         OR: [
           { status: 'in_progress' },
-          { delivery_date: today },
-          { delivery_date: { gt: today } },
+          { delivery_date: { gte: today, lte: sevenDaysLaterStr } },
           {
             status: { in: ['completed', 'failed', 'returned'] },
             updated_at: { gte: todayStart },
@@ -450,11 +463,11 @@ export class DriverService {
     }
 
     await this.notificationsService.create({
-      userId: driver.user.id,
+      userId: userId,
       companyId: route.company_id,
       type: 'route_started',
-      title: 'Route started',
-      body: `Your route "${route.name}" has started.`,
+      title: 'Route Started',
+      body: `Your route "${route.name}" has officially started. Safe travels!`,
     });
 
     return { message: 'Route started successfully' };
@@ -652,11 +665,26 @@ export class DriverService {
     const driver = await this.getDriverOrThrow(userId);
     const stop = await this.prisma.stop.findUnique({
       where: { id: stopId, driver_id: driver.id },
-      include: { company: true },
+      include: {
+        company: true,
+        route: true,
+      },
     });
     if (!stop) throw new NotFoundException('Stop not found');
     if (stop.status === 'completed')
       throw new ConflictException('Delivery already completed');
+
+    // Calculate distance-based delivery fee
+    let deliveryFee = 0;
+    if (
+      stop.route &&
+      stop.route.total_distance_km > 0 &&
+      stop.route.total_stops > 0
+    ) {
+      const pricePerKm = stop.company.price_per_km || 0;
+      deliveryFee =
+        (stop.route.total_distance_km / stop.route.total_stops) * pricePerKm;
+    }
 
     await this.prisma.$transaction([
       this.prisma.stop.update({
@@ -664,10 +692,10 @@ export class DriverService {
         data: {
           status: 'completed',
           completed_at: new Date(),
-          // Store first photo_url if multiple are provided, for simplicity
           photo_url: dto.photo_urls?.[0] ?? null,
           notes: dto.notes ?? null,
           location_confirmed: dto.qr_code ? true : stop.location_confirmed,
+          delivery_fee: deliveryFee,
         },
       }),
       this.prisma.driver.update({
@@ -929,7 +957,15 @@ export class DriverService {
         this.prisma.route.findMany({
           where: {
             driver_id: driver.id,
-            status: { in: ['completed', 'cancelled'] },
+            OR: [
+              { status: { in: ['completed', 'cancelled'] } },
+              {
+                status: { in: ['active'] },
+                stops: {
+                  some: { status: { in: ['completed', 'failed', 'returned'] } },
+                },
+              },
+            ],
           },
           orderBy: { date: 'desc' },
           skip,
@@ -949,7 +985,15 @@ export class DriverService {
         this.prisma.route.count({
           where: {
             driver_id: driver.id,
-            status: { in: ['completed', 'cancelled'] },
+            OR: [
+              { status: { in: ['completed', 'cancelled'] } },
+              {
+                status: { in: ['active'] },
+                stops: {
+                  some: { status: { in: ['completed', 'failed', 'returned'] } },
+                },
+              },
+            ],
           },
         }),
         this.prisma.stop.count({
@@ -961,37 +1005,80 @@ export class DriverService {
         }),
       ]);
 
-    // Combine and sort
-    type HistoryItem =
-      | (Prisma.RouteGetPayload<{ include: { stops: true } }> & {
-          type: 'route';
-        })
-      | (Prisma.StopGetPayload<object> & { type: 'stop' });
-
-    const combined: HistoryItem[] = [
-      ...routes.map((r) => ({ ...r, type: 'route' as const })),
-      ...standaloneStops.map((s) => ({ ...s, type: 'stop' as const })),
-    ].sort((a, b) => {
-      const dateA = new Date(
-        a.type === 'route' ? a.date : (a.completed_at as Date),
-      ).getTime();
-      const dateB = new Date(
-        b.type === 'route' ? b.date : (b.completed_at as Date),
-      ).getTime();
-      return dateB - dateA;
-    });
-
-    const total = totalRoutes + totalStops;
-
-    return {
-      data: combined.slice(0, limit),
-      pagination: {
-        page,
-        limit,
-        total,
-        total_pages: Math.ceil(total / limit),
+    // Format results
+    const responseData = {
+      data: [] as any[],
+      summary: {
+        total_earnings: 0,
+        completed_count: 0,
+        currency: driver.company.currency,
+        price_per_km: driver.company.price_per_km,
       },
     };
+
+    const formattedRoutes = routes.map((r: Route & { stops: Stop[] }) => {
+      let routeEarnings = 0;
+      let totalRating = 0;
+      let ratedStops = 0;
+      const stops = r.stops;
+      for (const s of stops) {
+        routeEarnings += Number(s.delivery_fee) || 0;
+        if (s.customer_rating) {
+          totalRating += Number(s.customer_rating);
+          ratedStops++;
+        }
+      }
+      return {
+        ...r,
+        type: 'route' as const,
+        stops_count: stops.length,
+        earnings: routeEarnings,
+        rating: ratedStops > 0 ? (totalRating / ratedStops).toFixed(1) : '5.0',
+      };
+    });
+
+    const formattedStops = standaloneStops.map((s: Stop) => ({
+      ...s,
+      type: 'stop' as const,
+      earnings: Number(s.delivery_fee) || 0,
+      rating: s.customer_rating ? Number(s.customer_rating).toFixed(1) : '5.0',
+    }));
+
+    // Combine and sort by date descending
+    const allItems = (
+      [...formattedRoutes, ...formattedStops] as Array<{
+        date?: Date | string;
+        completed_at?: Date | string | null;
+        earnings: number;
+      }>
+    ).sort((a, b) => {
+      const getTimestamp = (item: {
+        date?: Date | string;
+        completed_at?: Date | string | null;
+      }) => {
+        const d = item.date || item.completed_at;
+        return d ? new Date(d).getTime() : 0;
+      };
+      return getTimestamp(b) - getTimestamp(a);
+    });
+
+    // We can also get the overall sum from Prisma if needed, but for now we'll return the summary stats
+    const earningsSum = await this.prisma.stop.aggregate({
+      where: {
+        driver_id: driver.id,
+        status: 'completed',
+      },
+      _sum: {
+        delivery_fee: true,
+      },
+    });
+
+    responseData.data = allItems;
+    responseData.summary.total_earnings =
+      Math.round((Number(earningsSum._sum.delivery_fee) || 0) * 100) / 100;
+    responseData.summary.completed_count = totalRoutes + totalStops;
+
+    return responseData;
   }
 
   async getProfile(userId: string) {
@@ -1014,6 +1101,8 @@ export class DriverService {
       joined_at: driver.created_at,
       fleet_name: driver.company.name,
       fleet_code: driver.company.company_code,
+      currency: driver.company.currency,
+      price_per_km: driver.company.price_per_km,
     };
   }
 

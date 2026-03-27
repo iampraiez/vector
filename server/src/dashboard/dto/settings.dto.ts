@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 
 export class UpdateCompanySettingsDto {
   @IsString()
@@ -28,6 +28,14 @@ export class UpdateCompanySettingsDto {
   @IsString()
   @IsOptional()
   timezone?: string;
+
+  @IsNumber()
+  @IsOptional()
+  price_per_km?: number;
+
+  @IsString()
+  @IsOptional()
+  currency?: string;
 }
 
 export class UpdateNotificationsDto {

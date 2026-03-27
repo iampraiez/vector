@@ -226,13 +226,40 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     socket.on("notification", (payload: Record<string, unknown>) => {
       addNotificationToState(payload);
-      toast(payload.title as string, {
-        description: payload.body as string,
-        action: {
-          label: "View",
-          onClick: () => navigate("/dashboard/notifications"),
-        },
-      });
+
+      const title = payload.title as string;
+      const body = payload.body as string;
+      const isTelemetry = title?.includes("Telemetry");
+      const isOnline = body?.includes("connected");
+
+      if (isTelemetry) {
+        if (isOnline) {
+          toast.success(title, {
+            description: body,
+            action: {
+              label: "View",
+              onClick: () => navigate("/dashboard/notifications"),
+            },
+          });
+        } else {
+          toast.error(title, {
+            description: body,
+            action: {
+              label: "View",
+              onClick: () => navigate("/dashboard/notifications"),
+            },
+          });
+        }
+      } else {
+        toast.message(title, {
+          description: body,
+          icon: <BellIcon className="w-4 h-4 text-emerald-600" />,
+          action: {
+            label: "View",
+            onClick: () => navigate("/dashboard/notifications"),
+          },
+        });
+      }
     });
 
     return () => {
@@ -292,7 +319,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider>
       <OnboardingTour />
       <DashboardSidebar />
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        expand={false}
+        toastOptions={{
+          style: {
+            borderRadius: "18px",
+            border: "1px solid rgba(0,0,0,0.05)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+          },
+        }}
+      />
 
       {/* ── Main content area ── */}
       <SidebarInset className="bg-gray-50/50 min-w-0 overflow-x-hidden">

@@ -195,7 +195,7 @@ export function DashboardOrderDetail() {
             <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+                  <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 tracking-tight">
                     {order.external_id || `Order #${order.id.slice(0, 8)}`}
                   </h1>
                   <div
@@ -246,7 +246,9 @@ export function DashboardOrderDetail() {
                 value={
                   order.service_time_min
                     ? `${order.service_time_min} mins`
-                    : "Not specified"
+                    : order.time_window_start && order.time_window_end
+                      ? `${order.time_window_start} - ${order.time_window_end}`
+                      : "Not specified"
                 }
               />
             </div>
@@ -259,8 +261,8 @@ export function DashboardOrderDetail() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-4">
-                  Customer
+                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+                  Customer Profile
                 </h3>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center border border-black/5">
@@ -281,15 +283,15 @@ export function DashboardOrderDetail() {
               </div>
 
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-4">
-                  Address
+                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+                  Delivery Destination
                 </h3>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center border border-black/5">
                     <MapPinIcon className="w-6 h-6 text-gray-400" />
                   </div>
                   <div>
-                    <p className="text-base font-semibold text-gray-900 leading-snug">
+                    <p className="text-base font-medium text-gray-800 leading-snug">
                       {order.address}
                     </p>
                     <p className="text-sm text-gray-500 font-normal">
@@ -307,13 +309,37 @@ export function DashboardOrderDetail() {
 
             {order.notes && (
               <div className="mt-8 pt-8 border-t border-gray-100">
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Delivery Notes
+                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  Special Instructions
                 </h3>
                 <div className="p-4 bg-gray-50 rounded-xl border border-black/5">
                   <p className="text-sm text-gray-600 leading-relaxed italic">
                     "{order.notes}"
                   </p>
+                </div>
+              </div>
+            )}
+
+            {order.photo_url && (
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+                  Proof of Delivery
+                </h3>
+                <div className="relative group overflow-hidden rounded-2xl border border-black/8 shadow-sm max-w-md">
+                  <img
+                    src={order.photo_url}
+                    alt="Proof of delivery"
+                    className="w-full h-auto max-h-64 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
+                  <a
+                    href={order.photo_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md text-gray-900 px-4 py-2 rounded-xl text-[12px] font-bold shadow-xl border border-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 hover:bg-white"
+                  >
+                    View Full Resolution
+                  </a>
                 </div>
               </div>
             )}

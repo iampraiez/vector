@@ -51,14 +51,14 @@ interface ReportsState {
   error: string | null;
 
   // Methods
-  fetchSummary: (startDate?: string) => Promise<void>;
-  fetchCharts: (startDate?: string) => Promise<void>;
+  fetchSummary: (startDate?: string, driverId?: string) => Promise<void>;
+  fetchCharts: (startDate?: string, driverId?: string) => Promise<void>;
   fetchDriverPerformance: (
     page?: number,
     limit?: number,
     startDate?: string,
   ) => Promise<void>;
-  fetchAllData: (startDate?: string) => Promise<void>;
+  fetchAllData: (startDate?: string, driverId?: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -70,11 +70,12 @@ export const useReportsStore = create<ReportsState>((set, get) => ({
   isMutating: false,
   error: null,
 
-  fetchSummary: async (startDate?: string) => {
+  fetchSummary: async (startDate?: string, driverId?: string) => {
     set({ isLoading: true, error: null });
     try {
       const params = new URLSearchParams();
       if (startDate) params.append("start_date", startDate);
+      if (driverId) params.append("driver_id", driverId);
 
       const res = await api.get<ReportSummary>(
         `/dashboard/reports/summary?${params.toString()}`,
@@ -92,11 +93,12 @@ export const useReportsStore = create<ReportsState>((set, get) => ({
     }
   },
 
-  fetchCharts: async (startDate?: string) => {
+  fetchCharts: async (startDate?: string, driverId?: string) => {
     set({ isLoading: true, error: null });
     try {
       const params = new URLSearchParams();
       if (startDate) params.append("start_date", startDate);
+      if (driverId) params.append("driver_id", driverId);
 
       const res = await api.get<ReportCharts>(
         `/dashboard/reports/charts?${params.toString()}`,
@@ -138,12 +140,12 @@ export const useReportsStore = create<ReportsState>((set, get) => ({
     }
   },
 
-  fetchAllData: async (startDate?: string) => {
+  fetchAllData: async (startDate?: string, driverId?: string) => {
     set({ isLoading: true, error: null });
     try {
       await Promise.all([
-        get().fetchSummary(startDate),
-        get().fetchCharts(startDate),
+        get().fetchSummary(startDate, driverId),
+        get().fetchCharts(startDate, driverId),
         get().fetchDriverPerformance(1, 10, startDate),
       ]);
     } catch {

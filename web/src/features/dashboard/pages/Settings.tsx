@@ -332,23 +332,42 @@ function SimpleConfirmModal({
 }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-[13px] text-gray-500 mb-6">{desc}</p>
-        <div className="flex gap-2">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-4xl w-full max-w-sm shadow-2xl border border-black/5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
+        <div className="p-8 text-center">
+          <div
+            className={`w-16 h-16 rounded-3xl mx-auto mb-6 flex items-center justify-center ${
+              variant === "danger"
+                ? "bg-red-50 text-red-600"
+                : "bg-amber-50 text-amber-600"
+            }`}
+          >
+            <ExclamationCircleIcon className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">
+            {title}
+          </h3>
+          <p className="text-[13px] text-gray-500 leading-relaxed px-2">
+            {desc}
+          </p>
+        </div>
+
+        <div className="px-8 py-6 bg-gray-50/80 flex gap-3 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
+            className="flex-1 py-3.5 bg-white border border-black/5 text-gray-500 font-bold text-[13px] rounded-2xl hover:bg-gray-100 transition-all active:scale-[0.98]"
           >
             Cancel
           </button>
           <button
             onClick={() => {
               onConfirm();
-              // Do not automatically close; let the handler close it if needed, or handle async logic onConfirm
             }}
-            className={`flex-1 py-3 ${variant === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"} text-white font-semibold text-[13px] rounded-xl shadow-lg transition-all`}
+            className={`flex-1 py-3.5 font-bold text-[13px] rounded-2xl transition-all shadow-xl active:scale-[0.98] ${
+              variant === "danger"
+                ? "bg-red-600 text-white hover:bg-red-700 shadow-red-600/20"
+                : "bg-amber-600 text-white hover:bg-amber-700 shadow-amber-600/20"
+            }`}
           >
             {btnText}
           </button>
@@ -376,44 +395,53 @@ function OtpVerifyModal({
   if (!isOpen || !action) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Verify Identity
-        </h3>
-        <p className="text-[13px] text-gray-500 mb-4">
-          A 6-digit code has been sent to your email. Enter it below to confirm{" "}
-          {action === "deactivate_workspace"
-            ? "deactivation"
-            : "data clearance"}
-          .
-        </p>
-        <input
-          type="text"
-          maxLength={6}
-          value={otp}
-          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-          disabled={isVerifying}
-          placeholder="000000"
-          className="w-full text-center text-3xl tracking-[0.2em] font-semibold py-3 mb-6 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
-        <div className="flex gap-2">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-4xl w-full max-w-sm shadow-2xl border border-black/5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
+        <div className="px-8 pt-8 pb-6 border-b border-gray-50 text-center">
+          <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+            Verify Identity
+          </h3>
+          <p className="text-[13px] text-gray-400 mt-1 font-medium leading-relaxed">
+            A security code has been sent to your email. Enter it below to
+            confirm{" "}
+            <span className="text-gray-900 font-bold">
+              {action === "deactivate_workspace"
+                ? "deactivation"
+                : "data clearance"}
+            </span>
+            .
+          </p>
+        </div>
+
+        <div className="p-8">
+          <input
+            type="text"
+            maxLength={6}
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+            disabled={isVerifying}
+            placeholder="000 000"
+            className="w-full text-center text-4xl tracking-[0.25em] font-black py-5 mb-0 bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-3xl focus:outline-none focus:border-emerald-600/30 focus:bg-emerald-50/30 transition-all placeholder:text-gray-200"
+          />
+        </div>
+
+        <div className="px-8 py-6 bg-gray-50/80 flex gap-3 border-t border-gray-100">
           <button
             onClick={onClose}
             disabled={isVerifying}
-            className="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
+            className="flex-1 py-3.5 bg-white border border-black/5 text-gray-500 font-bold text-[13px] rounded-2xl hover:bg-gray-100 transition-all active:scale-[0.98] disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={() => onVerify(otp)}
             disabled={otp.length !== 6 || isVerifying}
-            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[13px] rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
+            className="flex-2 py-3.5 bg-emerald-600 text-white font-bold text-[13px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
           >
             {isVerifying ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              "Verify"
+              "Confirm Action"
             )}
           </button>
         </div>
@@ -492,7 +520,10 @@ export function DashboardSettings() {
     };
 
     Object.keys(filteredData).forEach((key) => {
-      if (filteredData[key as keyof CompanyInfo] === undefined) {
+      if (
+        filteredData[key as keyof CompanyInfo] === undefined ||
+        filteredData[key as keyof CompanyInfo] === null
+      ) {
         delete filteredData[key as keyof CompanyInfo];
       }
     });
@@ -553,19 +584,6 @@ export function DashboardSettings() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 pb-32">
-      {showSetupBanner && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
-          <ExclamationCircleIcon className="w-5 h-5 text-amber-600 mt-0.5" />
-
-          <button
-            onClick={() => setIsEditingProfile(true)}
-            className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-[11px] font-bold rounded-lg transition-colors"
-          >
-            Setup Now
-          </button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="mb-2 font-inter">
         <h1 className="text-2xl md:text-[26px] font-bold text-gray-900 mb-0.5 tracking-tight">
@@ -575,16 +593,28 @@ export function DashboardSettings() {
           Manage your workspace profile and performance preferences
         </p>
       </div>
-      <div className="flex-1">
-        <h4 className="text-[13px] font-semibold text-amber-900">
-          Pricing Configuration Required
-        </h4>
-        <p className="text-[12px] text-amber-800/80 mt-0.5">
-          Please set your price per kilometer and currency in the Workspace
-          Profile section. This is required to show accurate rates to your
-          drivers.
-        </p>
-      </div>
+
+      {showSetupBanner && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+          <ExclamationCircleIcon className="w-5 h-5 text-amber-600 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="text-[13px] font-semibold text-amber-900">
+              Pricing Configuration Required
+            </h4>
+            <p className="text-[12px] text-amber-800/80 mt-0.5">
+              Please set your price per kilometer and currency in the Workspace
+              Profile section. This is required to show accurate rates to your
+              drivers.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsEditingProfile(true)}
+            className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-[11px] font-bold rounded-lg transition-colors"
+          >
+            Setup Now
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-1 p-1 bg-gray-100/50 border border-black/5 rounded-2xl w-fit">
@@ -717,11 +747,10 @@ export function DashboardSettings() {
                 />
                 <StaticField
                   label="Region"
-                  value={
-                    company?.city && company?.state
-                      ? `${company.city}, ${company.state}`
-                      : company?.city || company?.state || ""
-                  }
+                  value={(company?.city && company?.state
+                    ? `${company.city}, ${company.state}`
+                    : company?.city || company?.state || ""
+                  ).toUpperCase()}
                   icon={MapPinIcon}
                   isLoading={isLoadingInitial}
                 />

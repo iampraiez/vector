@@ -38,6 +38,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   bool _isOffline = false;
+  double _totalEarnings = 0.0;
+  String _currency = 'USD';
 
   static const _cacheKey = 'cache_history';
 
@@ -58,21 +60,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Try live data first
     try {
       final data = await _api.getHistory(limit: 50);
-      final routes = _parseRoutes(data);
-      
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_cacheKey, jsonEncode({
-        'ts': DateTime.now().millisecondsSinceEpoch,
-        'data': routes,
-      }));
-      
+
       if (mounted) {
         setState(() {
-          _completedRoutes = routes;
+          _currency = data['summary']?['currency'] as String? ?? 'USD';
+          
+          _completedRoutes = _parseRoutes(data);
+          _totalEarnings = (data['summary']?['total_earnings'] as num?)?.toDouble() ?? 0.0;
           _updateChartData();
           _isLoading = false;
         });
       }
+
+      await prefs.setString(_cacheKey, jsonEncode({
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'data': _completedRoutes,
+      }));
       return;
     } catch (e) {
       debugPrint('History API/Parse Error: $e');
@@ -141,8 +145,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final dateStr = r['date'] as String? ?? r['completed_at'] as String? ?? '';
         final rawDate = dateStr.isNotEmpty ? (DateTime.tryParse(dateStr) ?? DateTime.now()) : DateTime(0);
         
-        // Dynamic Earnings: $10 base + $2 per completed stop
-        final double earnings = 10.0 + (completedStops * 2.0);
+        final double ratingVal = (r['rating'] as num?)?.toDouble() ?? 0.0;
+        final double earningsVal = (r['earnings'] as num?)?.toDouble() ?? 0.0;
 
         final parsed = {
           'id': r['id'] ?? 'item-$i',
@@ -156,8 +160,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           'distance': r['total_distance_km'] != null
               ? '${(r['total_distance_km'] as num).toStringAsFixed(1)} km'
               : '--',
-          'earnings': '\$${earnings.toStringAsFixed(2)}',
-          'rating': (r['rating'] as num?)?.toDouble() ?? 0.0,
+          'rating': ratingVal,
+          'earnings': '$_currency ${earningsVal.toStringAsFixed(2)}',
           'timeline': (isRoute ? stops : [r]).map((s) {
             final sm = s as Map<String, dynamic>;
             final sStatus = (sm['status'] ?? '').toString().toLowerCase();
@@ -260,7 +264,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double totalEarnings = 0;
     final int totalDeliveries = _completedRoutes.fold(
       0, (sum, r) => sum + (r['completed'] as int));
     
@@ -393,10 +396,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Expanded(
                           child: _SummaryCard(
                             label: 'Earned',
-                            value:
-                                '\$${(totalEarnings / 1000).toStringAsFixed(1)}k',
-                            icon: Icons.attach_money,
-                            color: const Color(0xFFD97706),
+                            value: '$_currency ${_totalEarnings.toStringAsFixed(2)}',
+                            icon: Icons.account_balance_wallet_outlined,
+                            color: const Color(0xFF6366F1),
                           ),
                         ),
                       ],
@@ -752,10 +754,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                                       '${r['rating']}',
                                                       style: const TextStyle(
                                                         fontSize: 11,
-                                                        color: AppColors
-                                                            .textSecondary,
-                                                        fontWeight:
-                                                            FontWeight.w600,
+                                                        color: AppColors.textSecondary,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Container(
+                                                      width: 4,
+                                                      height: 4,
+                                                      decoration: const BoxDecoration(
+                                                        color: AppColors.border,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      r['earnings'] as String,
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        color: AppColors.success,
+                                                        fontWeight: FontWeight.w700,
                                                       ),
                                                     ),
                                                   ],
@@ -778,14 +796,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                           ),
                                           Row(
                                             children: [
-                                              Text(
-                                                r['earnings'] as String,
-                                                style: const TextStyle(
-                                                  fontSize: 17,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.primary,
-                                                ),
-                                              ),
                                               const SizedBox(width: 12),
                                               Container(
                                                 width: 28,

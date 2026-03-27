@@ -21,6 +21,17 @@ export interface Driver {
   joined_at: string | null;
 }
 
+export interface RecentStop {
+  id: string;
+  external_id: string;
+  customer_name: string;
+  address: string;
+  city: string | null;
+  status: string;
+  completed_at: string | null;
+  delivery_date: string | null;
+}
+
 export interface RecentRoute {
   id: string;
   name: string;
@@ -35,6 +46,7 @@ interface DriverState {
   drivers: Driver[];
   selectedDriver: Driver | null;
   recentRoutes: RecentRoute[];
+  recentStops: RecentStop[];
   totalDrivers: number;
   isLoading: boolean;
   isMutating: boolean;
@@ -56,6 +68,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   drivers: [],
   selectedDriver: null,
   recentRoutes: [],
+  recentStops: [],
   totalDrivers: 0,
   isLoading: false,
   isMutating: false,
@@ -86,6 +99,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       set({
         selectedDriver: res.data.driver,
         recentRoutes: res.data.recent_routes,
+        recentStops: res.data.recent_stops || [],
         isLoading: false,
       });
     } catch (err: unknown) {

@@ -698,6 +698,13 @@ export class DashboardService {
       orderBy: { date: 'desc' },
     });
 
+    // Get recent completed stops (deliveries)
+    const recentStops = await this.prisma.stop.findMany({
+      where: { driver_id: driverId, status: 'completed' },
+      take: 10,
+      orderBy: { completed_at: 'desc' },
+    });
+
     return {
       driver: {
         id: driver.id,
@@ -717,6 +724,7 @@ export class DashboardService {
         joined_at: driver.created_at,
       },
       recent_routes: recentRoutes,
+      recent_stops: recentStops,
     };
   }
 
@@ -920,6 +928,7 @@ export class DashboardService {
       where: {
         company_id: companyId,
         created_at: timeFilter,
+        driver_id: query.driver_id || undefined,
       },
       _count: true,
     });
@@ -937,6 +946,7 @@ export class DashboardService {
         company_id: companyId,
         status: 'completed',
         created_at: timeFilter,
+        driver_id: query.driver_id || undefined,
       },
       _sum: {
         total_distance_km: true,
@@ -963,7 +973,6 @@ export class DashboardService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getReportCharts(companyId: string, _query: ReportQueryDto) {
     // Generate an array of the last 7 days
     const days = Array.from({ length: 7 })
@@ -977,6 +986,7 @@ export class DashboardService {
     const stops = await this.prisma.stop.findMany({
       where: {
         company_id: companyId,
+        driver_id: _query.driver_id || undefined,
         created_at: {
           gte: new Date(new Date().setDate(new Date().getDate() - 7)),
         },
@@ -1431,7 +1441,7 @@ export class DashboardService {
 
     const billing = await this.getBillingInfo(companyId);
 
-    const needs_setup = !company.price_per_km || !company.currency;
+    const needs_setup = !company.currency || !company.price_per_km;
 
     return {
       company: {
@@ -1463,11 +1473,14 @@ export class DashboardService {
   async updateSettings(companyId: string, dto: UpdateCompanySettingsDto) {
     const data: Prisma.CompanyUpdateInput = {};
     if (dto.name) data.name = dto.name;
+    if (dto.billing_email) data.billing_email = dto.billing_email;
     if (dto.contact_email) data.contact_email = dto.contact_email;
     if (dto.phone) data.phone = dto.phone;
     if (dto.city) data.city = dto.city;
     if (dto.state) data.state = dto.state;
     if (dto.timezone) data.timezone = dto.timezone;
+    if (dto.price_per_km !== undefined) data.price_per_km = dto.price_per_km;
+    if (dto.currency) data.currency = dto.currency;
 
     return this.prisma.company.update({
       where: { id: companyId },
