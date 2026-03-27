@@ -1151,7 +1151,7 @@ export class DriverService {
     });
     return { message: 'All marked read' };
   }
-  
+
   async deleteNotification(userId: string, notificationId: string) {
     if (notificationId === 'all') {
       await this.prisma.notification.deleteMany({

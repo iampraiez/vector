@@ -1077,7 +1077,7 @@ export class DashboardService {
   }
 
   async importBulkOrders(companyId: string, orders: CreateOrderDto[]) {
-    const billing = await this.getBillingInfo(companyId);       
+    const billing = await this.getBillingInfo(companyId);
     if (
       billing.total_deliveries_this_month + orders.length >
       billing.plan.monthly_delivery_limit
