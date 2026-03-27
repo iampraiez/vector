@@ -66,7 +66,7 @@ export function DashboardDrivers() {
         ratedDrivers.reduce((acc, curr) => acc + (curr.avg_rating || 0), 0) /
         ratedDrivers.length
       ).toFixed(1)
-    : "N/A";
+    : "—";
 
   return (
     <div className="p-4 md:p-8 max-w-350 mx-auto">
@@ -75,7 +75,7 @@ export function DashboardDrivers() {
         <div>
           <h1
             id="tour-drivers-heading"
-            className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight"
+            className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-1 tracking-tight"
           >
             Drivers
           </h1>
@@ -253,7 +253,7 @@ export function DashboardDrivers() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[17px] font-bold text-gray-900 mb-1 truncate tracking-tight group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-[17px] font-semibold text-gray-900 mb-1 truncate tracking-tight group-hover:text-emerald-700 transition-colors">
                       {driver.name || "Unknown Driver"}
                     </h3>
                     <div className="flex items-center gap-2">
@@ -327,21 +327,21 @@ export function DashboardDrivers() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-2 bg-gray-50/50 rounded-xl p-3 mb-6 border border-black/5 transition-all group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50">
                   <div className="text-center border-r border-black/5 last:border-0 border-dashed">
-                    <p className="text-lg font-extrabold text-gray-900 mb-0 tracking-tight">
+                    <p className="text-lg font-semibold text-gray-900 mb-0 tracking-tight">
                       {driver.total_deliveries || 0}
                     </p>
-                    <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-widest">
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
                       Routes
                     </p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <StarIcon className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shadow-sm" />
-                      <p className="text-lg font-extrabold text-gray-900 tracking-tight">
-                        {driver.avg_rating || "N/A"}
+                      <p className="text-lg font-semibold text-gray-900 tracking-tight">
+                        {driver.avg_rating || "—"}
                       </p>
                     </div>
-                    <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-widest">
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
                       Rating
                     </p>
                   </div>
@@ -409,7 +409,7 @@ export function DashboardDrivers() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-500 tracking-wider"
+                      className="px-5 py-3.5 text-left text-[11px] font-medium text-gray-500 tracking-wider"
                     >
                       {h}
                     </th>
@@ -530,7 +530,7 @@ export function DashboardDrivers() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[14px] font-bold text-gray-800 mb-0.5 truncate tracking-tight group-hover:text-emerald-700 transition-colors">
+                            <p className="text-[14px] font-semibold text-gray-800 mb-0.5 truncate tracking-tight group-hover:text-emerald-700 transition-colors">
                               {driver.name || "Unknown Driver"}
                             </p>
                             <p className="text-[12px] text-gray-400 truncate tracking-tight font-medium">
@@ -548,15 +548,15 @@ export function DashboardDrivers() {
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-[14px] font-extrabold text-gray-900 tracking-tight bg-gray-50/50 px-2.5 py-1 rounded-lg border border-black/5 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50 transition-colors">
+                        <span className="text-[14px] font-semibold text-gray-900 tracking-tight bg-gray-50/50 px-2.5 py-1 rounded-lg border border-black/5 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50 transition-colors">
                           {driver.total_deliveries || 0}
                         </span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 bg-gray-50/50 px-2.5 py-1 rounded-lg border border-black/5 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/50 transition-colors">
                           <StarIcon className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                          <span className="text-[14px] font-extrabold text-gray-900 tracking-tight">
-                            {driver.avg_rating || "N/A"}
+                          <span className="text-[14px] font-semibold text-gray-900 tracking-tight">
+                            {driver.avg_rating || "—"}
                           </span>
                         </div>
                       </td>
@@ -639,13 +639,13 @@ function StatsCard({
 }) {
   return (
     <div className="bg-white rounded-2xl p-5 border border-black/5 shadow-sm transition-all duration-300 group hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-600/5 hover:-translate-y-0.5">
-      <p className="text-[10px] text-gray-500 font-extrabold uppercase tracking-widest mb-2 transition-colors group-hover:text-emerald-600">
+      <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest mb-2 transition-colors group-hover:text-emerald-600">
         {label}
       </p>
       {isLoading ? (
         <Skeleton className="w-16 h-8" />
       ) : (
-        <p className="text-2xl font-bold text-gray-900 tracking-tight leading-none group-hover:text-gray-800">
+        <p className="text-2xl font-medium text-gray-900 tracking-tight leading-none group-hover:text-gray-800">
           {value}
         </p>
       )}

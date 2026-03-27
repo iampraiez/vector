@@ -2116,6 +2116,8 @@ components:
           type: array
           items:
             type: string
+        qr_code:
+          type: string
     FailDeliveryDto:
       type: object
       properties:

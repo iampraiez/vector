@@ -395,7 +395,7 @@ export function DashboardTracking() {
                     <InfoGroup
                       icon={PhoneIcon}
                       label="Contact Number"
-                      value={selectedDriver.phone || "N/A"}
+                      value={selectedDriver.phone || "—"}
                     />
                     <InfoGroup
                       icon={MapPinIcon}

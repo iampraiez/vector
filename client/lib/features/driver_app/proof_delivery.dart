@@ -26,6 +26,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
   bool _qrScanned = false;
   String? _capturedPhotoPath;
   String? _scannedQrCode;
+  bool _wrongQrShownOnce = false;
   final TextEditingController _notesController = TextEditingController();
   bool _submitting = false;
   bool _uploadingPhoto = false;
@@ -88,6 +89,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
         await _api.completeDelivery(
           stop.id,
           photoUrl: cloudPhotoUrl,
+          qrCode: _scannedQrCode,
           notes: _notesController.text.trim().isEmpty
               ? null
               : _notesController.text.trim(),
@@ -310,7 +312,8 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                               });
                             } else if (mounted) {
                               // Camera was cancelled or failed
-                              messenger.showSnackBar(
+                              messenger.clearSnackBars();
+                                                messenger.showSnackBar(
                                 const SnackBar(
                                   content: Text(
                                     'Camera access denied or cancelled',
@@ -322,7 +325,8 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                             }
                           } catch (e) {
                             if (mounted) {
-                              messenger.showSnackBar(
+                              messenger.clearSnackBars();
+                                                messenger.showSnackBar(
                                 SnackBar(
                                   content: Text('Failed to capture photo: $e'),
                                   behavior: SnackBarBehavior.floating,
@@ -500,7 +504,8 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                                   ?.trackingToken
                                   ?.trim();
                               if (expectedToken == null || expectedToken.isEmpty) {
-                                messenger.showSnackBar(
+                                messenger.clearSnackBars();
+                                                messenger.showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                       'Delivery code unavailable. Refresh assignments, then open this stop again.',
@@ -535,15 +540,19 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                                             if (scanned.isEmpty) return;
 
                                             if (scanned != expectedToken) {
-                                              messenger.showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Wrong QR code. Please scan the customer\'s code.',
+                                              // Only show the error toast once to avoid spamming
+                                              if (!_wrongQrShownOnce) {
+                                                setState(() => _wrongQrShownOnce = true);
+                                                messenger.clearSnackBars();
+                                                messenger.showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Wrong QR code. Please scan the customer\'s code.',
+                                                    ),
+                                                    behavior: SnackBarBehavior.floating,
                                                   ),
-                                                  behavior:
-                                                      SnackBarBehavior.floating,
-                                                ),
-                                              );
+                                                );
+                                              }
                                               return;
                                             }
 

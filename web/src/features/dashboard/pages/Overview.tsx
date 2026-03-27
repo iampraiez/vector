@@ -124,7 +124,7 @@ export function DashboardOverview() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-800 mb-1 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold text-gray-800 mb-1 tracking-tight">
               Overview
             </h1>
             <p className="text-[13px] text-gray-500">{today}</p>
@@ -132,7 +132,7 @@ export function DashboardOverview() {
           <div className="flex flex-wrap gap-2.5">
             <button
               onClick={() => navigate("/dashboard/tracking")}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[13px] font-bold text-gray-900 transition-all duration-200 shadow-sm hover:bg-gray-50 hover:border-emerald-600/30 cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[13px] font-semibold text-gray-900 transition-all duration-200 shadow-sm hover:bg-gray-50 hover:border-emerald-600/30 cursor-pointer"
             >
               <SignalIcon className="w-4 h-4 text-emerald-600" />
               Live Tracking
@@ -148,7 +148,7 @@ export function DashboardOverview() {
                   <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/50 shrink-0">
                     <RocketLaunchIcon className="w-4 h-4" />
                   </div>
-                  <h2 className="text-[15px] font-bold text-gray-900 tracking-tight">
+                  <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">
                     Get your fleet moving
                   </h2>
                 </div>
@@ -162,10 +162,10 @@ export function DashboardOverview() {
                 {/* Fleet Code Block */}
                 <div className="flex items-center bg-gray-50/50 border border-black/5 rounded-xl pl-3 pr-1 py-1 gap-4">
                   <div className="flex flex-col py-1">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                    <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
                       Fleet Code
                     </span>
-                    <code className="text-[14px] font-mono font-bold text-gray-900 leading-none">
+                    <code className="text-[14px] font-mono font-semibold text-gray-900 leading-none">
                       {metrics.company_code || "—"}
                     </code>
                   </div>
@@ -198,7 +198,7 @@ export function DashboardOverview() {
                       state: { openNewOrder: true },
                     })
                   }
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
                 >
                   New Order
                 </button>
@@ -238,7 +238,7 @@ export function DashboardOverview() {
                         <Icon className="w-5 h-5 text-gray-400 group-hover:text-emerald-600" />
                       </div>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
                           m.trend === "up"
                             ? "text-emerald-600 bg-emerald-50 border-emerald-100"
                             : "text-red-500 bg-red-50 border-red-100"
@@ -250,8 +250,8 @@ export function DashboardOverview() {
                     <p className="text-[11px] text-gray-500 mb-1 uppercase tracking-widest font-semibold text-nowrap">
                       {m.label}
                     </p>
-                    <p className="text-2xl font-bold text-gray-800 tracking-tight">
-                      {m.value}
+                    <p className="text-2xl font-medium text-gray-900 tracking-tight leading-none group-hover:text-gray-800">
+                      {m.value || "—"}
                     </p>
                   </div>
                 );
@@ -280,7 +280,7 @@ export function DashboardOverview() {
               </div>
               <button
                 onClick={() => navigate("/dashboard/drivers")}
-                className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider text-nowrap"
+                className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider text-nowrap"
               >
                 View all <ChevronRightIcon className="w-3.5 h-3.5" />
               </button>
@@ -314,7 +314,7 @@ export function DashboardOverview() {
                     <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 relative border border-black/5 transition-all group-hover:bg-emerald-50 group-hover:border-emerald-100 group-hover:shadow-sm">
                       <div className="flex flex-col items-center justify-center">
                         <UsersIcon className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 mb-0.5" />
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter group-hover:text-emerald-500">
+                        <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-tighter group-hover:text-emerald-500">
                           {(driver.id || "").slice(-4)}
                         </span>
                       </div>
@@ -331,7 +331,7 @@ export function DashboardOverview() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-[14px] font-bold text-gray-800 truncate tracking-tight leading-none">
+                        <p className="text-[14px] font-semibold text-gray-800 truncate tracking-tight leading-none">
                           {driver.name || "Unknown Driver"}
                         </p>
                       </div>
@@ -349,8 +349,8 @@ export function DashboardOverview() {
                       <div
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all shadow-sm ${
                           (driver.status || "").toLowerCase() === "active"
-                            ? "bg-emerald-50/50 border-emerald-100 text-emerald-700 font-bold"
-                            : "bg-amber-50/50 border-amber-100 text-amber-700 font-bold"
+                            ? "bg-emerald-50/50 border-emerald-100 text-emerald-700 font-semibold"
+                            : "bg-amber-50/50 border-amber-100 text-amber-700 font-semibold"
                         }`}
                       >
                         <div
@@ -389,7 +389,7 @@ export function DashboardOverview() {
               </div>
               <button
                 onClick={() => navigate("/dashboard/orders")}
-                className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider text-nowrap"
+                className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-transparent border-none cursor-pointer hover:underline uppercase tracking-wider text-nowrap"
               >
                 View all <ChevronRightIcon className="w-3.5 h-3.5" />
               </button>
@@ -431,7 +431,7 @@ export function DashboardOverview() {
                             {order.customer_name || "Unknown Customer"}
                           </p>
                           <span
-                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider border shrink-0"
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wider border shrink-0"
                             style={{
                               backgroundColor: s.bg,
                               color: s.color,
@@ -442,7 +442,7 @@ export function DashboardOverview() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest shrink-0">
                             {order.external_id ||
                               `#${(recentOrders || []).length - i}`}
                           </p>

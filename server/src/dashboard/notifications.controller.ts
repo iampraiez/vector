@@ -52,4 +52,10 @@ export class DashboardNotificationsController {
   ) {
     return this.dashboardService.deleteNotification(userId, notificationId);
   }
+
+  @Delete()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  clearAll(@CurrentUser('id') userId: string) {
+    return this.dashboardService.deleteNotification(userId, 'all');
+  }
 }

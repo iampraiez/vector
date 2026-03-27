@@ -232,13 +232,47 @@ export class TrackingService {
       throw new NotFoundException('Delivery cannot be rated');
     }
 
-    await this.prisma.stop.update({
-      where: { id: stop.id },
-      data: {
-        customer_rating: dto.rating,
-        customer_rating_comment: dto.comment,
-        customer_rated_at: new Date(),
-      },
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Update the stop with the rating
+      await tx.stop.update({
+        where: { id: stop.id },
+        data: {
+          customer_rating: dto.rating,
+          customer_rating_comment: dto.comment,
+          customer_rated_at: new Date(),
+        },
+      });
+
+      // 2. Create a persistent DeliveryRating record
+      await tx.deliveryRating.create({
+        data: {
+          stop_id: stop.id,
+          driver_id: stop.driver_id!,
+          company_id: stop.company_id,
+          rating: dto.rating,
+          comment: dto.comment,
+        },
+      });
+
+      // 3. Update the Driver's aggregate rating stats
+      const driver = await tx.driver.findUnique({
+        where: { id: stop.driver_id! },
+        select: { avg_rating: true, rating_count: true },
+      });
+
+      if (driver) {
+        const newCount = driver.rating_count + 1;
+        const newAvg =
+          (driver.avg_rating * driver.rating_count + dto.rating) / newCount;
+
+        await tx.driver.update({
+          where: { id: stop.driver_id! },
+          data: {
+            avg_rating: parseFloat(newAvg.toFixed(2)),
+            rating_count: newCount,
+          },
+        });
+      }
     });
 
     if (stop.driver?.user_id) {

@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Param,
   UseGuards,
   Query,
@@ -39,5 +40,18 @@ export class DriverNotificationsController {
   @Post('read-all')
   markAllRead(@CurrentUser('id') userId: string) {
     return this.driverService.markAllNotificationsRead(userId);
+  }
+
+  @Delete(':notification_id')
+  deleteNotification(
+    @CurrentUser('id') userId: string,
+    @Param('notification_id') notificationId: string,
+  ) {
+    return this.driverService.deleteNotification(userId, notificationId);
+  }
+
+  @Delete()
+  clearAll(@CurrentUser('id') userId: string) {
+    return this.driverService.deleteNotification(userId, 'all');
   }
 }

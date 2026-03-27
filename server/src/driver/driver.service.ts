@@ -148,6 +148,12 @@ export class DriverService {
       },
     });
 
+    // Get company settings for pricing
+    const company = await this.prisma.company.findUnique({
+      where: { id: driver.company_id },
+      select: { price_per_km: true, currency: true, name: true },
+    });
+
     return {
       status: driver.status,
       deliveries_today: completedToday,
@@ -157,6 +163,9 @@ export class DriverService {
       active_route_id: activeRoute?.id || null,
       rating: driver.avg_rating,
       last_active_at: driver.last_active_at,
+      company_name: company?.name || null,
+      price_per_km: company?.price_per_km || 0,
+      currency: company?.currency || 'NGN',
     };
   }
 
@@ -658,6 +667,7 @@ export class DriverService {
           // Store first photo_url if multiple are provided, for simplicity
           photo_url: dto.photo_urls?.[0] ?? null,
           notes: dto.notes ?? null,
+          location_confirmed: dto.qr_code ? true : stop.location_confirmed,
         },
       }),
       this.prisma.driver.update({
@@ -773,7 +783,15 @@ export class DriverService {
       await this.prisma.$transaction(async (tx) => {
         await tx.route.update({
           where: { id: routeId },
-          data: { status: 'completed', completed_at: new Date() },
+          data: {
+            status: 'completed',
+            completed_at: new Date(),
+            actual_duration_min: route.started_at
+              ? Math.round(
+                  (Date.now() - new Date(route.started_at).getTime()) / 60000,
+                )
+              : null,
+          },
         });
 
         // After finishing a route, check if driver is free
@@ -1021,6 +1039,18 @@ export class DriverService {
     if (dto.vehicle_type) driverUpdates.vehicle_type = dto.vehicle_type;
     if (dto.vehicle_plate) driverUpdates.vehicle_plate = dto.vehicle_plate;
 
+    if (Object.keys(driverUpdates).length > 0) {
+      // Check for active route before allowing vehicle updates
+      const activeRoute = await this.prisma.route.findFirst({
+        where: { driver_id: driver.id, status: 'active' },
+      });
+      if (activeRoute) {
+        throw new ForbiddenException(
+          'Cannot update vehicle information while a route is active',
+        );
+      }
+    }
+
     if (Object.keys(userUpdates).length > 0) {
       await this.prisma.user.update({
         where: { id: userId },
@@ -1120,6 +1150,18 @@ export class DriverService {
       data: { read: true, read_at: new Date() },
     });
     return { message: 'All marked read' };
+  }
+  
+  async deleteNotification(userId: string, notificationId: string) {
+    if (notificationId === 'all') {
+      await this.prisma.notification.deleteMany({
+        where: { user_id: userId },
+      });
+      return;
+    }
+    await this.prisma.notification.delete({
+      where: { id: notificationId, user_id: userId },
+    });
   }
 
   async completeOnboarding(userId: string, dto: OnboardingDto) {

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -108,6 +109,20 @@ export class RoutesService {
       where: { id: routeId, company_id: companyId },
     });
     if (!route) throw new NotFoundException('Route not found');
+
+    // BLOCK: Updates if route is active
+    if (route.status === 'active') {
+      const isSensitiveUpdate =
+        dto.stops !== undefined ||
+        dto.name !== undefined ||
+        dto.driver_id !== undefined;
+
+      if (isSensitiveUpdate) {
+        throw new ForbiddenException(
+          'Cannot update route stops, name, or driver while the route is active.',
+        );
+      }
+    }
 
     const updateData: Prisma.RouteUncheckedUpdateInput = {};
     if (dto.name) updateData.name = dto.name;

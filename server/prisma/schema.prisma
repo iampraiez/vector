@@ -68,6 +68,8 @@ model Company {
   country            String?
   logo_url           String?
   timezone           String?   @default("UTC")
+  price_per_km       Float     @default(0.0)
+  currency           String    @default("NGN")
   notification_settings Json?    @default("{\"email\":true,\"sms\":false,\"push\":true,\"driverAlerts\":true,\"deliveryUpdates\":true,\"paymentAlerts\":false,\"weeklyReport\":true}")
   route_settings        Json?    @default("{\"auto_optimize\":false,\"default_start_address\":\"\",\"default_end_address\":\"\"}")
   subscription_locked Boolean   @default(false)

@@ -95,7 +95,7 @@ function ExportModal({
               <div className="absolute inset-0 bg-emerald-400/20 rounded-[28px] animate-ping" />
               <CheckCircleIcon className="w-10 h-10 text-emerald-600 relative z-10" />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-3 tracking-tight">
+            <h3 className="text-2xl font-medium text-gray-900 mb-3 tracking-tight">
               Report Queued!
             </h3>
             <p className="text-[14px] text-gray-500 leading-relaxed mb-10 px-4">
@@ -113,7 +113,7 @@ function ExportModal({
           <>
             <div className="px-8 pt-8 pb-6 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 tracking-tight">
+                <h3 className="text-xl font-medium text-gray-800 tracking-tight">
                   Export Settings
                 </h3>
                 <p className="text-[13px] text-gray-500 mt-1 font-normal">
@@ -235,13 +235,13 @@ function KPICard({
       <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors">
         <Icon className="w-5 h-5 text-emerald-600 group-hover:text-white transition-colors" />
       </div>
-      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+      <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-2">
         {label}
       </p>
       {isLoading ? (
         <Skeleton className="w-24 h-8 mb-1" />
       ) : (
-        <p className="text-3xl font-bold text-gray-900 tracking-tight">
+        <p className="text-2xl font-medium text-gray-900 tracking-tight leading-none group-hover:text-gray-800">
           {value || "—"}
         </p>
       )}
@@ -281,7 +281,7 @@ export function DashboardReports() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-1 tracking-tight">
               Reports & Analytics
             </h1>
             <p className="text-[13px] text-gray-600">
@@ -352,7 +352,7 @@ export function DashboardReports() {
                 charts.deliveries_by_day.length > 0 && (
                   <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm">
                     <div className="mb-6">
-                      <h3 className="text-[15px] font-bold text-gray-900 mb-1">
+                      <h3 className="text-[15px] font-semibold text-gray-900 mb-1">
                         Deliveries by Day
                       </h3>
                       <p className="text-[12px] text-gray-500">
@@ -390,7 +390,7 @@ export function DashboardReports() {
                 charts.success_rate_trend.length > 0 && (
                   <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm">
                     <div className="mb-6">
-                      <h3 className="text-[15px] font-bold text-gray-900 mb-1">
+                      <h3 className="text-[15px] font-semibold text-gray-900 mb-1">
                         Success Rate Trend
                       </h3>
                       <p className="text-[12px] text-gray-500">
@@ -431,7 +431,7 @@ export function DashboardReports() {
             {driverPerformance?.data && driverPerformance.data.length > 0 && (
               <div className="bg-white border border-black/8 rounded-2xl p-6 shadow-sm overflow-hidden">
                 <div className="mb-6">
-                  <h3 className="text-[15px] font-bold text-gray-900 mb-1">
+                  <h3 className="text-[15px] font-semibold text-gray-900 mb-1">
                     Driver Performance
                   </h3>
                   <p className="text-[12px] text-gray-500">
@@ -442,16 +442,16 @@ export function DashboardReports() {
                   <table className="w-full text-[13px]">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
                           Driver Name
                         </th>
-                        <th className="text-center py-3 px-4 font-semibold text-gray-700">
+                        <th className="text-center py-3 px-4 font-medium text-gray-700">
                           Deliveries
                         </th>
-                        <th className="text-center py-3 px-4 font-semibold text-gray-700">
+                        <th className="text-center py-3 px-4 font-medium text-gray-700">
                           On-Time Rate
                         </th>
-                        <th className="text-center py-3 px-4 font-semibold text-gray-700">
+                        <th className="text-center py-3 px-4 font-medium text-gray-700">
                           Rating
                         </th>
                       </tr>
@@ -462,7 +462,7 @@ export function DashboardReports() {
                           key={driver.driver_id}
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-4 px-4 font-medium text-gray-900">
+                          <td className="py-4 px-4 font-normal text-gray-900">
                             {driver.name}
                           </td>
                           <td className="py-4 px-4 text-center text-gray-600">
@@ -486,7 +486,7 @@ export function DashboardReports() {
                           </td>
                           <td className="py-4 px-4 text-center">
                             {driver.rating ? (
-                              <span className="text-yellow-500 font-semibold">
+                              <span className="text-yellow-500 font-medium">
                                 ★ {driver.rating.toFixed(1)}
                               </span>
                             ) : (

@@ -135,6 +135,11 @@ export function DashboardSignUp() {
       );
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
+      if (error.response?.data?.message === "ACCOUNT_PENDING_DELETION") {
+        navigate(
+          `/dashboard/verify-email?email=${encodeURIComponent(data.email)}&isRecovery=true`,
+        );
+      }
       setGlobalError(
         error.response?.data?.message || "Failed to sign up. Please try again.",
       );

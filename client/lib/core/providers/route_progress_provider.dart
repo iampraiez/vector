@@ -75,6 +75,7 @@ class RouteProgressProvider extends ChangeNotifier {
   bool get isRouteComplete => _isRouteComplete;
   bool get hasMoreStops => _currentIndex < _stops.length;
   bool get isEmpty => _stops.isEmpty;
+  bool get hasActiveRoute => _stops.isNotEmpty && !_isRouteComplete;
 
   /// The stop the driver is currently heading to / delivering.
   StopModel? get currentStop =>

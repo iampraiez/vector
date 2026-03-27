@@ -769,14 +769,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.swap_horiz_rounded,
                         label: 'Switch Fleet',
                         sub: 'Join another company roster',
-                        onTap: _updating ? null : _handleSwitchFleet,
+                        onTap: (_updating || RouteProgressScope.of(context).hasActiveRoute) ? null : _handleSwitchFleet,
+                        enabled: !RouteProgressScope.of(context).hasActiveRoute,
                       ),
                       const Divider(height: 1, indent: 66),
                       _MenuItem(
                         icon: Icons.exit_to_app_rounded,
                         label: 'Leave Current Fleet',
                         sub: 'Disconnect from ${_fleetName ?? 'Company'}',
-                        onTap: _requestingOtp ? null : _handleLeaveFleet,
+                        onTap: (_requestingOtp || RouteProgressScope.of(context).hasActiveRoute) ? null : _handleLeaveFleet,
+                        enabled: !RouteProgressScope.of(context).hasActiveRoute,
                       ),
                     ],
                   ),
@@ -917,33 +919,62 @@ class _MenuItem extends StatelessWidget {
   final String label;
   final String? sub;
   final VoidCallback? onTap;
-  const _MenuItem({required this.icon, required this.label, this.sub, this.onTap});
+  final bool enabled;
+  const _MenuItem({
+    required this.icon,
+    required this.label,
+    this.sub,
+    this.onTap,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        child: Row(
-          children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
-              child: Icon(icon, size: 16, color: AppColors.textSecondary),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  if (sub != null) Text(sub!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                ],
+      onTap: enabled ? onTap : null,
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.5,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Icon(icon, size: 16, color: AppColors.textSecondary),
               ),
-            ),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textHint),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (sub != null)
+                      Text(
+                        sub!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 20, color: AppColors.textHint),
+            ],
+          ),
         ),
       ),
     );

@@ -132,9 +132,9 @@ export function DashboardDriverDetail() {
     id: selectedDriver.id,
     name: selectedDriver.name,
     email: selectedDriver.email,
-    phone: selectedDriver.phone || "N/A",
+    phone: selectedDriver.phone || "—",
     vehicle: `${selectedDriver.vehicle_type || "No vehicle"} • ${selectedDriver.vehicle_plate || "No plate"}`,
-    rating: selectedDriver.avg_rating || "N/A",
+    rating: selectedDriver.avg_rating || "—",
     status: selectedDriver.status,
     lastSession: selectedDriver.last_active_at ? "Active" : "New",
     companyCode: "VECT-D", // Stubbed
@@ -158,7 +158,7 @@ export function DashboardDriverDetail() {
       : "Pending",
     packages: route.total_stops || 0,
     signature: false,
-    timeWindow: route.date || "N/A",
+    timeWindow: route.date || "—",
   }));
 
   const currentHistory = historyData; // Simplify for now as we don't have filtered history from API yet
@@ -167,17 +167,17 @@ export function DashboardDriverDetail() {
     today: {
       completed: 0,
       onTime: 0,
-      rating: "N/A",
+      rating: "—",
     },
     week: {
       completed: 0,
       onTime: 0,
-      rating: "N/A",
+      rating: "—",
     },
     month: {
       completed: 0,
       onTime: 0,
-      rating: "N/A",
+      rating: "—",
     },
   };
 
@@ -220,7 +220,7 @@ export function DashboardDriverDetail() {
           <div className="flex-1 min-w-0 w-full">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-2 tracking-tight">
                   {driver.name}
                 </h1>
                 <div
@@ -307,7 +307,7 @@ export function DashboardDriverDetail() {
         />
         <StatCard
           label="Rating"
-          value={currentStats.rating}
+          value={currentStats.rating || "—"}
           icon={StarIcon}
           color="amber"
         />
@@ -316,7 +316,7 @@ export function DashboardDriverDetail() {
       {/* Delivery History */}
       <div className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-sm">
         <div className="p-5 md:p-6 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+          <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
             Delivery History
           </h2>
 
@@ -355,7 +355,7 @@ export function DashboardDriverDetail() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-6 py-4 text-[11px] font-bold text-gray-400 tracking-wider"
+                    className="px-6 py-4 text-[11px] font-semibold text-gray-400 tracking-wider"
                   >
                     {h}
                   </th>
@@ -382,12 +382,12 @@ export function DashboardDriverDetail() {
                     className="transition-colors hover:bg-gray-50/50 group"
                   >
                     <td className="px-6 py-4">
-                      <span className="text-[13px] font-bold text-gray-900">
+                      <span className="text-[13px] font-semibold text-gray-900">
                         {delivery.id}
                       </span>
                     </td>
                     <td className="px-6 py-4 min-w-37.5">
-                      <p className="text-[13px] font-bold text-gray-800">
+                      <p className="text-[13px] font-semibold text-gray-800">
                         {delivery.customerName}
                       </p>
                       <p className="text-[11px] text-gray-400 font-medium">
@@ -434,10 +434,10 @@ export function DashboardDriverDetail() {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="relative">
-      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest mb-1.5">
+      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">
         {label}
       </p>
-      <p className="text-[15px] font-bold text-gray-900 tracking-tight">
+      <p className="text-[15px] font-semibold text-gray-900 tracking-tight">
         {value}
       </p>
     </div>
@@ -469,11 +469,11 @@ function StatCard({
         >
           <Icon className="w-6 h-6" />
         </div>
-        <p className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none">
+        <p className="text-3xl font-semibold text-gray-900 tracking-tight leading-none">
           {value}
         </p>
       </div>
-      <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-emerald-600">
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-emerald-600">
         {label}
       </p>
     </div>

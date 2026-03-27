@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "companies" ADD COLUMN     "currency" TEXT NOT NULL DEFAULT 'NGN',
+ADD COLUMN     "price_per_km" DOUBLE PRECISION NOT NULL DEFAULT 0.0;

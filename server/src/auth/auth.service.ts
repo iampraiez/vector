@@ -211,11 +211,8 @@ export class AuthService {
     const driverCount = await this.prisma.driver.count({
       where: { company_id: company.id, is_active: true },
     });
-    if (
-      billing &&
-      billing.seats_included > 0 &&
-      driverCount >= billing.seats_included
-    ) {
+    const limit = billing ? billing.seats_included : 2;
+    if (driverCount >= limit) {
       throw new ForbiddenException(
         'This company has reached its driver seat limit. Ask your manager to upgrade the plan.',
       );

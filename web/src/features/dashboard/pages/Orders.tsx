@@ -149,7 +149,7 @@ export function DashboardOrders() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+            <h1 className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-1 tracking-tight">
               Orders & Deliveries
             </h1>
             <p className="text-[13px] text-gray-500">
@@ -177,7 +177,7 @@ export function DashboardOrders() {
                     setShowDeleteDialog(true);
                   }}
                   disabled={isMutating}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] font-bold shadow-sm transition-all hover:bg-red-100 hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] font-semibold shadow-sm transition-all hover:bg-red-100 hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isMutating ? (
                     <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
@@ -190,7 +190,7 @@ export function DashboardOrders() {
             )}
             <button
               onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[13px] font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-lg text-[13px] font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md cursor-pointer"
             >
               <ArrowUpTrayIcon className="w-4 h-4" />
               Upload CSV
@@ -198,7 +198,7 @@ export function DashboardOrders() {
             <button
               id="tour-new-order-btn"
               onClick={() => setShowNewOrderModal(true)}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-bold text-white shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 rounded-lg text-[13px] font-semibold text-white shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 active:scale-95 cursor-pointer"
             >
               <PlusIcon className="w-4 h-4" />
               New Order
@@ -356,7 +356,7 @@ export function DashboardOrders() {
                         )}
                       </div>
                       <div>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                           {order.external_id || `Order ${index + 1}`}
                         </p>
                         {order.priority && order.priority === "high" && (
@@ -367,12 +367,12 @@ export function DashboardOrders() {
                       </div>
                     </div>
                     <span
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status as OrderStatus)}`}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider shadow-sm ${getStatusClasses(order.status as OrderStatus)}`}
                     >
                       {getStatusLabel(order.status)}
                     </span>
                   </div>
-                  <h3 className="text-[14px] font-bold text-gray-900 mb-0.5 flex items-center gap-2">
+                  <h3 className="text-[14px] font-semibold text-gray-900 mb-0.5 flex items-center gap-2">
                     {order.customer_name}
                     {!order.lat && !order.lng && (
                       <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
@@ -380,13 +380,13 @@ export function DashboardOrders() {
                   </h3>
                   <div className="flex flex-col gap-0.5 mb-2">
                     <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
-                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-400">
+                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400">
                         EMAIL
                       </span>
                       {maskEmail(order.customer_email)}
                     </p>
                     <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
-                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-400">
+                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-400">
                         PHONE
                       </span>
                       {maskPhone(order.customer_phone)}
@@ -550,7 +550,7 @@ export function DashboardOrders() {
                       <th
                         key={h}
                         id={h === "ASSIGNED TO" ? "tour-assign-col" : undefined}
-                        className={`px-6 py-4 text-[11px] font-semibold text-gray-500 tracking-wider text-left`}
+                        className={`px-6 py-4 text-[11px] font-medium text-gray-500 tracking-wider text-left`}
                       >
                         {h}
                       </th>
@@ -767,7 +767,7 @@ export function DashboardOrders() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusClasses(order.status as OrderStatus)}`}
+                            className={`inline-flex px-2 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider ${getStatusClasses(order.status as OrderStatus)}`}
                           >
                             {getStatusLabel(order.status)}
                           </span>
@@ -903,7 +903,7 @@ export function DashboardOrders() {
         >
           <DialogContent className="sm:max-w-md bg-white border-none shadow-2xl rounded-2xl overflow-hidden p-0">
             <DialogHeader className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
-              <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+              <DialogTitle className="text-xl font-semibold text-gray-900 tracking-tight">
                 Reassign Failed Order
               </DialogTitle>
             </DialogHeader>
@@ -1070,13 +1070,15 @@ function StatCard({
     <div
       className={`bg-white border rounded-2xl p-5 md:p-6 transition-all hover:shadow-md ${colorMap[color]}`}
     >
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
         {label}
       </p>
       {isLoading ? (
         <Skeleton className="w-12 h-9" />
       ) : (
-        <p className="text-2xl md:text-3xl font-bold tracking-tight">{value}</p>
+        <p className="text-2xl md:text-3xl font-semibold tracking-tight">
+          {value}
+        </p>
       )}
     </div>
   );
@@ -1094,7 +1096,7 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-all duration-200 whitespace-nowrap cursor-pointer shrink-0 ${
+      className={`px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer shrink-0 ${
         active
           ? "bg-emerald-600 text-white shadow-xl shadow-emerald-600/10"
           : "bg-gray-100/50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
@@ -1216,7 +1218,7 @@ function EditOrderModal({
       <DialogContent className="max-w-[calc(100%-32px)] sm:max-w-110 p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-2xl flex flex-col max-h-[90vh] mx-auto">
         <DialogHeader className="p-5 border-b border-gray-100 bg-white shrink-0 relative">
           <div className="pr-8">
-            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
+            <DialogTitle className="text-xl font-semibold text-gray-900 tracking-tight">
               Edit Order
             </DialogTitle>
           </div>
@@ -1271,7 +1273,7 @@ function EditOrderModal({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest ml-1">
                   Delivery Date
                 </label>
                 <input
@@ -1284,7 +1286,7 @@ function EditOrderModal({
                 />
               </div>
               <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest ml-1">
                   Time Window
                 </label>
                 <div className="flex items-center gap-2">
@@ -1312,7 +1314,7 @@ function EditOrderModal({
             {/* Location Map Override */}
             <div className="pt-2">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                   Delivery Pin
                 </label>
                 {!form.lat && !form.lng && (
@@ -1335,7 +1337,7 @@ function EditOrderModal({
 
             {/* Scrollable Driver Selection */}
             <div>
-              <label className="block text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2.5">
+              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
                 Assign Driver
               </label>
               <div className="bg-gray-50 border border-black/8 rounded-xl overflow-hidden">
@@ -1351,7 +1353,7 @@ function EditOrderModal({
                       }
                       className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
                         !form.driver_id
-                          ? "bg-emerald-50 text-emerald-600 font-bold"
+                          ? "bg-emerald-50 text-emerald-600 font-semibold"
                           : "text-gray-500 hover:bg-white"
                       }`}
                     >
@@ -1373,7 +1375,7 @@ function EditOrderModal({
                         }
                         className={`w-full flex items-center justify-between px-4 py-3 text-[13px] transition-all cursor-pointer ${
                           form.driver_id === d.id
-                            ? "bg-emerald-50 text-emerald-600 font-bold"
+                            ? "bg-emerald-50 text-emerald-600 font-semibold"
                             : "text-gray-700 hover:bg-white"
                         }`}
                       >
@@ -1394,7 +1396,7 @@ function EditOrderModal({
           <button
             onClick={handleSave}
             disabled={loading}
-            className="w-full py-3 bg-emerald-600 text-white text-[13px] font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-3 bg-emerald-600 text-white text-[13px] font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? (
               <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

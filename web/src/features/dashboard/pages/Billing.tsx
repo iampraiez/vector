@@ -109,9 +109,10 @@ export function DashboardBilling() {
   );
 
   const activePlanId = billing?.plan?.id || "free";
-  const activePlanSeats =
-    activePlanId === "free" ? 2 : activePlanId === "starter" ? 5 : 20;
-  const activeDriverCount = drivers.filter((d) => d.status === "active").length;
+  const activePlanSeats = billing?.seats_included || 2;
+  const activeDriverCount =
+    billing?.total_drivers ||
+    drivers.filter((d) => d.status === "active").length;
   const trialDaysLeft =
     isTrial && billing?.current_period_end
       ? Math.max(
@@ -150,7 +151,7 @@ export function DashboardBilling() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 font-inter">
-        <h1 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-1 tracking-tight">
+        <h1 className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-1 tracking-tight">
           Billing & Subscription
         </h1>
         <p className="text-[13px] text-gray-500">
@@ -184,11 +185,11 @@ export function DashboardBilling() {
             <div className="flex-1 min-w-60">
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md mb-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
+                <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-widest">
                   {isTrial ? "Free Trial" : "Active Plan"}
                 </span>
               </div>
-              <h2 className="text-2xl md:text-[28px] font-bold text-gray-900 mb-2 tracking-tight">
+              <h2 className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-2 tracking-tight">
                 {isLoadingInitial ? (
                   <Skeleton className="w-48 h-8" />
                 ) : (
@@ -207,7 +208,7 @@ export function DashboardBilling() {
                           ? new Date(
                               billing.current_period_end,
                             ).toLocaleDateString()
-                          : "-"}
+                          : "—"}
                       </span>
                     </p>
                     {isTrial && (
@@ -251,7 +252,7 @@ export function DashboardBilling() {
                 <button
                   onClick={() => setShowChangePlan(!showChangePlan)}
                   disabled={isLoadingInitial}
-                  className="w-full md:w-auto px-5 py-2.5 bg-emerald-600 text-white font-bold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full md:w-auto px-5 py-2.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-lg shadow-xl shadow-emerald-600/10 transition-all hover:bg-emerald-700 hover:-translate-y-0.5 active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {showChangePlan ? "Hide Plans" : "Change Plan"}
                   <ChevronRightIcon
@@ -281,7 +282,7 @@ export function DashboardBilling() {
                     <p className="font-semibold text-gray-600 uppercase tracking-wider text-[11px]">
                       {item.label}
                     </p>
-                    <span className="text-[13px] font-bold text-gray-900">
+                    <span className="text-[13px] font-semibold text-gray-900">
                       {item.used} / {item.total}
                     </span>
                   </div>
@@ -498,16 +499,14 @@ export function DashboardBilling() {
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-black/5 bg-gray-50/80">
-                  <th className="px-4 py-3 font-semibold text-gray-500">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500">
+                  <th className="px-4 py-3 font-medium text-gray-500">Date</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">
                     Amount
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500">
+                  <th className="px-4 py-3 font-medium text-gray-500">
                     Status
                   </th>
-                  <th className="px-4 py-3 font-semibold text-gray-500 text-right">
+                  <th className="px-4 py-3 font-medium text-gray-500 text-right">
                     PDF
                   </th>
                 </tr>

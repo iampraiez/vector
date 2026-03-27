@@ -230,7 +230,23 @@ export class DashboardService {
     return { orders };
   }
 
-  async createOrder(companyId: string, dto: CreateOrderDto) {
+  async createOrder(
+    companyId: string,
+    dto: CreateOrderDto,
+    skipBillingCheck = false,
+  ) {
+    if (!skipBillingCheck) {
+      const billing = await this.getBillingInfo(companyId);
+      if (
+        billing.total_deliveries_this_month >=
+        billing.plan.monthly_delivery_limit
+      ) {
+        throw new ForbiddenException(
+          `Your plan limit (${billing.plan.monthly_delivery_limit} deliveries/month) has been reached. Please upgrade to accept more deliveries.`,
+        );
+      }
+    }
+
     if (dto.delivery_date) {
       const today = new Date().toISOString().split('T')[0];
       if (dto.delivery_date < today) {
@@ -490,6 +506,28 @@ export class DashboardService {
   }
 
   async updateOrder(companyId: string, stopId: string, dto: UpdateOrderDto) {
+    const stop = await this.prisma.stop.findUnique({
+      where: { id: stopId, company_id: companyId },
+      include: { route: true },
+    });
+
+    if (!stop) throw new NotFoundException('Order not found');
+
+    // BLOCK: Location/Address changes if route is active
+    if (stop.route?.status === 'active') {
+      const isChangingLocation =
+        dto.address !== undefined ||
+        dto.city !== undefined ||
+        dto.lat !== undefined ||
+        dto.lng !== undefined;
+
+      if (isChangingLocation) {
+        throw new ForbiddenException(
+          'Cannot change delivery location while the route is active.',
+        );
+      }
+    }
+
     const data: Prisma.StopUpdateInput = { ...dto };
 
     // If address is being updated but no manual lat/lng provided, try to geocode
@@ -760,10 +798,24 @@ export class DashboardService {
   ) {
     const driver = await this.prisma.driver.findUnique({
       where: { id: driverId, company_id: companyId },
-      include: { user: true },
+      include: { user: true, routes: { where: { status: 'active' } } },
     });
 
     if (!driver) throw new NotFoundException('Driver not found');
+
+    // BLOCK: Profile/Vehicle changes if route is active
+    if (driver.routes.length > 0) {
+      const isSensitiveUpdate =
+        dto.vehicle_type !== undefined ||
+        dto.vehicle_plate !== undefined ||
+        dto.status !== undefined;
+
+      if (isSensitiveUpdate) {
+        throw new ForbiddenException(
+          'Cannot update vehicle information or status while on an active route.',
+        );
+      }
+    }
 
     const updateDto = dto;
 
@@ -1025,6 +1077,16 @@ export class DashboardService {
   }
 
   async importBulkOrders(companyId: string, orders: CreateOrderDto[]) {
+    const billing = await this.getBillingInfo(companyId);       
+    if (
+      billing.total_deliveries_this_month + orders.length >
+      billing.plan.monthly_delivery_limit
+    ) {
+      throw new ForbiddenException(
+        `Importing ${orders.length} orders would exceed your monthly limit of ${billing.plan.monthly_delivery_limit} deliveries. You currently have ${billing.total_deliveries_this_month} deliveries this month.`,
+      );
+    }
+
     let imported = 0;
     let skipped = 0;
     const errors: { row: number; reason: string }[] = [];
@@ -1032,7 +1094,7 @@ export class DashboardService {
     // Process sequentially to easily track errors per row
     for (let i = 0; i < orders.length; i++) {
       try {
-        await this.createOrder(companyId, orders[i]);
+        await this.createOrder(companyId, orders[i], true);
         imported++;
       } catch (err: unknown) {
         skipped++;
@@ -1076,16 +1138,21 @@ export class DashboardService {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const deliveryCount = await this.prisma.stop.count({
-      where: {
-        company_id: companyId,
-        created_at: {
-          gte: monthStart,
-          lte: monthEnd,
+    const [deliveryCount, activeDriversCount] = await Promise.all([
+      this.prisma.stop.count({
+        where: {
+          company_id: companyId,
+          created_at: {
+            gte: monthStart,
+            lte: monthEnd,
+          },
+          status: { in: ['completed', 'in_progress'] },
         },
-        status: { in: ['completed', 'in_progress'] },
-      },
-    });
+      }),
+      this.prisma.driver.count({
+        where: { company_id: companyId, is_active: true },
+      }),
+    ]);
 
     if (!record) {
       const planDetails = planLimits['free'];
@@ -1102,6 +1169,8 @@ export class DashboardService {
         ).toISOString(),
         cancel_at_period_end: false,
         total_deliveries_this_month: deliveryCount,
+        total_drivers: activeDriversCount,
+        seats_included: 2, // Default for free plan
       };
     }
 
@@ -1122,6 +1191,8 @@ export class DashboardService {
       current_period_end: record.current_period_end,
       cancel_at_period_end: record.cancel_at_period_end,
       total_deliveries_this_month: deliveryCount,
+      total_drivers: activeDriversCount,
+      seats_included: record.seats_included,
     };
   }
 
@@ -1360,10 +1431,13 @@ export class DashboardService {
 
     const billing = await this.getBillingInfo(companyId);
 
+    const needs_setup = !company.price_per_km || !company.currency;
+
     return {
       company: {
         ...company,
         api_keys: company.api_keys,
+        needs_setup,
       },
       notifications: company.notification_settings,
       billing,
@@ -1522,6 +1596,12 @@ export class DashboardService {
   }
 
   async deleteNotification(userId: string, notificationId: string) {
+    if (notificationId === 'all') {
+      await this.prisma.notification.deleteMany({
+        where: { user_id: userId },
+      });
+      return;
+    }
     await this.prisma.notification.delete({
       where: { id: notificationId, user_id: userId },
     });

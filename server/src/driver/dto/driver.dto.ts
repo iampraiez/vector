@@ -36,6 +36,10 @@ export class CompleteDeliveryDto {
   @IsString({ each: true })
   @IsOptional()
   photo_urls?: string[];
+
+  @IsString()
+  @IsOptional()
+  qr_code?: string;
 }
 
 export class FailDeliveryDto {

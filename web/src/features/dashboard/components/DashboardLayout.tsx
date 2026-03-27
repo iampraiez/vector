@@ -295,7 +295,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Toaster position="top-right" />
 
       {/* ── Main content area ── */}
-      <SidebarInset className="bg-gray-50/50">
+      <SidebarInset className="bg-gray-50/50 min-w-0 overflow-x-hidden">
         {/* ── Top header (mobile: logo + trigger / desktop: page title + trigger) ── */}
         <header className="sticky top-0 z-30 flex h-14 items-center border-b border-black/5 bg-white/90 backdrop-blur-sm px-4 gap-3">
           <SidebarTrigger className="shrink-0 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" />
@@ -329,7 +329,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto w-full max-w-400 mx-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 px-1 w-full max-w-400 mx-auto min-w-0 overflow-x-hidden">
           <BillingLockoutGuard>{children || <Outlet />}</BillingLockoutGuard>
         </main>
       </SidebarInset>

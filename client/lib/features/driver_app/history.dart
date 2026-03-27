@@ -472,7 +472,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             alignment: Alignment.center,
                             children: [
                               SizedBox(
-                                height: 80,
+                                height: 100,
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: _weekBarData.asMap().entries.map((e) {
@@ -480,55 +480,70 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     int successVal = e.value;
                                     int failedVal = _weekFailedBarData[i];
                                     int totalVal = successVal + failedVal;
+                                    final double barHeight = totalVal == 0
+                                        ? 0
+                                        : ((totalVal / maxBar) * 70).clamp(4.0, 70.0);
 
                                     return Expanded(
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.end,
                                         children: [
-                                          Expanded(
-                                            child: Align(
-                                              alignment: Alignment.bottomCenter,
-                                              child: Container(
-                                                width: double.infinity,
-                                                margin: const EdgeInsets.symmetric(
-                                                  horizontal: 4,
-                                                ),
-                                                height: (totalVal / maxBar) * 70, // proportional height
-                                                decoration: BoxDecoration(
-                                                  borderRadius: const BorderRadius.vertical(
-                                                    top: Radius.circular(4),
-                                                  ),
-                                                ),
-                                                clipBehavior: Clip.antiAlias,
-                                                child: Column(
-                                                  children: [
-                                                    if (failedVal > 0)
-                                                      Expanded(
-                                                        flex: failedVal,
-                                                        child: Container(
-                                                          color: AppColors.error.withValues(alpha: 0.8),
-                                                        ),
-                                                      ),
-                                                    if (successVal > 0)
-                                                      Expanded(
-                                                        flex: successVal,
-                                                        child: Container(
-                                                          color: i == 6
-                                                              ? AppColors.primary
-                                                              : AppColors.primary.withValues(alpha: 0.5),
-                                                        ),
-                                                      ),
-                                                  ],
+                                          // Count label above bar
+                                          if (totalVal > 0)
+                                            Padding(
+                                              padding: const EdgeInsets.only(bottom: 3),
+                                              child: Text(
+                                                '$totalVal',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.primary,
                                                 ),
                                               ),
+                                            ),
+                                          if (totalVal == 0)
+                                            const SizedBox(height: 16),
+                                          // Bar itself
+                                          Container(
+                                            width: double.infinity,
+                                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                                            height: barHeight,
+                                            decoration: BoxDecoration(
+                                              borderRadius: const BorderRadius.vertical(
+                                                top: Radius.circular(4),
+                                              ),
+                                            ),
+                                            clipBehavior: Clip.antiAlias,
+                                            child: Column(
+                                              children: [
+                                                if (failedVal > 0)
+                                                  Expanded(
+                                                    flex: failedVal,
+                                                    child: Container(
+                                                      color: AppColors.error.withValues(alpha: 0.8),
+                                                    ),
+                                                  ),
+                                                if (successVal > 0)
+                                                  Expanded(
+                                                    flex: successVal,
+                                                    child: Container(
+                                                      color: AppColors.primary,
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             _weekLabels[i],
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 10,
-                                              color: AppColors.textMuted,
+                                              fontWeight: i == DateTime.now().weekday - 1
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w400,
+                                              color: i == DateTime.now().weekday - 1
+                                                  ? AppColors.primary
+                                                  : AppColors.textMuted,
                                             ),
                                           ),
                                         ],

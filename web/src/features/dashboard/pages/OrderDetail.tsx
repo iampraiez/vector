@@ -211,7 +211,7 @@ export function DashboardOrderDetail() {
                   Created on{" "}
                   {order.created_at
                     ? new Date(order.created_at).toLocaleDateString()
-                    : "N/A"}
+                    : "—"}
                 </p>
               </div>
 
@@ -267,13 +267,13 @@ export function DashboardOrderDetail() {
                     <UserIcon className="w-6 h-6 text-gray-400" />
                   </div>
                   <div>
-                    <p className="text-base font-bold text-gray-900">
+                    <p className="text-base font-semibold text-gray-900">
                       {order.customer_name}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 font-normal">
                       {order.customer_email || "No email provided"}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 font-normal">
                       {order.customer_phone || "No phone provided"}
                     </p>
                   </div>
@@ -289,10 +289,10 @@ export function DashboardOrderDetail() {
                     <MapPinIcon className="w-6 h-6 text-gray-400" />
                   </div>
                   <div>
-                    <p className="text-base font-bold text-gray-900 leading-snug">
+                    <p className="text-base font-semibold text-gray-900 leading-snug">
                       {order.address}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 font-normal">
                       {order.city || "City not specified"}
                     </p>
                     {order.lat && (
@@ -388,7 +388,7 @@ export function DashboardOrderDetail() {
                   <AssignmentDetail
                     icon={PhoneIcon}
                     label="Phone"
-                    value={order.driver.user.phone || "N/A"}
+                    value={order.driver.user.phone || "—"}
                   />
                   <AssignmentDetail
                     icon={TruckIcon}
@@ -536,7 +536,7 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">
         {label}
       </p>
-      <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-medium text-gray-800">{value}</p>
     </div>
   );
 }
@@ -556,7 +556,7 @@ function AssignmentDetail({
       <span className="text-[13px] text-gray-400 font-medium w-16">
         {label}
       </span>
-      <span className="text-[13px] text-gray-700 font-bold">{value}</span>
+      <span className="text-[13px] text-gray-700 font-medium">{value}</span>
     </div>
   );
 }

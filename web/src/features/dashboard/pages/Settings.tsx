@@ -13,7 +13,10 @@ import {
   PencilIcon,
   EnvelopeIcon,
   MapPinIcon,
+  PhoneIcon,
+  BanknotesIcon,
   ClipboardDocumentIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 import { Skeleton } from "../../../components/ui/skeleton";
@@ -99,20 +102,24 @@ function StaticField({
   isLoading?: boolean;
 }) {
   return (
-    <div className="bg-gray-50/50 border border-black/5 rounded-2xl p-4.5 group transition-all duration-300 hover:bg-white hover:border-emerald-600/30 hover:shadow-sm">
-      <div className="flex items-center gap-2.5 mb-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-        <Icon className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600" />
-        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-          {label}
-        </span>
+    <div className="bg-white border border-black/5 rounded-2xl p-4 group transition-all duration-300 hover:border-emerald-600/30 hover:shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
+          <Icon className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+        </div>
+        <div className="min-w-0">
+          <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+            {label}
+          </span>
+          {isLoading ? (
+            <Skeleton className="w-24 h-4" />
+          ) : (
+            <p className="text-[13px] font-semibold text-gray-700 truncate tracking-tight">
+              {value || "—"}
+            </p>
+          )}
+        </div>
       </div>
-      {isLoading ? (
-        <Skeleton className="w-full h-4" />
-      ) : (
-        <p className="text-[13px] font-medium text-gray-700 tracking-tight leading-none">
-          {value || "—"}
-        </p>
-      )}
     </div>
   );
 }
@@ -178,61 +185,109 @@ function EditProfileModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-black/5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
-        <div className="px-8 pt-8 pb-6 flex items-center justify-between border-b border-gray-100">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white rounded-4xl w-full max-w-lg shadow-2xl border border-black/5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
+        <div className="px-8 pt-8 pb-6 flex items-center justify-between border-b border-gray-50">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
-              Edit Workspace
+            <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+              Workspace Profile
             </h3>
-            <p className="text-[13px] text-gray-400 mt-0.5 font-normal">
-              Update company information
+            <p className="text-[13px] text-gray-400 mt-1 font-medium">
+              Configure your company's identity and billing defaults
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors border border-black/5"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all border border-black/5 active:scale-90"
           >
             <XMarkIcon className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
-        <div className="p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <InputField
-              label="Operating Name"
-              value={draft.name}
-              onChange={(v) => setDraft({ ...draft, name: v })}
-            />
-            <InputField
-              label="Ops Email"
-              value={draft.contact_email}
-              onChange={(v) => setDraft({ ...draft, contact_email: v })}
-            />
+        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          {/* General Info */}
+          <div className="space-y-4">
+            <h4 className="text-[11px] font-bold text-emerald-600 uppercase tracking-[0.2em] ml-1">
+              General Identity
+            </h4>
+            <div className="grid grid-cols-1 gap-4">
+              <InputField
+                label="Workspace Name"
+                value={draft.name}
+                onChange={(v) => setDraft({ ...draft, name: v })}
+                placeholder="e.g. Vector Logistics"
+              />
+            </div>
           </div>
-          <InputField
-            label="Fleet Hotline"
-            value={draft.phone}
-            onChange={(v) => setDraft({ ...draft, phone: v })}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <InputField
-              label="City"
-              value={draft.city}
-              onChange={(v) => setDraft({ ...draft, city: v })}
-            />
-            <InputField
-              label="State"
-              value={draft.state}
-              onChange={(v) => setDraft({ ...draft, state: v })}
-            />
+
+          {/* Contact Details */}
+          <div className="space-y-4">
+            <h4 className="text-[11px] font-bold text-emerald-600 uppercase tracking-[0.2em] ml-1">
+              Communication
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                label="Operational Email"
+                value={draft.contact_email}
+                onChange={(v) => setDraft({ ...draft, contact_email: v })}
+                placeholder="ops@company.com"
+              />
+              <InputField
+                label="Contact Number"
+                value={draft.phone}
+                onChange={(v) => setDraft({ ...draft, phone: v })}
+                placeholder="+234..."
+              />
+            </div>
+          </div>
+
+          {/* Commercials */}
+          <div className="space-y-4">
+            <h4 className="text-[11px] font-bold text-emerald-600 uppercase tracking-[0.2em] ml-1">
+              Commercial Settings
+            </h4>
+            <div className="grid grid-cols-2 gap-4 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-600/10">
+              <InputField
+                label="Default Currency"
+                value={draft.currency}
+                placeholder="NGN"
+                onChange={(v) => setDraft({ ...draft, currency: v })}
+              />
+              <InputField
+                label="Base Rate / KM"
+                type="number"
+                value={String(draft.price_per_km)}
+                onChange={(v) =>
+                  setDraft({ ...draft, price_per_km: parseFloat(v) || 0 })
+                }
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="space-y-4">
+            <h4 className="text-[11px] font-bold text-emerald-600 uppercase tracking-[0.2em] ml-1">
+              Headquarters
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                label="City"
+                value={draft.city}
+                onChange={(v) => setDraft({ ...draft, city: v })}
+              />
+              <InputField
+                label="State / Province"
+                value={draft.state}
+                onChange={(v) => setDraft({ ...draft, state: v })}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="px-8 py-6 bg-gray-50/50 flex gap-3">
+        <div className="px-8 py-6 bg-gray-50/80 flex gap-3 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="flex-1 py-3.5 bg-white border border-black/5 text-gray-500 font-semibold text-[13px] rounded-2xl hover:bg-gray-100 transition-all active:scale-[0.98]"
+            className="flex-1 py-3.5 bg-white border border-black/5 text-gray-500 font-bold text-[13px] rounded-2xl hover:bg-gray-100 transition-all active:scale-[0.98]"
           >
             Cancel
           </button>
@@ -242,7 +297,7 @@ function EditProfileModal({
               onClose();
             }}
             disabled={isMutating}
-            className="flex-3 py-3.5 bg-emerald-600 text-white font-semibold text-[13px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
+            className="flex-3 py-3.5 bg-emerald-600 text-white font-bold text-[13px] rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
           >
             {isMutating ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -346,7 +401,7 @@ function OtpVerifyModal({
           <button
             onClick={onClose}
             disabled={isVerifying}
-            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
+            className="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold text-[13px] rounded-xl hover:bg-gray-200 transition-colors"
           >
             Cancel
           </button>
@@ -432,6 +487,8 @@ export function DashboardSettings() {
       city: data.city,
       state: data.state,
       timezone: data.timezone,
+      price_per_km: data.price_per_km,
+      currency: data.currency,
     };
 
     Object.keys(filteredData).forEach((key) => {
@@ -492,8 +549,23 @@ export function DashboardSettings() {
   const isLoadingInitial = isLoading && !company;
   const companyCode = company?.company_code || "VECT-XXXX";
 
+  const showSetupBanner = company?.needs_setup;
+
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 pb-32">
+      {showSetupBanner && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+          <ExclamationCircleIcon className="w-5 h-5 text-amber-600 mt-0.5" />
+
+          <button
+            onClick={() => setIsEditingProfile(true)}
+            className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-[11px] font-bold rounded-lg transition-colors"
+          >
+            Setup Now
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-2 font-inter">
         <h1 className="text-2xl md:text-[26px] font-bold text-gray-900 mb-0.5 tracking-tight">
@@ -501,6 +573,16 @@ export function DashboardSettings() {
         </h1>
         <p className="text-[12.5px] text-gray-500 font-normal">
           Manage your workspace profile and performance preferences
+        </p>
+      </div>
+      <div className="flex-1">
+        <h4 className="text-[13px] font-semibold text-amber-900">
+          Pricing Configuration Required
+        </h4>
+        <p className="text-[12px] text-amber-800/80 mt-0.5">
+          Please set your price per kilometer and currency in the Workspace
+          Profile section. This is required to show accurate rates to your
+          drivers.
         </p>
       </div>
 
@@ -543,7 +625,7 @@ export function DashboardSettings() {
             <div className="relative overflow-hidden bg-white border border-black/8 rounded-3xl p-4.5 md:p-5 flex items-center justify-between gap-4 shadow-sm transition-all hover:bg-gray-50/20">
               <div className="relative z-10 flex items-center gap-6">
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                  <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
                     Fleet Access Code
                   </span>
@@ -551,7 +633,7 @@ export function DashboardSettings() {
                     {isLoadingInitial ? (
                       <Skeleton className="w-32 h-8" />
                     ) : (
-                      <span className="text-[20px] font-mono font-bold text-gray-900 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
+                      <span className="text-[20px] font-mono font-semibold text-gray-900 tracking-tighter bg-white px-3 py-1.5 rounded-lg border border-black/5">
                         {companyCode}
                       </span>
                     )}
@@ -579,7 +661,7 @@ export function DashboardSettings() {
                 <button
                   onClick={() => regenerateAccessCode()}
                   disabled={isMutating}
-                  className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50 min-w-24 flex items-center justify-center"
+                  className="relative z-10 px-4 py-2 bg-gray-50 border border-black/5 text-gray-500 font-semibold text-[10px] uppercase tracking-wider rounded-xl hover:bg-white hover:text-emerald-600 hover:border-emerald-600/30 transition-all cursor-pointer disabled:opacity-50 min-w-24 flex items-center justify-center"
                 >
                   {isMutating ? (
                     <div className="w-3.5 h-3.5 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
@@ -604,40 +686,33 @@ export function DashboardSettings() {
                 </button>
               }
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 <StaticField
-                  label="Operating Name"
+                  label="Workspace Name"
                   value={company?.name || ""}
                   icon={BuildingOfficeIcon}
                   isLoading={isLoadingInitial}
                 />
                 <StaticField
-                  label="Member Since"
-                  value={
-                    company?.created_at
-                      ? new Date(company.created_at).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          },
-                        )
-                      : ""
-                  }
-                  icon={BuildingOfficeIcon}
-                  isLoading={isLoadingInitial}
-                />
-                <StaticField
-                  label="Operations Email"
+                  label="Operational Email"
                   value={company?.contact_email || user?.email || ""}
                   icon={EnvelopeIcon}
                   isLoading={isLoadingInitial}
                 />
                 <StaticField
-                  label="Fleet Hotline"
+                  label="Primary Contact"
                   value={company?.phone || ""}
-                  icon={BellIcon}
+                  icon={PhoneIcon}
+                  isLoading={isLoadingInitial}
+                />
+                <StaticField
+                  label="Commercial Rate"
+                  value={
+                    company
+                      ? `${company.currency || "NGN"} ${company.price_per_km || "0"}/KM`
+                      : ""
+                  }
+                  icon={BanknotesIcon}
                   isLoading={isLoadingInitial}
                 />
                 <StaticField
@@ -779,7 +854,9 @@ export function DashboardSettings() {
             phone: "",
             city: "",
             state: "",
-            timezone: "America/Los_Angeles",
+            timezone: "UTC",
+            price_per_km: 0,
+            currency: "NGN",
           }
         }
         onSave={handleSaveCompany}

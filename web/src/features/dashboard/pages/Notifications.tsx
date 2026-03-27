@@ -60,7 +60,7 @@ export function DashboardNotifications() {
 
   const [activeCategory, setActiveCategory] = useState<NotifCategory>("all");
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // We map the backend type to category here to support filtering
   const getCategory = (type: string): "orders" | "drivers" | "system" => {
@@ -181,9 +181,9 @@ export function DashboardNotifications() {
             return (
               <div
                 key={n.id}
-                onClick={() => !n.is_read && markAsRead(n.id)}
+                onClick={() => !n.read && markAsRead(n.id)}
                 className={`group flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
-                  n.is_read
+                  n.read
                     ? "bg-white border-black/5 hover:border-black/10"
                     : "bg-white border-emerald-600/15 shadow-sm shadow-emerald-600/5 hover:border-emerald-600/25"
                 }`}
@@ -197,10 +197,10 @@ export function DashboardNotifications() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <p
-                      className={`text-[14px] leading-snug ${n.is_read ? "font-medium text-gray-600" : "font-medium text-gray-700"}`}
+                      className={`text-[14px] leading-snug ${n.read ? "font-medium text-gray-600" : "font-medium text-gray-700"}`}
                     >
                       {n.title}
-                      {!n.is_read && (
+                      {!n.read && (
                         <span className="ml-2 inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full align-middle" />
                       )}
                     </p>

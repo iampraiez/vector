@@ -57,7 +57,10 @@ export class NotificationProcessor {
       if (driver?.fcm_token) {
         const fcmToken = driver.fcm_token;
         try {
-          await admin.messaging().send({
+          this.logger.debug(
+            `Sending FCM to token: ${fcmToken.substring(0, 10)}...`,
+          );
+          const response = await admin.messaging().send({
             token: fcmToken,
             notification: {
               title: notification.title,
@@ -67,11 +70,31 @@ export class NotificationProcessor {
               ? (notification.data as Record<string, string>)
               : {},
           });
-          this.logger.log(`FCM push delivered to ${userId}`);
+          this.logger.log(
+            `FCM push delivered to ${userId}. Message ID: ${response}`,
+          );
         } catch (fcmErr) {
           const errorMessage = (fcmErr as Error).message;
-          this.logger.warn(`FCM push failed for ${userId}: ${errorMessage}`);
+          this.logger.error(
+            `FCM push failed for user ${userId}: ${errorMessage}`,
+            (fcmErr as Error).stack,
+          );
+
+          // Optional: If token is invalid, we could clear it
+          if (errorMessage.includes('registration-token-not-registered')) {
+            this.logger.warn(
+              `Token for user ${userId} is invalid. Clearing...`,
+            );
+            await this.prisma.driver.updateMany({
+              where: { user_id: userId },
+              data: { fcm_token: null },
+            });
+          }
         }
+      } else {
+        this.logger.debug(
+          `No FCM token found for user ${userId}, skipping push.`,
+        );
       }
     } catch (err) {
       const errorMessage = (err as Error).message;

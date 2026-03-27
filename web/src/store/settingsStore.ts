@@ -19,9 +19,12 @@ export interface CompanyInfo {
   city: string;
   state: string;
   timezone: string;
+  price_per_km: number;
+  currency: string;
   company_code?: string;
   created_at?: string;
   route_settings?: RouteSettings;
+  needs_setup?: boolean;
 }
 
 export interface RouteSettings {
@@ -53,6 +56,8 @@ interface BillingInfo {
   current_period_end: string;
   cancel_at_period_end?: boolean;
   total_deliveries_this_month?: number;
+  total_drivers?: number;
+  seats_included?: number;
 }
 
 export interface BillingInvoice {

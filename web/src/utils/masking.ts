@@ -1,5 +1,5 @@
 export const maskEmail = (email: string | null | undefined): string => {
-  if (!email) return "N/A";
+  if (!email) return "—";
   const [user, domain] = email.split("@");
   if (!domain) return email;
 
@@ -13,7 +13,7 @@ export const maskEmail = (email: string | null | undefined): string => {
 };
 
 export const maskPhone = (phone: string | null | undefined): string => {
-  if (!phone) return "N/A";
+  if (!phone) return "—";
   if (phone.length <= 4) return "****";
   return `${phone.slice(0, 4)}*****${phone.slice(-3)}`;
 };

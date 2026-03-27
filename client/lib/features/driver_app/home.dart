@@ -32,6 +32,8 @@ class _HomeSummary {
   final String? activeRouteName;
   final String? activeRouteId;
   final DateTime? lastActiveAt;
+  final double pricePerKm;
+  final String currency;
 
   const _HomeSummary({
     required this.status,
@@ -44,6 +46,8 @@ class _HomeSummary {
     this.activeRouteName,
     this.activeRouteId,
     this.lastActiveAt,
+    this.pricePerKm = 0.0,
+    this.currency = 'NGN',
   });
 
   factory _HomeSummary.fromJson(Map<String, dynamic> j) => _HomeSummary(
@@ -59,6 +63,8 @@ class _HomeSummary {
         lastActiveAt: j['last_active_at'] != null 
             ? DateTime.tryParse(j['last_active_at'] as String) 
             : null,
+        pricePerKm: (j['price_per_km'] as num?)?.toDouble() ?? 0.0,
+        currency: j['currency'] as String? ?? 'NGN',
       );
 
   Map<String, dynamic> toJson() => {
@@ -72,6 +78,8 @@ class _HomeSummary {
         'active_route_name': activeRouteName,
     'active_route_id': activeRouteId,
         'last_active_at': lastActiveAt?.toIso8601String(),
+        'price_per_km': pricePerKm,
+        'currency': currency,
       };
 }
 
@@ -425,6 +433,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
+                                  ),
+                                if (_summary != null && _summary!.pricePerKm > 0)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryLight,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                                    ),
+                                    child: Text(
+                                      'Rate: ${_summary!.currency} ${_summary!.pricePerKm.toStringAsFixed(0)} / KM',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),

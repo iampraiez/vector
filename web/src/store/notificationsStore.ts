@@ -7,7 +7,7 @@ export interface AppNotification {
   title: string;
   body: string;
   created_at: string;
-  is_read: boolean;
+  read: boolean;
   data?: Record<string, unknown>;
 }
 
@@ -22,7 +22,7 @@ interface NotificationsState {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
-  clearAll: () => void;
+  clearAll: () => Promise<void>;
 }
 
 export const useNotificationsStore = create<NotificationsState>((set) => ({
@@ -51,7 +51,7 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
       title: (payload.title as string) || "New Notification",
       body: (payload.body as string) || "",
       created_at: (payload.created_at as string) || new Date().toISOString(),
-      is_read: false,
+      read: false,
       data: payload.data as Record<string, unknown> | undefined,
     };
 
@@ -63,7 +63,7 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
   markAsRead: async (id: string) => {
     set((state) => ({
       notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, is_read: true } : n,
+        n.id === id ? { ...n, read: true } : n,
       ),
     }));
     try {
@@ -75,7 +75,7 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
 
   markAllAsRead: async () => {
     set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
+      notifications: state.notifications.map((n) => ({ ...n, read: true })),
     }));
     try {
       await api.post("/dashboard/notifications/read-all");
@@ -95,7 +95,12 @@ export const useNotificationsStore = create<NotificationsState>((set) => ({
     }
   },
 
-  clearAll: () => {
+  clearAll: async () => {
     set({ notifications: [] });
+    try {
+      await api.delete("/dashboard/notifications");
+    } catch {
+      // silently fail
+    }
   },
 }));
