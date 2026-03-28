@@ -4,8 +4,8 @@ import 'package:client/core/theme/colors.dart';
 import 'package:client/core/theme/spacing.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:client/main.dart';
-import 'package:client/shared/widgets/inputs.dart';
-import 'package:client/shared/widgets/buttons.dart';
+import 'package:client/widgets/inputs.dart';
+import 'package:client/widgets/buttons.dart';
 import 'package:client/core/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {

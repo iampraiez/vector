@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
-import '../../shared/widgets/buttons.dart';
+import '../../widgets/buttons.dart';
 import '../../main.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class VerifyEmailScreen extends StatefulWidget {
   State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
 }
 
-class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+class _VerifyEmailScreenState extends State<VerifyEmailScreen> with WidgetsBindingObserver {
   final List<TextEditingController> _controllers = List.generate(
     6,
     (_) => TextEditingController(),
@@ -24,7 +25,46 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Check clipboard on initial load
+    _checkClipboard();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkClipboard();
+    }
+  }
+
+  Future<void> _checkClipboard() async {
+    try {
+      // Small delay to ensure clipboard is ready after app swap
+      await Future.delayed(const Duration(milliseconds: 300));
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = data?.text?.trim() ?? '';
+      
+      if (RegExp(r'^\d{6}$').hasMatch(text)) {
+        // Only auto-fill if the fields are currently empty
+        bool isEmpty = _controllers.every((c) => c.text.isEmpty);
+        if (isEmpty) {
+          for (int i = 0; i < 6; i++) {
+            _controllers[i].text = text[i];
+          }
+          _focusNodes[5].requestFocus();
+          _verifyCode();
+        }
+      }
+    } catch (e) {
+      debugPrint('Clipboard check failed: $e');
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     for (var c in _controllers) {
       c.dispose();
     }

@@ -233,6 +233,7 @@ model BillingRecord {
   company                  Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
 
   @@index([company_id])
+  @@unique([company_id, paystack_reference])
   @@map("billing_records")
 }
 
@@ -252,6 +253,7 @@ model Invoice {
   company             Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
 
   @@index([company_id])
+  @@unique([company_id, paystack_invoice_id])
   @@map("invoices")
 }
 

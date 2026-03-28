@@ -50,7 +50,10 @@ function DashboardSidebar() {
   const { setOpenMobile, isMobile } = useSidebar();
   const { user, logout } = useAuthStore();
   const { company, fetchSettings } = useSettingsStore();
+  const { notifications } = useNotificationsStore();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   React.useEffect(() => {
     if (!company) {
@@ -124,16 +127,26 @@ function DashboardSidebar() {
                 <SidebarMenuButton
                   isActive={active}
                   onClick={() => handleNav(item.path)}
-                  className={`gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                  className={`px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-between ${
                     active
                       ? "bg-emerald-600 text-white shadow-sm"
                       : "text-gray-500 hover:bg-gray-100/80 hover:text-gray-900"
                   }`}
                 >
-                  <Icon className="w-4.5 h-4.5 shrink-0" />
-                  <span className="font-semibold text-[13px]">
-                    {item.label}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4.5 h-4.5 shrink-0" />
+                    <span className="font-semibold text-[13px]">
+                      {item.label}
+                    </span>
+                  </div>
+                  {item.path === "/dashboard/notifications" &&
+                    unreadCount > 0 && (
+                      <div
+                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${active ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-600"}`}
+                      >
+                        {unreadCount}
+                      </div>
+                    )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

@@ -3,12 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/colors.dart';
-import '../../shared/widgets/bottom_nav.dart';
-import '../../shared/widgets/empty_state.dart';
-import '../../shared/widgets/skeleton.dart';
+import '../../widgets/bottom_nav.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
-import '../../shared/widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

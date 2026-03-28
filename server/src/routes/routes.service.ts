@@ -194,11 +194,10 @@ export class RoutesService {
       );
     }
 
-    const latSum = stops.reduce((acc, s) => acc + Number(s.lat), 0);
-    const lngSum = stops.reduce((acc, s) => acc + Number(s.lng), 0);
+    // Use the first stop as the guaranteed physical road node for the start location
     const agentWaypoint = {
-      lat: latSum / stops.length,
-      lng: lngSum / stops.length,
+      lat: Number(stops[0].lat),
+      lng: Number(stops[0].lng),
     };
 
     const optimizedIds = await this.mapService.optimizeRoute(
@@ -272,7 +271,7 @@ export class RoutesService {
         where: { id: routeId },
         data: {
           total_distance_km: directions.distanceKm,
-          estimated_duration_min: directions.durationMin,
+          estimated_duration_min: directions.durationMin + stops.length * 5,
           optimization_score: optimizationScore,
         },
       });
@@ -291,7 +290,7 @@ export class RoutesService {
       route: updated!,
       optimized_order: orderedIds,
       total_distance_km: directions.distanceKm,
-      estimated_duration_min: directions.durationMin,
+      estimated_duration_min: directions.durationMin + stops.length * 5,
     };
   }
 

@@ -1,22 +1,25 @@
 import 'package:go_router/go_router.dart';
 
 // Driver App
-import '../features/driver_app/welcome.dart';
-import '../features/driver_app/sign_in.dart' as driver_signin;
-import '../features/driver_app/sign_up.dart' as driver_signup;
-import '../features/driver_app/verify_email.dart';
-import '../features/driver_app/forgot_password.dart';
-import '../features/driver_app/onboarding.dart';
-import '../features/driver_app/home.dart';
-import '../features/driver_app/assignments.dart';
-import '../features/driver_app/new_route.dart';
-import '../features/driver_app/route_preview.dart';
-import '../features/driver_app/navigation.dart';
-import '../features/driver_app/proof_delivery.dart';
-import '../features/driver_app/history.dart';
-import '../features/driver_app/profile.dart';
-import '../features/driver_app/settings.dart' as driver_settings;
-import '../features/driver_app/notifications.dart' as driver_notifications;
+// Auth
+import '../features/auth/welcome.dart';
+import '../features/auth/sign_in.dart' as driver_signin;
+import '../features/auth/sign_up.dart' as driver_signup;
+import '../features/auth/verify_email.dart';
+import '../features/auth/forgot_password.dart';
+import '../features/auth/onboarding.dart';
+
+// Home & Core Features
+import '../features/home/home.dart';
+import '../features/routes/assignments.dart';
+import '../features/routes/new_route.dart';
+import '../features/routes/route_preview.dart';
+import '../features/routes/navigation.dart';
+import '../features/routes/proof_delivery.dart';
+import '../features/history/history.dart';
+import '../features/profile/profile.dart';
+import '../features/settings/settings.dart' as driver_settings;
+import '../features/notifications/notifications.dart' as driver_notifications;
 
 import 'package:client/main.dart';
 

@@ -83,9 +83,6 @@ importers:
       joi:
         specifier: ^18.0.2
         version: 18.0.2
-      multer:
-        specifier: ^2.1.1
-        version: 2.1.1
       nodemailer:
         specifier: ^8.0.1
         version: 8.0.1

@@ -26,11 +26,32 @@ export function VerifyEmail() {
     const emailParam = searchParams.get("email");
     if (emailParam) {
       setEmail(emailParam);
-    } else {
-      // If no email in URL, we might want to redirect back to signup or signin
-      // setGlobalError("Email address missing. Please try signing in again.");
     }
   }, [location]);
+
+  // Auto-fill from clipboard
+  useEffect(() => {
+    const checkClipboard = async () => {
+      try {
+        // Only attempt if the OTP is currently empty to avoid overwriting user input
+        if (otp.every((d) => !d)) {
+          const text = await navigator.clipboard.readText();
+          const cleanText = text.trim();
+          if (/^\d{6}$/.test(cleanText)) {
+            setOtp(cleanText.split(""));
+          }
+        }
+      } catch {
+        // Silently fail if clipboard access is denied
+      }
+    };
+
+    window.addEventListener("focus", checkClipboard);
+    // Also check on mount
+    checkClipboard();
+
+    return () => window.removeEventListener("focus", checkClipboard);
+  }, [otp]);
 
   const handleChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;

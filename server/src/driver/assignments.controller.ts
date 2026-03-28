@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -13,8 +21,12 @@ export class AssignmentsController {
   constructor(private readonly driverService: DriverService) {}
 
   @Get()
-  getAssignments(@CurrentUser('id') userId: string) {
-    return this.driverService.getAssignments(userId);
+  getAssignments(
+    @CurrentUser('id') userId: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
+  ) {
+    return this.driverService.getAssignments(userId, { limit, offset });
   }
 
   @Post('optimize')

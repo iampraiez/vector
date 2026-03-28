@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { Prisma } from '@prisma/client';
 
 @Catch()
@@ -24,6 +24,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
+      if (status === HttpStatus.TOO_MANY_REQUESTS) {
+        const req = ctx.getRequest<Request>();
+        this.logger.warn(
+          `Rate limit exceeded: ${req.ip || 'unknown'} -> ${req.method} ${req.url}`,
+        );
+      }
       const res = exception.getResponse() as
         | string
         | { message?: string | string[]; error?: string };

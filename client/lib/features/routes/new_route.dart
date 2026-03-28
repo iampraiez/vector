@@ -7,8 +7,8 @@ import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
-import '../../shared/widgets/inputs.dart';
-import '../../shared/widgets/buttons.dart';
+import '../../widgets/inputs.dart';
+import '../../widgets/buttons.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/location_service.dart';
 

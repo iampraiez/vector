@@ -20,6 +20,10 @@ export interface Route {
   driver_id: string | null;
   status: string;
   date: string;
+  total_stops: number;
+  completed_stops: number;
+  total_distance_km: number;
+  estimated_duration_min: number;
   stops?: RouteStop[];
   driver?: unknown;
 }

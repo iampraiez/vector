@@ -11,6 +11,7 @@ import {
   Get,
   UseGuards,
 } from '@nestjs/common';
+import { Roles } from '../common/decorators/roles.decorator';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import * as crypto from 'crypto';
@@ -23,6 +24,7 @@ import {
   PaystackTransactionVerifyResponse,
 } from './paystack.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import type { User } from '@prisma/client';
@@ -82,6 +84,7 @@ export class BillingController {
    * Handles idempotency to prevent duplicate processing
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'manager')
   @Post('verify')
   @HttpCode(200)
   async verifyPayment(
@@ -135,15 +138,19 @@ export class BillingController {
       }
 
       // Verify with Paystack
-      let verification: any;
+      let verification: PaystackTransactionVerifyResponse & {
+        transaction_status: string;
+      };
       try {
         verification = await this.paystackService.verifyTransaction(
           body.reference,
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
         this.logger.warn(
           `Paystack verification failed for reference: ${body.reference}`,
-          error instanceof Error ? error.message : 'Unknown error',
+          message,
         );
         return {
           success: false,
@@ -156,8 +163,7 @@ export class BillingController {
       }
 
       // At this point, verification succeeded and transaction_status is 'success'
-      const metadata = (verification as PaystackTransactionVerifyResponse)
-        .metadata;
+      const metadata = verification.metadata;
       const planId = metadata?.plan_id || 'starter';
       const billingCycle = metadata?.billing_cycle || 'monthly';
 
@@ -175,84 +181,102 @@ export class BillingController {
 
       const seats = planId === 'free' ? 2 : planId === 'starter' ? 5 : 20;
 
-      // Get user's company
-      const userData = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: { company: true },
-      });
+      try {
+        const invoice = await this.prisma.$transaction(async (tx) => {
+          // Get user's company
+          const userData = await tx.user.findUnique({
+            where: { id: user.id },
+          });
 
-      if (!userData?.company_id) {
-        throw new UnauthorizedException('User company not found');
-      }
+          if (!userData?.company_id) {
+            throw new UnauthorizedException('User company not found');
+          }
 
-      // Find or create billing record
-      let billingRecord = await this.prisma.billingRecord.findFirst({
-        where: { company_id: userData.company_id },
-      });
+          // Find or create billing record
+          const billingRecord = await tx.billingRecord.findFirst({
+            where: { company_id: userData.company_id },
+          });
 
-      if (!billingRecord) {
-        billingRecord = await this.prisma.billingRecord.create({
-          data: {
-            company_id: userData.company_id,
-            plan_id: planId,
-            status: 'active',
-            paystack_reference: body.reference,
-            current_period_start: new Date(),
-            current_period_end: periodEnd,
-            seats_included: seats,
-          },
+          if (!billingRecord) {
+            await tx.billingRecord.create({
+              data: {
+                company_id: userData.company_id,
+                plan_id: planId,
+                status: 'active',
+                paystack_reference: body.reference,
+                current_period_start: new Date(),
+                current_period_end: periodEnd,
+                seats_included: seats,
+              },
+            });
+          } else {
+            // Update existing billing record with payment reference
+            await tx.billingRecord.update({
+              where: { id: billingRecord.id },
+              data: {
+                paystack_reference: body.reference,
+                status: 'active',
+                plan_id: planId,
+                current_period_start: new Date(),
+                current_period_end: periodEnd,
+                seats_included: seats,
+              },
+            });
+          }
+
+          // Update company tier
+          await tx.company.update({
+            where: { id: userData.company_id },
+            data: {
+              subscription_tier: planId,
+              subscription_locked: false,
+            },
+          });
+
+          // Create invoice record
+          return tx.invoice.create({
+            data: {
+              company_id: userData.company_id,
+              amount_cents: verification.amount || 0,
+              status: 'paid',
+              description: `Plan: ${planId} (${billingCycle})`,
+              invoice_pdf_url: '',
+              paid_at: new Date(verification.paid_at || Date.now()),
+              period_start: new Date(),
+              period_end: periodEnd,
+              paystack_invoice_id: body.reference,
+            },
+          });
         });
-      } else {
-        // Update existing billing record with payment reference
-        billingRecord = await this.prisma.billingRecord.update({
-          where: { id: billingRecord.id },
-          data: {
-            paystack_reference: body.reference,
-            status: 'active',
-            plan_id: planId,
-            current_period_start: new Date(),
-            current_period_end: periodEnd,
-            seats_included: seats,
-          },
-        });
+
+        this.logger.log(`Payment verified and processed for user ${user.id}`);
+
+        return {
+          success: true,
+          status: 'success',
+          message: 'Payment verified successfully',
+          invoice: this.formatInvoice(invoice),
+        };
+      } catch (error) {
+        // Handle unique constraint (idempotency hit)
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          this.logger.log(
+            `Idempotency hit for reference: ${body.reference}. Skipping update.`,
+          );
+          return {
+            success: true,
+            status: 'verified',
+            message: 'Payment already processed',
+            invoice: null, // Frontend should handle this or fetch the last invoice
+          };
+        }
+        throw error;
       }
-
-      // Update company tier
-      await this.prisma.company.update({
-        where: { id: userData.company_id },
-        data: {
-          subscription_tier: planId,
-          subscription_locked: false,
-        },
-      });
-
-      // Create invoice record
-      const invoice = await this.prisma.invoice.create({
-        data: {
-          company_id: userData.company_id,
-          amount_cents:
-            (verification as PaystackTransactionVerifyResponse).amount || 0,
-          status: 'paid',
-          description: `Plan: ${planId} (${billingCycle})`,
-          invoice_pdf_url: '',
-          paid_at: new Date(),
-          period_start: new Date(),
-          period_end: periodEnd,
-          paystack_invoice_id: body.reference,
-        },
-      });
-
-      this.logger.log(
-        `Payment verified and processed for company ${userData.company_id}`,
-      );
-
-      return {
-        success: true,
-        status: 'success',
-        message: 'Payment verified successfully',
-        invoice: this.formatInvoice(invoice),
-      };
     } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
       this.logger.error('Error verifying payment:', error);
       return {
         success: false,
@@ -266,6 +290,7 @@ export class BillingController {
    * Get invoices for the authenticated user's company
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'manager')
   @Get('invoices')
   async getInvoices(@CurrentUser() user: User) {
     const userData = await this.prisma.user.findUnique({

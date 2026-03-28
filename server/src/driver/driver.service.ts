@@ -279,7 +279,10 @@ export class DriverService {
     return R * c;
   }
 
-  async getAssignments(userId: string) {
+  async getAssignments(
+    userId: string,
+    pagination: { limit?: number; offset?: number } = {},
+  ) {
     const driver = await this.getDriverOrThrow(userId);
     const todayStr = new Date().toISOString().split('T')[0];
     const sevenDaysAgo = new Date();
@@ -313,6 +316,8 @@ export class DriverService {
         },
       },
       orderBy: { date: 'asc' },
+      take: pagination.limit || 50,
+      skip: pagination.offset || 0,
     });
 
     // 2. Fetch standalone stops (not in a route) for this driver
@@ -330,6 +335,8 @@ export class DriverService {
         ],
       },
       orderBy: { created_at: 'asc' },
+      take: pagination.limit || 50,
+      skip: pagination.offset || 0,
       select: DRIVER_STOP_LIST_SELECT,
     });
 

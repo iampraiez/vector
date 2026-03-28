@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import 'package:client/main.dart';
-import '../../shared/widgets/bottom_nav.dart';
+import '../../widgets/bottom_nav.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/offline_service.dart';
 
-import '../../shared/widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';

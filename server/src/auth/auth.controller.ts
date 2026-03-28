@@ -97,7 +97,7 @@ export class AuthController {
   }
 
   @Public()
-  @SkipThrottle()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: RefreshTokenDto) {

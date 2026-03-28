@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme/colors.dart';
 import '../../core/constants/map_constants.dart';
 import '../../core/services/map_service.dart';
-import '../../shared/widgets/buttons.dart';
+import '../../widgets/buttons.dart';
 import '../../main.dart' show RouteProgressScope;
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/location_service.dart';

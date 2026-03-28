@@ -12,7 +12,7 @@ import { Logger, Injectable } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: '*', // In production, this should be restricted to the FRONTEND_URL
+    origin: process.env.APP_URL || '*', // In production, this should be restricted to the APP_URL
   },
 })
 @Injectable()

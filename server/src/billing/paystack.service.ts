@@ -28,6 +28,7 @@ export interface PaystackTransactionVerifyResponse {
   amount: number;
   currency: string;
   customer_id: number;
+  paid_at?: string;
   authorization: {
     authorization_code: string;
     bin: string;

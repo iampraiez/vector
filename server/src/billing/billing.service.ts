@@ -155,16 +155,30 @@ export class BillingService {
     const customerCode = data.customer?.customer_code;
     if (!customerCode) return;
 
-    // In a full integration we'd lookup by paystack_customer_id,
-    // but we can fallback to email matching if needed.
-    const companyAuths = await this.prisma.user.findMany({
-      where: { email: data.customer.email, role: 'admin' },
-      select: { company_id: true },
+    // 1. Try to lookup by paystack_customer_id first (more reliable)
+    const company = await this.prisma.company.findFirst({
+      where: { paystack_customer_id: customerCode },
     });
 
-    for (const auth of companyAuths) {
+    const companyIds = company ? [company.id] : [];
+
+    // 2. Fallback to email matching if No company found by customer ID
+    if (companyIds.length === 0 && data.customer?.email) {
+      const users = await this.prisma.user.findMany({
+        where: { email: data.customer.email, role: 'admin' },
+        select: { company_id: true },
+      });
+      companyIds.push(...users.map((u) => u.company_id));
+      if (companyIds.length > 0) {
+        this.logger.warn(
+          `Found ${companyIds.length} companies by email fallback for customer ${customerCode}`,
+        );
+      }
+    }
+
+    for (const companyId of companyIds) {
       const billingRecord = await this.prisma.billingRecord.findFirst({
-        where: { company_id: auth.company_id },
+        where: { company_id: companyId },
       });
 
       if (billingRecord) {
@@ -172,9 +186,7 @@ export class BillingService {
           where: { id: billingRecord.id },
           data: { status: 'past_due' }, // Suspend gracefully
         });
-        this.logger.log(
-          `Marked billing past_due for company ${auth.company_id}`,
-        );
+        this.logger.log(`Marked billing past_due for company ${companyId}`);
         // Optionally notify fleet manager here
       }
     }

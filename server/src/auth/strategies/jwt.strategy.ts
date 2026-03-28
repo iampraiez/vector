@@ -21,8 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('JWT_ACCESS_SECRET') || 'default-secret',
+      secretOrKey: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
       passReqToCallback: true,
     });
   }
@@ -51,7 +50,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // For now, let's just log a warning and let it pass if Redis is empty but the JWT is valid.
     // This handles the "Redis cleared/restarted" case.
     if (!sessionExists) {
-      // console.warn(`Session not found in Redis for user ${payload.sub}, allowing based on JWT validity`);
+      throw new UnauthorizedException('Session expired or revoked');
     }
 
     const user = await this.prisma.user.findUnique({

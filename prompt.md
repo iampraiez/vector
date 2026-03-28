@@ -30,97 +30,54 @@ This is **Vector**, a delivery management platform with three actors:
 **Notifications:** `NotificationsService.create(...)` writes to the `Notification` table and enqueues a BullMQ `deliver` job. The `notification.processor.ts` currently only logs the job — actual delivery (FCM for Flutter, WebSocket for Web) is not yet implemented.
 
 **Required environment variables** (do not hardcode fallbacks for any of these; validate them at startup):
-```
 DATABASE_URL, REDIS_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
 SENDGRID_API_KEY, GEOAPIFY_API_KEY, FRONTEND_URL, APP_URL,
 CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET
-```
-
----
+text---
 
 ## Task
 
-Open and read `complete.md` in the project root. It is the single source of truth for everything that needs to be fixed.
+Perform a **complete, strict, and exhaustive audit** of the entire Vector application (server, web, and client folders) as a senior full-stack engineer.
 
-Work through it in **Priority Order** (found at the bottom of the file):
+Your goal is to determine exactly what is still **missing** for the app to be fully production-ready. Be extremely detailed and ruthless — do not accept “good enough”.
 
-```
-🔴 P0 first → 🟠 P1 second → 🟡 P2 last
-```
+You must:
 
-### Execution Flow — One Item at a Time
+1. **Read every relevant file** in the codebase before making any conclusions.
+2. Cross-check against the Context above and against real-world production standards for a delivery management platform (security, reliability, scalability, user experience, error handling, monitoring, etc.).
+3. Identify **every single gap**, no matter how small.
+4. Verify that nothing you flag would break existing functionality if fixed.
+5. Categorize the gaps clearly.
 
-**You work on exactly ONE item per session.** Do not move to the next item until explicitly told to.
-
-For each item:
-
-**Step 0 — Check Status**
-Look at the item's heading in `complete.md`. If it contains an `[x]` (e.g., `### 1.1 [x]`), the task is already completed. Skip it and move to the next item in the priority list. Do not attempt to re-solve an already completed task.
-
-**Step 1 — Announce**
-Before writing any code, state in one sentence: which item you are solving and what the core problem is. Example: *"Solving 1.1 — `optimizeAssignments` always fails because it filters stops by `status: 'pending'` but stops are created with `status: 'assigned'`."*
-
-**Step 2 — Read**
-Read the relevant source file(s) listed in the item. Confirm the problem still exists as described. If the code has changed and the problem is already fixed, mark it `[x]` in `complete.md`, note it in `progress.md` as "already resolved", and skip to Step 5.
-
-**Step 3 — Fix**
-Implement the fix exactly as described in the "Fix logic" block under that item. If the fix has two options (Option A / Option B), pick the architecturally cleaner one — do not ask.
-
-**Step 4 — Verify**
-Run the appropriate check depending on what was changed:
-- Prisma schema → `npx prisma migrate dev --name <descriptive_name>` then `npx prisma generate`
-- Server code → `pnpm run build` inside `server/`
-- Flutter code → `flutter analyze` inside `client/`
-- Web code → `pnpm run build` inside `web/`
-
-If verification fails, fix the error before proceeding.
-
-**Step 5 — Update `progress.md`**
-Create or update a file called `progress.md` in the project root. It must always contain two sections:
+After the audit is complete, **create (or fully replace) a file called `missing.md`** in the project root with the following exact structure:
 
 ```markdown
-## Solved
+# Vector — Missing Items for Production Readiness
 
-| Item | Description | Status |
-|---|---|---|
-| 1.1 | optimizeAssignments stop status filter fixed | ✅ Done |
-...
+## 🔴 Critical (Must be fixed before production)
+- ...
 
-## Currently Working On
+## 🟠 High Priority
+- ...
 
-| Item | Description |
-|---|---|
-| 1.2 | arrived_at never set — Mark as Arrived fix |
-```
+## 🟡 Medium Priority
+- ...
 
-After updating `progress.md`, also mark the just-completed item as `[x]` in `complete.md`.
+## ⚪ Nice-to-have / Future
+- ...
 
-**Step 6 — Pause**
-Stop. Say exactly this:
+## Summary
+Total gaps found: X  
+Critical gaps: Y  
+Estimated effort: ...
+Be detailed and strict in every bullet point. For each gap include:
 
-> ✅ Done with [item number] — [one line summary of what was changed]. Updated `progress.md`. Should I proceed to [next item number]?
+Exact file/path where the issue lives (if applicable)
+Why it is missing or insufficient for production
+What the correct production-grade solution should be
 
-Then wait. Do not continue until the user says yes (or similar confirmation).
-
----
-
-**Hard rules — penalty applies if broken:**
-- Never use `type: any`. All types must be explicitly defined.
-- Never hardcode values that belong in environment variables.
-- Never leave a `TODO` comment in code you touch — either implement it or remove it.
-- Read the file before editing it. Never assume the current state.
-- **Always use `pnpm`** (e.g., `pnpm install`, `pnpm add`) in the `server/` and `web/` directories. NEVER use `npm` or `yarn`.
-- Do not create new files for logic that already exists — extend or correct what is there.
-- If a fix references a dependency (e.g., "implement after 1.2", "requires item 1.9"), say so in your announcement and implement the dependency first.
-- Never do more than one item per session, even if the item seems small.
-
----
-
-## Expected Output (per session)
-
-After each item is complete:
-1. The specific code change is in place and the build/analyze command passes with no errors or new warnings.
-2. `complete.md` has the item marked `[x]`.
-3. `progress.md` exists and is up to date — the solved item is in the "Solved" table and the next item is in "Currently Working On".
-4. The agent has said "Done with X — should I proceed to Y?" and is waiting.
-
+Do not implement any fixes in this session.
+Do not create any other files.
+Do not summarise or give high-level advice — only the missing.md file matters.
+Once missing.md is created/updated, output the full content of the file in your response and then say exactly:
+✅ Audit complete. missing.md has been created with every missing item for production readiness. Let me know when you want me to start fixing them in priority order.

@@ -7,12 +7,12 @@ import 'package:geolocator/geolocator.dart' show ServiceStatus, LocationPermissi
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
-import '../../shared/widgets/bottom_nav.dart';
-import '../../shared/widgets/skeleton.dart';
+import '../../widgets/bottom_nav.dart';
+import '../../widgets/skeleton.dart';
 import '../../core/services/driver_api_service.dart';
 import '../../core/services/location_service.dart';
 import '../../main.dart' show AuthScope, RouteProgressScope, NotificationScope;
-import '../../shared/widgets/offline_banner.dart';
+import '../../widgets/offline_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

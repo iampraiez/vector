@@ -392,6 +392,29 @@ function OtpVerifyModal({
 }) {
   const [otp, setOtp] = useState("");
 
+  useEffect(() => {
+    if (!isOpen || !action) return;
+
+    const checkClipboard = async () => {
+      try {
+        if (!otp) {
+          const text = await navigator.clipboard.readText();
+          const cleanText = text.trim();
+          if (/^\d{6}$/.test(cleanText)) {
+            setOtp(cleanText);
+          }
+        }
+      } catch {
+        // Silently fail if clipboard access is denied
+      }
+    };
+
+    window.addEventListener("focus", checkClipboard);
+    checkClipboard();
+
+    return () => window.removeEventListener("focus", checkClipboard);
+  }, [isOpen, action, otp]);
+
   if (!isOpen || !action) return null;
 
   return (

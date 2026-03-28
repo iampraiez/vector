@@ -1,123 +1,89 @@
 # Vector Server
 
-Vector is a high-performance, modular fleet management and route optimization platform built with NestJS. It provides a robust backend for both a web-based administration dashboard and a mobile application for drivers.
-
-## 🚀 Key Features
-
-### 👤 Authentication & Security
-- **Multi-Role Support**: Granular access control for Admins, Managers, and Drivers.
-- **Secure Onboarding**: Dedicated signup flows for fleet owners and individual drivers.
-- **JWT Strategy**: Dual-token system (Access + Refresh) with Redis-backed session management.
-- **Security First**: Integrated with Helmet, CORS, and Rate Limiting.
-
-### 📊 Dashboard (Web API)
-- **Fleet Overview**: Real-time metrics on deliveries, active drivers, and success rates.
-- **Order Management**: Full CRUD for delivery stops with priority and window tracking.
-- **Driver Management**: Invite system, performance tracking, and live status monitoring.
-- **Reports**: Data-driven insights on distance, fuel savings, and time efficiency.
-- **Billing**: Integration with Paystack for subscription and invoice management.
-
-### 📱 Driver App (Mobile API)
-- **Real-Time Status**: Seamless state transitions (Active, Idle, Offline).
-- **Assignments**: Instant push-ready notification payloads for new route assignments.
-- **Navigation**: Route sequence optimization and OSRM-ready data structures.
-- **Delivery Verification**: Support for signatures, photos, and failure reason logging.
-
-### 📍 Public Tracking
-- **Live Customer View**: Token-based tracking links for customers to view delivery progress and driver location without authentication.
-- **Rating System**: Post-delivery feedback loop for customer satisfaction.
-
----
+High-performance NestJS API powering the Vector delivery platform. Built with a focus on security, real-time observability, and scalable background processing.
 
 ## 🛠 Tech Stack
 
-- **Framework**: [NestJS](https://nestjs.com/) (v11)
-- **Language**: TypeScript (Strict Mode)
-- **Database**: PostgreSQL with [Prisma ORM](https://www.prisma.io/)
-- **Caching**: [Redis](https://redis.io/) (ioredis)
-- **Background Jobs**: [BullMQ](https://docs.bullmq.io/)
-- **Authentication**: Passport-JWT & Bcrypt
+- **Framework**: [NestJS](https://nestjs.com/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Database**: PostgreSQL
+- **Caching & Sessions**: Redis
+- **Task Queue**: [BullMQ](https://docs.bullmq.io/)
+- **Real-time**: Socket.io
 - **Documentation**: Swagger/OpenAPI
-
----
 
 ## 📂 Project Structure
 
-```text
-src/
-├── auth/               # JWT authentication & session logic
-├── common/             # Global filters, interceptors, & decorators
-├── config/             # Environment configuration
-├── dashboard/          # Web app endpoints (8 sub-controllers)
-├── driver/             # Mobile app endpoints (11 sub-controllers)
-├── health/             # System health checks (DB & Redis)
-├── mail/               # Asynchronous email service
-├── prisma/             # Database service & client
-├── queue/              # BullMQ configuration for workers
-├── redis/              # Caching & Rate-limit service
-├── routes/             # Route optimization & assignment logic
-└── tracking/           # Public-facing tracking service
-```
+- `src/auth`: Authentication, JWT rotation, and role-based access control.
+- `src/billing`: Paystack integration, webhook handlers, and idempotency logic.
+- `src/driver`: Driver profile management and assignment tracking.
+- `src/routes`: Route optimization and assignment logic.
+- `src/tracking`: Real-time tracking, geolocation updates, and customer ratings.
+- `src/notifications`: Firebase Cloud Messaging (FCM) integration.
+- `src/prisma`: Database client and service.
+- `src/redis`: Redis client and session management.
 
----
+## ⚙️ Environment Variables
 
-## 🚦 Getting Started
+Create a `.env` file in the `server` root based on `.env.example`:
 
-### Prerequisites
-- Node.js (v20+)
-- pnpm (v10+)
-- PostgreSQL & Redis instances
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection string (e.g. `redis://localhost:6379`) |
+| `JWT_ACCESS_SECRET` | Secret key for access tokens |
+| `JWT_REFRESH_SECRET` | Secret key for refresh tokens |
+| `PAYSTACK_SECRET_KEY` | Paystack API secret |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Firebase service account JSON |
+
+## 🚀 Development
 
 ### Installation
-1. Clone the repository and navigate to the server directory.
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-3. Set up your environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-4. Generate Prisma client:
-   ```bash
-   pnpm exec prisma generate
-   ```
-
-### Running the Server
 ```bash
-# Development mode
+pnpm install
+```
+
+### Database Migration
+```bash
+npx prisma migrate dev
+pnpm generate
+```
+
+### Running the App
+```bash
+# Development
 pnpm start:dev
 
-# Production mode
+# Production
 pnpm build
 pnpm start:prod
 ```
 
----
+## 📚 API Documentation
 
-## 📝 API Standards
+When running in development mode, you can access the interactive Swagger UI:
+- **URL**: `http://localhost:8080/api-docs`
+- **Spec**: An `openapi.yaml` is also automatically generated in the root on startup.
 
-The server follows a standardized response format for all endpoints:
+## 🧪 Testing
 
-**Success Response:**
-```json
-{
-  "data": { ... },
-  "message": "Optional success message",
-  "pagination": { "total": 100, "page": 1, ... }
-}
+The server uses Jest for unit and e2e testing.
+
+```bash
+# Unit tests
+pnpm test
+
+# Critical service tests
+pnpm test auth.service.spec.ts billing.service.spec.ts tracking.service.spec.ts routes.service.spec.ts
+
+# E2E tests
+pnpm test:e2e
 ```
 
-**Error Response:**
-```json
-{
-  "error": "not_found",
-  "message": "Resource not found",
-  "details": { ... }
-}
-```
+## 🏗 Background Jobs
 
----
+Vector uses BullMQ for asynchronous operations:
+- **Email Queue**: Handles transactional emails (verification, tracking links).
+- **Notification Queue**: Processes FCM push notifications to drivers.
 
-## 📄 License
-Vector is [MIT licensed](LICENSE).
+Refer to `src/queue` for processor implementations.

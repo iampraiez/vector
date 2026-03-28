@@ -7,6 +7,7 @@ import 'package:client/core/theme/colors.dart';
 import 'package:client/main.dart';
 import 'package:client/core/services/driver_api_service.dart';
 import 'package:client/core/services/offline_service.dart';
+import 'package:flutter/services.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -180,6 +181,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx2) {
+        // Check clipboard on open
+        Clipboard.getData(Clipboard.kTextPlain).then((data) {
+          final text = data?.text?.trim() ?? '';
+          if (RegExp(r'^\d{6}$').hasMatch(text)) {
+            codeController.text = text;
+          }
+        });
+
         return StatefulBuilder(
           builder: (context, setStateModal) {
             return AlertDialog(

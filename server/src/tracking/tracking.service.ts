@@ -7,7 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 type StopWithRelations = Prisma.StopGetPayload<{
   include: {
     driver: {
-      include: { user: { select: { full_name: true; phone: true } } };
+      include: { user: { select: { full_name: true } } };
     };
     company: {
       select: { name: true; contact_email: true; phone: true };
@@ -35,7 +35,7 @@ export class TrackingService {
       where: { tracking_token: token },
       include: {
         driver: {
-          include: { user: { select: { full_name: true, phone: true } } },
+          include: { user: { select: { full_name: true } } },
         },
         company: {
           select: { name: true, contact_email: true, phone: true },
@@ -66,7 +66,7 @@ export class TrackingService {
     const stopData = primaryStop as unknown as Stop & {
       driver: {
         id: string;
-        user: { full_name: string; phone: string };
+        user: { full_name: string };
         avg_rating: number;
         total_deliveries: number;
         vehicle_color: string | null;
@@ -134,7 +134,6 @@ export class TrackingService {
         ? {
             id: stopData.driver.id,
             name: stopData.driver.user.full_name,
-            phone: stopData.driver.user.phone,
             rating: stopData.driver.avg_rating,
             deliveries: stopData.driver.total_deliveries,
             vehicle:

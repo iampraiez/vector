@@ -138,6 +138,7 @@ export class MapService {
       .join('|');
     url.searchParams.set('waypoints', waypointsParam);
     url.searchParams.set('mode', 'drive');
+    url.searchParams.set('type', 'short');
     url.searchParams.set('apiKey', this.apiKey);
 
     let data: {
@@ -179,6 +180,7 @@ export class MapService {
 
     const body = {
       mode: 'drive',
+      type: 'short',
       agents: [
         {
           start_location: [agentLocation.lng, agentLocation.lat],

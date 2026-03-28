@@ -6,7 +6,9 @@
  * served from the deployed frontend (APP_URL/icon.png).
  */
 
-const LOGO_URL = 'https://vector-route.vercel.app/icon.png';
+const LOGO_URL = process.env.APP_URL
+  ? `${process.env.APP_URL.replace(/\/$/, '')}/icon.png`
+  : 'https://vector-route.vercel.app/icon.png';
 
 export function generateBaseTemplate(content: string, title: string) {
   return `

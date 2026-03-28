@@ -56,10 +56,10 @@ export function DashboardTracking() {
 
   const activeDrivers = (drivers || []).filter((d) => d.status === "active");
 
-  const totalDeliveriesToday = drivers.reduce(
-    (sum, d) => sum + (d.total_deliveries || 0),
-    0,
-  );
+  const todayStr = new Date().toLocaleDateString("en-CA");
+  const totalDeliveriesToday = (routes || [])
+    .filter((r) => r.date === todayStr)
+    .reduce((sum, r) => sum + (r.completed_stops || 0), 0);
   const remainingStops = (routes || []).filter(
     (r) => r.status === "in_progress" || r.status === "pending",
   ).length;

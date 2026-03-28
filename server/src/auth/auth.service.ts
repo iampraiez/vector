@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { randomBytes, randomInt } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,7 +13,6 @@ import { RedisService } from '../redis/redis.service';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bull';
 import * as bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
 import {
   SignInDto,
   SignUpDriverDto,
@@ -147,7 +147,7 @@ export class AuthService {
 
       if (isPendingDeletion) {
         // Re-send a recovery OTP so they can cancel account deletion
-        const token = Math.floor(100000 + Math.random() * 900000).toString();
+        const token = randomInt(100000, 1000000).toString();
         await this.redis.set(`verify:${user.email}`, token, 3600);
         await this.emailQueue.add(
           'sendVerification',
@@ -163,7 +163,7 @@ export class AuthService {
       }
 
       // Normal unverified: resend OTP
-      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      const token = randomInt(100000, 1000000).toString();
       await this.redis.set(`verify:${user.email}`, token, 3600);
       await this.emailQueue.add(
         'sendVerification',
@@ -260,7 +260,7 @@ export class AuthService {
         });
       });
 
-      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      const token = randomInt(100000, 1000000).toString();
       await this.redis.set(`verify:${existingUser.email}`, token, 3600);
       await this.emailQueue.add(
         'sendVerification',
@@ -320,15 +320,14 @@ export class AuthService {
     }
 
     // Generate OTP
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = randomInt(100000, 1000000).toString();
     await this.redis.set(`verify:${user.email}`, token, 3600);
 
-    // await this.emailQueue.add(
-    //   'sendVerification',
-    //   { email: user.email, token },
-    //   STANDARD_QUEUE_OPTIONS,
-    // );
-    console.log(token);
+    await this.emailQueue.add(
+      'sendVerification',
+      { email: user.email, token },
+      STANDARD_QUEUE_OPTIONS,
+    );
 
     return {
       message: 'Account created. Please verify your email.',
@@ -416,7 +415,7 @@ export class AuthService {
       body: 'Your workspace is ready. Invite drivers and create your first route.',
     });
 
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = randomInt(100000, 1000000).toString();
     await this.redis.set(`verify:${result.user.email}`, token, 3600);
     await this.emailQueue.add(
       'sendVerification',
@@ -519,16 +518,16 @@ export class AuthService {
       );
 
       const deviceId = payload.device_id || 'default';
+      const session = await this.redis.get(`rt:${payload.sub}:${deviceId}`);
+      if (!session) {
+        throw new UnauthorizedException('Session expired or revoked');
+      }
+
       const storedHash = await this.redis.get(`rt:${payload.sub}:${deviceId}`);
 
-      // If hash exists, we MUST verify it.
-      // If it DOESN'T exist (e.g. Redis cleared), we don't fail immediately
-      // as long as the refresh token itself is cryptographically valid (which it is, since verifyAsync passed).
       if (storedHash) {
         const isMatch = await bcrypt.compare(dto.refresh_token, storedHash);
         if (!isMatch) throw new UnauthorizedException('Invalid refresh token');
-      } else {
-        // console.warn(`Refresh session not found in Redis for user ${payload.sub}, allowing based on JWT validity`);
       }
 
       const user = await this.prisma.user.findUnique({
@@ -560,9 +559,11 @@ export class AuthService {
       where: { email: dto.email },
     });
     if (user) {
-      const token = uuidv4();
+      const secret = randomBytes(32).toString('hex');
+      const token = `${user.id}.${secret}`;
+      const hash = await bcrypt.hash(secret, 10);
 
-      await this.redis.set(`reset:${token}`, user.id, 1800);
+      await this.redis.set(`reset:${user.id}`, hash, 1800);
 
       const frontendUrl = this.configService.getOrThrow<string>('APP_URL');
       await this.emailQueue.add(
@@ -580,12 +581,23 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const userId = await this.redis.get(`reset:${dto.token}`);
+    const [userId, secret] = dto.token.split('.');
 
-    if (!userId) {
+    if (!userId || !secret) {
+      throw new UnauthorizedException('Invalid token format');
+    }
+
+    const storedHash = await this.redis.get(`reset:${userId}`);
+
+    if (!storedHash) {
       throw new UnauthorizedException(
         'Invalid or expired password reset token',
       );
+    }
+
+    const isMatch = await bcrypt.compare(secret, storedHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid password reset token');
     }
 
     const hashedPassword = await this.hashPassword(dto.new_password);
@@ -597,7 +609,7 @@ export class AuthService {
     });
 
     // Delete the used token to prevent reuse
-    await this.redis.del(`reset:${dto.token}`);
+    await this.redis.del(`reset:${userId}`);
 
     return { message: 'Password updated successfully.' };
   }

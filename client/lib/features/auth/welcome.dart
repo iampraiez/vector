@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
-import '../../shared/widgets/buttons.dart';
+import '../../widgets/buttons.dart';
 
 class FeatureItem {
   final IconData icon;
