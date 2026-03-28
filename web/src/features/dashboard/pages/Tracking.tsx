@@ -33,7 +33,11 @@ export function DashboardTracking() {
   const { drivers, isLoading, fetchDrivers } = useDriverStore();
   const { routes, fetchRoutes } = useRouteStore();
 
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
+  const selectedDriver = React.useMemo(
+    () => drivers.find((d) => d.id === selectedDriverId) || null,
+    [drivers, selectedDriverId],
+  );
   const [viewMode, setViewMode] = useState<"board" | "list">("board");
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -48,7 +52,7 @@ export function DashboardTracking() {
     fetchRoutes({ limit: 100 });
 
     const interval = setInterval(() => {
-      fetchDrivers({ limit: 100 });
+      fetchDrivers({ limit: 100, silent: true });
     }, 18000);
 
     return () => clearInterval(interval);
@@ -106,7 +110,7 @@ export function DashboardTracking() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
-        setSelectedDriver(null); // Clear selected driver to focus on user
+        setSelectedDriverId(null); // Clear selected driver to focus on user
         // Intentionally NOT forcing auto-center to prevent aggressive snapping/reloads
         setIsLocating(false);
       },
@@ -120,7 +124,7 @@ export function DashboardTracking() {
   };
 
   const handleResetView = () => {
-    setSelectedDriver(null);
+    setSelectedDriverId(null);
     setUserLocation(null);
     setShouldAutoCenter(true);
   };
@@ -484,7 +488,7 @@ export function DashboardTracking() {
                 {drivers.map((d) => (
                   <button
                     key={d.id}
-                    onClick={() => setSelectedDriver(d)}
+                    onClick={() => setSelectedDriverId(d.id)}
                     className={`group bg-white border rounded-2xl p-5 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer ${
                       selectedDriver?.id === d.id
                         ? "border-emerald-600 shadow-lg shadow-emerald-600/5"
@@ -572,7 +576,7 @@ export function DashboardTracking() {
                       {drivers.map((d) => (
                         <tr
                           key={d.id}
-                          onClick={() => setSelectedDriver(d)}
+                          onClick={() => setSelectedDriverId(d.id)}
                           className={`cursor-pointer transition-colors ${selectedDriver?.id === d.id ? "bg-emerald-50/50" : "hover:bg-gray-50/50"}`}
                         >
                           <td className="px-6 py-4">

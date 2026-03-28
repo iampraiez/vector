@@ -254,3 +254,42 @@ export function accountDeletionScheduledTemplate(
   `;
   return generateBaseTemplate(content, 'Account Deletion Scheduled');
 }
+
+export function driverAccountDeletedTemplate(
+  driverName: string,
+  totalDeliveries: number,
+  avgRating: number,
+  joinedAt: string,
+  vehicleInfo: string,
+) {
+  const content = `
+    <h2 style="margin-top: 0; color: #0f172a; font-size: 24px; font-weight: 800; tracking: -0.5px;">Account Terminated</h2>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Hi ${driverName},</p>
+    <p style="color: #475569; font-size: 16px; margin-bottom: 20px;">Your driver account has been deactivated by your fleet manager.</p>
+
+    <div style="background-color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 32px;">
+      <h3 style="margin-top: 0; color: #0f172a; font-size: 18px; font-weight: 700;">Account Activity Summary</h3>
+      <table width="100%" cellspacing="0" cellpadding="8" border="0">
+        <tr>
+          <td style="color: #64748b; font-size: 14px; border-bottom: 1px solid #e2e8f0;">Date Joined</td>
+          <td style="color: #0f172a; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #e2e8f0;">${joinedAt}</td>
+        </tr>
+        <tr>
+          <td style="color: #64748b; font-size: 14px; border-bottom: 1px solid #e2e8f0;">Total Deliveries</td>
+          <td style="color: #0f172a; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #e2e8f0;">${totalDeliveries}</td>
+        </tr>
+        <tr>
+          <td style="color: #64748b; font-size: 14px; border-bottom: 1px solid #e2e8f0;">Average Rating</td>
+          <td style="color: #0f172a; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #e2e8f0;">${(avgRating || 0).toFixed(1)} / 5.0</td>
+        </tr>
+        <tr>
+          <td style="color: #64748b; font-size: 14px;">Vehicle</td>
+          <td style="color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${vehicleInfo}</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="color: #475569; font-size: 16px; margin-bottom: 24px;">Thank you for your service with Vector Fleet. If you have any questions, please contact your fleet manager directly.</p>
+  `;
+  return generateBaseTemplate(content, 'Driver Account Terminated');
+}

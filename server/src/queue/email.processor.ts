@@ -10,6 +10,7 @@ import {
   verificationEmailTemplate,
   passwordResetTemplate,
   trackingLinkTemplate,
+  driverAccountDeletedTemplate,
 } from '../common/template';
 
 @Processor('email')
@@ -123,6 +124,43 @@ export class EmailProcessor {
       email,
       title,
       trackingLinkTemplate(title, statusText, trackingLink, driverName),
+      text,
+    );
+  }
+
+  @Process({ name: 'sendDriverTermination', concurrency: 1 })
+  async handleSendDriverTermination(
+    job: Bull.Job<{
+      email: string;
+      driverName: string;
+      totalDeliveries: number;
+      avgRating: number;
+      joinedAt: string;
+      vehicleInfo: string;
+    }>,
+  ) {
+    const {
+      email,
+      driverName,
+      totalDeliveries,
+      avgRating,
+      joinedAt,
+      vehicleInfo,
+    } = job.data;
+    this.logger.log(`Processing driver termination email for ${email}`);
+
+    const text = `Your driver account has been deactivated. Total Deliveries: ${totalDeliveries}, Rating: ${(avgRating || 0).toFixed(1)}/5.0.`;
+
+    await this.mailService.sendMail(
+      email,
+      'Your Driver Account Has Been Terminated',
+      driverAccountDeletedTemplate(
+        driverName,
+        totalDeliveries,
+        avgRating,
+        joinedAt,
+        vehicleInfo,
+      ),
       text,
     );
   }

@@ -149,7 +149,10 @@ export function DownloadApp() {
               </div>
 
               <a
-                href="https://www.dropbox.com/scl/fi/icn8jkm6cuqtu6lcc97eu/app-release.apk?rlkey=uwn32qlj1hnogfx8l7x0rvr5o&st=h9u7luaz&dl=1"
+                href={
+                  import.meta.env.VITE_APK_URL ||
+                  "https://www.dropbox.com/scl/fi/icn8jkm6cuqtu6lcc97eu/app-release.apk?rlkey=uwn32qlj1hnogfx8l7x0rvr5o&st=h9u7luaz&dl=1"
+                }
                 download="vector-driver.apk"
                 className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 text-white rounded-xl text-[14px] font-bold hover:bg-emerald-700 transition-colors"
               >

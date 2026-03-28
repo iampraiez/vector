@@ -76,17 +76,33 @@ export function OnboardingTour() {
 
   useEffect(() => {
     // Only mount tour if the database flag says the user hasn't completed it
-    // and we haven't already started the tour run
-    if (user && user.is_onboarded === false && !run) {
-      // If we land on a deep page, move to overview first so the first target exists
-      if (location.pathname == "/dashboard") {
-        navigate("/dashboard");
+    if (user && user.is_onboarded === false) {
+      const allowedPaths = [
+        "/dashboard",
+        "/dashboard/orders",
+        "/dashboard/tracking",
+        "/dashboard/drivers",
+      ];
+      const isAllowed = allowedPaths.some(
+        (p) => location.pathname === p || location.pathname === p + "/",
+      );
+
+      if (isAllowed) {
+        if (!run) {
+          // If we land on a deep page, move to overview first so the first target exists
+          if (location.pathname !== "/dashboard" && stepIndex === 0) {
+            navigate("/dashboard");
+          } else {
+            // Delay starting slightly more so views and metric stores can load
+            const timer = setTimeout(() => setRun(true), 1500);
+            return () => clearTimeout(timer);
+          }
+        }
+      } else {
+        if (run) setRun(false);
       }
-      // Delay starting slightly more so views and metric stores can load
-      const timer = setTimeout(() => setRun(true), 1500);
-      return () => clearTimeout(timer);
     }
-  }, [location.pathname, navigate, run, user]);
+  }, [location.pathname, navigate, run, user, stepIndex]);
 
   const handleJoyrideCallback = async (data: CallBackProps) => {
     const { action, index, status, type } = data;
@@ -122,6 +138,11 @@ export function OnboardingTour() {
     if (type === "step:after") {
       const nextIndex = action === "prev" ? index - 1 : index + 1;
 
+      if (nextIndex < 0 || nextIndex >= steps.length) {
+        setStepIndex(nextIndex);
+        return;
+      }
+
       // Update route based on upcoming step
       let targetPath = "";
       if (nextIndex >= 3 && nextIndex <= 4) {
@@ -130,7 +151,7 @@ export function OnboardingTour() {
         targetPath = "/dashboard/tracking";
       } else if (nextIndex === 7) {
         targetPath = "/dashboard/drivers";
-      } else if ((nextIndex >= 0 && nextIndex <= 2) || nextIndex > 8) {
+      } else if (nextIndex >= 0 && nextIndex <= 2) {
         targetPath = "/dashboard";
       }
 
@@ -138,11 +159,25 @@ export function OnboardingTour() {
         navigate(targetPath);
       }
 
-      // We give the router/store slightly more time, 800ms for a snappier feel
-      setTimeout(() => {
-        // Ensure the component is still running before updating state
-        setStepIndex(nextIndex);
-      }, 800);
+      // Poll until the target is actually on the DOM (handles Suspense/Lazy load delays)
+      let attempts = 0;
+      const targetSelector = steps[nextIndex]?.target as string;
+
+      const checkAndProceed = () => {
+        attempts++;
+        if (targetSelector && document.querySelector(targetSelector)) {
+          // Give it a tiny visual delay for transition smoothness
+          setTimeout(() => setStepIndex(nextIndex), 300);
+        } else if (attempts < 50) {
+          // Keep trying for 5 seconds
+          setTimeout(checkAndProceed, 100);
+        } else {
+          // Fallback
+          setStepIndex(nextIndex);
+        }
+      };
+
+      checkAndProceed();
     }
   };
 

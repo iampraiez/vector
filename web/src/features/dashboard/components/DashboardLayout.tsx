@@ -337,6 +337,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         richColors
         closeButton
         expand={false}
+        theme="light"
         toastOptions={{
           style: {
             borderRadius: "18px",

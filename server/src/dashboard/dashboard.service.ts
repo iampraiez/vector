@@ -862,6 +862,7 @@ export class DashboardService {
   async deleteDriver(companyId: string, driverId: string, userId: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { id: driverId, company_id: companyId },
+      include: { user: true },
     });
     if (!driver) throw new NotFoundException('Driver not found');
 
@@ -884,6 +885,23 @@ export class DashboardService {
       resourceId: driverId,
       oldValue: { user_id: driver.user_id },
     });
+
+    if (driver.user.email) {
+      await this.emailQueue.add(
+        'sendDriverTermination',
+        {
+          email: driver.user.email,
+          driverName: driver.user.full_name,
+          totalDeliveries: driver.total_deliveries,
+          avgRating: driver.avg_rating,
+          joinedAt: driver.created_at.toLocaleDateString(),
+          vehicleInfo: driver.vehicle_plate
+            ? `${driver.vehicle_type} (${driver.vehicle_plate})`
+            : driver.vehicle_type || 'N/A',
+        },
+        STANDARD_QUEUE_OPTIONS,
+      );
+    }
   }
 
   async getLiveTracking(companyId: string) {

@@ -57,6 +57,7 @@ interface DriverState {
     limit?: number;
     search?: string;
     status?: string;
+    silent?: boolean;
   }) => Promise<void>;
   fetchDriverDetail: (id: string) => Promise<void>;
   inviteDriver: (data: Partial<Driver>) => Promise<unknown>;
@@ -74,8 +75,8 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   isMutating: false,
   error: null,
 
-  fetchDrivers: async (params = { page: 1, limit: 10 }) => {
-    set({ isLoading: true, error: null });
+  fetchDrivers: async (params = { page: 1, limit: 10, silent: false }) => {
+    if (!params.silent) set({ isLoading: true, error: null });
     try {
       const res = await api.get("/dashboard/drivers", { params });
       set({

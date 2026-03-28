@@ -411,7 +411,7 @@ export class AuthService {
       userId: result.user.id,
       companyId: result.company.id,
       type: 'system_alert',
-      title: '🎉 Welcome aboard, Fleet Manager!',
+      title: `🎉 Welcome aboard, ${dto.full_name}!`,
       body: 'Your workspace is ready. Invite drivers and create your first route.',
     });
 
