@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import * as Bull from 'bull';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateReportCsv } from '../dashboard/utils/report.util';
@@ -21,8 +21,10 @@ export class EmailProcessor {
     private readonly prisma: PrismaService,
   ) {}
 
-  @Process('sendVerification')
-  async handleSendVerification(job: Job<{ email: string; token: string }>) {
+  @Process({ name: 'sendVerification', concurrency: 1 })
+  async handleSendVerification(
+    job: Bull.Job<{ email: string; token: string }>,
+  ) {
     const { email, token } = job.data;
     this.logger.log(`Processing verification email for ${email}`);
 
@@ -36,9 +38,9 @@ export class EmailProcessor {
     );
   }
 
-  @Process('sendPasswordReset')
+  @Process({ name: 'sendPasswordReset', concurrency: 1 })
   async handleSendPasswordReset(
-    job: Job<{ email: string; token: string; resetLink: string }>,
+    job: Bull.Job<{ email: string; token: string; resetLink: string }>,
   ) {
     const { email, resetLink } = job.data;
     this.logger.log(`Processing password reset email for ${email}`);
@@ -53,9 +55,9 @@ export class EmailProcessor {
     );
   }
 
-  @Process('sendReport')
+  @Process({ name: 'sendReport', concurrency: 1 })
   async handleSendReport(
-    job: Job<{ email: string; companyId: string; query: ReportQueryDto }>,
+    job: Bull.Job<{ email: string; companyId: string; query: ReportQueryDto }>,
   ) {
     const { email, companyId, query } = job.data;
     this.logger.log(`Generating report for ${email}`);
@@ -92,9 +94,9 @@ export class EmailProcessor {
    * - `status: 'scheduled' | 'assigned'` → “Your Delivery is Scheduled” (manager assignRoute).
    * - `status: 'active'` (else) → “Your Delivery is Out for Delivery” (driver startRoute when no prior send).
    */
-  @Process('sendTrackingLink')
+  @Process({ name: 'sendTrackingLink', concurrency: 1 })
   async handleSendTrackingLink(
-    job: Job<{
+    job: Bull.Job<{
       email: string;
       customerName: string;
       trackingLink: string;

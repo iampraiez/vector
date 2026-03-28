@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import * as Bull from 'bull';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import * as admin from 'firebase-admin';
@@ -31,8 +31,8 @@ export class NotificationProcessor {
   /**
    * Handles the 'deliver' job dispatched by NotificationsService.
    */
-  @Process('deliver')
-  async handleDeliver(job: Job<DeliverJobData>): Promise<void> {
+  @Process({ name: 'deliver', concurrency: 1 })
+  async handleDeliver(job: Bull.Job<DeliverJobData>): Promise<void> {
     const { notificationId, userId } = job.data;
     this.logger.log(
       `Delivering notification ${notificationId} to user ${userId}`,

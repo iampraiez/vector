@@ -1,4 +1,4 @@
-import { Module, Global, OnModuleInit } from '@nestjs/common';
+import { Module, Global, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { BullModule, InjectQueue } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
@@ -8,6 +8,7 @@ import { AccountProcessor } from './account.processor';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import * as Bull from 'bull';
+import Redis, { RedisOptions } from 'ioredis';
 
 @Global()
 @Module({
@@ -15,12 +16,47 @@ import * as Bull from 'bull';
     PrismaModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: configService.getOrThrow<string>('REDIS_URL'),
-        settings: {
-          maxStalledCount: 0,
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.getOrThrow<string>('REDIS_URL');
+        const redisOptions = {
+          maxRetriesPerRequest: null,
+          enableReadyCheck: false,
+        };
+
+        // Shared across all queues for 'client' and 'subscriber' roles
+        const sharedClient = new Redis(redisUrl, redisOptions);
+        const sharedSubscriber = new Redis(redisUrl, redisOptions);
+
+        return {
+          prefix: 'vector:queue',
+          createClient: (type: string, options: RedisOptions) => {
+            switch (type) {
+              case 'client':
+                return sharedClient;
+              case 'subscriber':
+                return sharedSubscriber;
+              case 'bclient':
+                return new Redis(redisUrl, options);
+              default:
+                return new Redis(redisUrl, options);
+            }
+          },
+          defaultJobOptions: {
+            removeOnComplete: true,
+            removeOnFail: 50,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 1000,
+            },
+          },
+          settings: {
+            maxStalledCount: 1,
+            lockDuration: 30000,
+            stalledInterval: 30000,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     BullModule.registerQueue({
@@ -38,9 +74,11 @@ import * as Bull from 'bull';
   providers: [EmailProcessor, NotificationProcessor, AccountProcessor],
   exports: [BullModule],
 })
-export class QueueModule implements OnModuleInit {
+export class QueueModule implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectQueue('account') private readonly accountQueue: Bull.Queue,
+    @InjectQueue('email') private readonly emailQueue: Bull.Queue,
+    @InjectQueue('notification') private readonly notificationQueue: Bull.Queue,
   ) {}
 
   async onModuleInit() {
@@ -63,5 +101,15 @@ export class QueueModule implements OnModuleInit {
         jobId: 'periodic-order-status-refresh',
       },
     );
+  }
+
+  async onModuleDestroy() {
+    console.log('Closing Bull queues...');
+    await Promise.allSettled([
+      this.accountQueue.close(),
+      this.emailQueue.close(),
+      this.notificationQueue.close(),
+    ]);
+    console.log('Bull queues closed.');
   }
 }

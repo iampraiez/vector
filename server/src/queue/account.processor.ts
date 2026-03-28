@@ -25,7 +25,7 @@ export class AccountProcessor {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  @Process('clearDataReport')
+  @Process({ name: 'clearDataReport', concurrency: 1 })
   async handleClearDataReport(
     job: Bull.Job<{
       companyId: string;
@@ -139,7 +139,7 @@ export class AccountProcessor {
     }
   }
 
-  @Process('exportHistory')
+  @Process({ name: 'exportHistory', concurrency: 1 })
   async handleExportHistory(
     job: Bull.Job<{
       userId: string;
@@ -268,7 +268,7 @@ export class AccountProcessor {
     }
   }
 
-  @Process('deleteAccount')
+  @Process({ name: 'deleteAccount', concurrency: 1 })
   async handleDeleteAccount(
     job: Bull.Job<{
       userId: string;
@@ -304,7 +304,7 @@ export class AccountProcessor {
     }
   }
 
-  @Process('checkTrialExpiry')
+  @Process({ name: 'checkTrialExpiry', concurrency: 1 })
   async handleCheckTrialExpiry() {
     this.logger.log('Running daily trial expiry check...');
 
@@ -363,7 +363,7 @@ export class AccountProcessor {
     }
   }
 
-  @Process('refreshAllOrderStatuses')
+  @Process({ name: 'refreshAllOrderStatuses', concurrency: 1 })
   async handleRefreshAllOrderStatuses() {
     this.logger.log('Running periodic order status refresh...');
     const now = new Date();
