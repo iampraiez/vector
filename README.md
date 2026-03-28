@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/master/icons/truck.svg" width="128" height="128" alt="Vector Logo" />
+  <img src="https://vector-route.vercel.app/icon.png" width="128" height="128" alt="Vector Logo" />
 </p>
 
 <h1 align="center">Vector</h1>
