@@ -30,15 +30,21 @@ import Redis, { RedisOptions } from 'ioredis';
         return {
           prefix: 'vector:queue',
           createClient: (type: string, options: RedisOptions) => {
+            const safeOptions: RedisOptions = {
+              ...options,
+              maxRetriesPerRequest: null,
+              enableReadyCheck: false,
+            };
+
             switch (type) {
               case 'client':
                 return sharedClient;
               case 'subscriber':
                 return sharedSubscriber;
               case 'bclient':
-                return new Redis(redisUrl, options);
+                return new Redis(redisUrl, safeOptions);
               default:
-                return new Redis(redisUrl, options);
+                return new Redis(redisUrl, safeOptions);
             }
           },
           defaultJobOptions: {
