@@ -98,62 +98,62 @@ export class DashboardService {
       prevTotalStops,
       avgRatingRow,
     ] = await Promise.all([
-      this.prisma.driver.count({
+      this.prisma.readDb.driver.count({
         where: { company_id: companyId, status: 'active' },
       }),
-      this.prisma.driver.count({
+      this.prisma.readDb.driver.count({
         where: { company_id: companyId, is_active: true },
       }),
-      this.prisma.stop.count({
+      this.prisma.readDb.stop.count({
         where: { company_id: companyId, status: 'unassigned' },
       }),
-      this.prisma.stop.count({
+      this.prisma.readDb.stop.count({
         where: {
           company_id: companyId,
           status: 'completed',
           completed_at: { gte: currentStart },
         },
       }),
-      this.prisma.stop.count({
+      this.prisma.readDb.stop.count({
         where: { company_id: companyId, created_at: { gte: currentStart } },
       }),
-      this.prisma.route.findFirst({
+      this.prisma.readDb.route.findFirst({
         where: { company_id: companyId, status: 'active' },
         orderBy: { created_at: 'desc' },
       }),
-      this.prisma.company.findUnique({
+      this.prisma.readDb.company.findUnique({
         where: { id: companyId },
         select: { company_code: true },
       }),
       // Previous period stats
-      this.prisma.driver.count({
+      this.prisma.readDb.driver.count({
         where: {
           company_id: companyId,
           status: 'active',
           last_active_at: { gte: previousStart, lt: currentStart },
         },
       }),
-      this.prisma.stop.count({
+      this.prisma.readDb.stop.count({
         where: {
           company_id: companyId,
           status: 'unassigned',
           created_at: { gte: previousStart, lt: currentStart },
         },
       }),
-      this.prisma.stop.count({
+      this.prisma.readDb.stop.count({
         where: {
           company_id: companyId,
           status: 'completed',
           completed_at: { gte: previousStart, lt: currentStart },
         },
       }),
-      this.prisma.stop.count({
+      this.prisma.readDb.stop.count({
         where: {
           company_id: companyId,
           created_at: { gte: previousStart, lt: currentStart },
         },
       }),
-      this.prisma.stop.aggregate({
+      this.prisma.readDb.stop.aggregate({
         where: {
           company_id: companyId,
           status: 'completed',
@@ -484,7 +484,7 @@ export class DashboardService {
   }
 
   private async getOrderStats(companyId: string) {
-    const stops = await this.prisma.stop.groupBy({
+    const stops = await this.prisma.readDb.stop.groupBy({
       by: ['status'],
       where: { company_id: companyId },
       _count: true,
@@ -941,7 +941,7 @@ export class DashboardService {
       ? { gte: new Date(query.start_date) }
       : undefined;
 
-    const statsResult = await this.prisma.stop.groupBy({
+    const statsResult = await this.prisma.readDb.stop.groupBy({
       by: ['status'],
       where: {
         company_id: companyId,
@@ -959,7 +959,7 @@ export class DashboardService {
       if (s.status === 'failed') failed += s._count;
     });
 
-    const routes = await this.prisma.route.aggregate({
+    const routes = await this.prisma.readDb.route.aggregate({
       where: {
         company_id: companyId,
         status: 'completed',
@@ -1001,7 +1001,7 @@ export class DashboardService {
       })
       .reverse();
 
-    const stops = await this.prisma.stop.findMany({
+    const stops = await this.prisma.readDb.stop.findMany({
       where: {
         company_id: companyId,
         driver_id: _query.driver_id || undefined,
@@ -1047,17 +1047,17 @@ export class DashboardService {
     const skip = (page - 1) * limit;
 
     const [drivers, total] = await Promise.all([
-      this.prisma.driver.findMany({
+      this.prisma.readDb.driver.findMany({
         where: { company_id: companyId },
         include: { user: true },
         skip,
         take: limit,
       }),
-      this.prisma.driver.count({ where: { company_id: companyId } }),
+      this.prisma.readDb.driver.count({ where: { company_id: companyId } }),
     ]);
 
     const driverIds = drivers.map((d) => d.id);
-    const stops = await this.prisma.stop.findMany({
+    const stops = await this.prisma.readDb.stop.findMany({
       where: {
         driver_id: { in: driverIds },
         status: 'completed',

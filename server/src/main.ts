@@ -7,10 +7,20 @@ import helmet from 'helmet';
 import * as fs from 'fs';
 import * as yaml from 'yaml';
 import { join } from 'path';
+import { RedisIoAdapter } from './adapters/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   const logger = new Logger('Bootstrap');
+
+  // ─── Fix 1: Redis IO Adapter ───────────────────────────────────────────────
+  // Replace the default in-memory Socket.io transport with a Redis-backed one.
+  // This allows multiple server instances to broadcast WebSocket events to each
+  // other via Redis Pub/Sub, solving the "Single-Node Trap" for horizontal scaling.
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
+  // ───────────────────────────────────────────────────────────────────────────
 
   app.use(helmet());
   app.useGlobalPipes(

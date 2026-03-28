@@ -38,6 +38,7 @@
     "@nestjs/websockets": "^11.1.16",
     "@prisma/client": "^5.22.0",
     "@sendgrid/mail": "^8.1.6",
+    "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
