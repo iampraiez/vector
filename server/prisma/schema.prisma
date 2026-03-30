@@ -338,4 +338,7 @@ enum NotificationType {
   system_alert
   rating_received
   route_completed
+  stop_arrived
+  stop_completed
 }
+

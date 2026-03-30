@@ -344,15 +344,25 @@ export class DriverService {
     const active: AssignmentItem[] = [];
     const upcoming: AssignmentItem[] = [];
     const completed: AssignmentItem[] = [];
+    const now = new Date();
 
     // Process Routes
     routes.forEach((route) => {
-      if (route.status === 'completed' || route.status === 'cancelled') {
-        completed.push({ ...route, type: 'route' } as AssignmentItem);
-      } else if (route.status === 'active' || route.date === today) {
+      const status = route.status;
+      const isToday = route.date === today;
+      const firstStop = route.stops[0];
+      const isPastStartTime = firstStop?.time_window_start
+        ? today + 'T' + firstStop.time_window_start + ':00' <= now.toISOString()
+        : true;
+
+      if (status === 'active') {
         active.push({ ...route, type: 'route' } as AssignmentItem);
-      } else {
+      } else if (isToday && isPastStartTime) {
         upcoming.push({ ...route, type: 'route' } as AssignmentItem);
+      } else if (isToday || route.date > today) {
+        upcoming.push({ ...route, type: 'route' } as AssignmentItem);
+      } else if (status === 'completed' || status === 'cancelled') {
+        completed.push({ ...route, type: 'route' } as AssignmentItem);
       }
     });
 
@@ -469,13 +479,23 @@ export class DriverService {
       });
     }
 
-    await this.notificationsService.create({
-      userId: userId,
-      companyId: route.company_id,
-      type: 'route_started',
-      title: 'Route Started',
-      body: `Your route "${route.name}" has officially started. Safe travels!`,
+    const admin = await this.prisma.user.findFirst({
+      where: {
+        company_id: driver.company_id,
+        role: { in: ['admin', 'manager'] },
+      },
+      orderBy: { created_at: 'asc' },
     });
+
+    if (admin) {
+      await this.notificationsService.create({
+        userId: admin.id,
+        companyId: driver.company_id,
+        type: 'route_started',
+        title: 'Route Started',
+        body: `${driver.user.full_name} has started route: ${route.name}`,
+      });
+    }
 
     return { message: 'Route started successfully' };
   }
@@ -603,20 +623,20 @@ export class DriverService {
     });
 
     // Notify company/manager that driver has arrived at delivery point
-    const manager = await this.prisma.user.findFirst({
+    const admin = await this.prisma.user.findFirst({
       where: {
         company_id: stop.company_id,
         role: { in: ['admin', 'manager'] },
       },
       orderBy: { created_at: 'asc' },
     });
-    if (manager) {
+    if (admin) {
       await this.notificationsService.create({
-        userId: manager.id,
+        userId: admin.id,
         companyId: stop.company_id,
-        type: 'system_alert',
+        type: 'stop_arrived',
         title: 'Driver Arrived',
-        body: `${driver.user.full_name} has arrived at ${stop.customer_name}'s location for delivery.`,
+        body: `${driver.user.full_name} has arrived at ${stop.customer_name}'s location.`,
       });
     }
 
@@ -712,20 +732,20 @@ export class DriverService {
     ]);
 
     // Notify fleet manager of completed delivery
-    const manager = await this.prisma.user.findFirst({
+    const admin = await this.prisma.user.findFirst({
       where: {
         company_id: stop.company_id,
         role: { in: ['admin', 'manager'] },
       },
       orderBy: { created_at: 'asc' },
     });
-    if (manager) {
+    if (admin) {
       await this.notificationsService.create({
-        userId: manager.id,
-        companyId: stop.company_id,
-        type: 'system_alert',
+        userId: admin.id,
+        companyId: driver.company_id,
+        type: 'stop_completed',
         title: 'Delivery Completed',
-        body: `${driver.user.full_name} completed a delivery for "${stop.customer_name}".`,
+        body: `${driver.user.full_name} completed delivery for ${stop.customer_name}.`,
       });
     }
 

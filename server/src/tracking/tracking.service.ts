@@ -95,8 +95,18 @@ export class TrackingService {
       created_at: Date;
     };
 
+    const now = new Date();
+    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+    let timeBegun = true;
+    if (stopData.time_window_start) {
+      const [startH, startM] = stopData.time_window_start
+        .split(':')
+        .map(Number);
+      timeBegun = currentTotalMinutes >= startH * 60 + startM;
+    }
+
     let displayStatus: string = stopData.status;
-    if (displayStatus === 'pending' && stopData.started_at) {
+    if (displayStatus === 'pending' && stopData.started_at && timeBegun) {
       displayStatus = 'out_for_delivery';
     } else if (displayStatus === 'in_progress') {
       displayStatus = 'out_for_delivery';

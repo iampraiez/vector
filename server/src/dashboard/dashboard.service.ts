@@ -700,7 +700,10 @@ export class DashboardService {
 
     // Get recent completed stops (deliveries)
     const recentStops = await this.prisma.stop.findMany({
-      where: { driver_id: driverId, status: 'completed' },
+      where: {
+        driver_id: driverId,
+        status: { in: ['completed', 'failed', 'returned'] },
+      },
       take: 10,
       orderBy: { completed_at: 'desc' },
     });

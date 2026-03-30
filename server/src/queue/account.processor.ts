@@ -422,15 +422,6 @@ export class AccountProcessor {
 
           if (currentTotalMinutes > endTotalMinutes) {
             newStatus = 'failed';
-          } else if (order.time_window_start) {
-            const [startH, startM] = order.time_window_start
-              .split(':')
-              .map(Number);
-            const startTotalMinutes = startH * 60 + startM;
-
-            if (currentTotalMinutes >= startTotalMinutes) {
-              newStatus = 'in_progress';
-            }
           }
         }
 
