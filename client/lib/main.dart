@@ -7,6 +7,7 @@ import 'package:client/core/theme/theme_controller.dart';
 import 'package:client/core/providers/route_progress_provider.dart';
 import 'package:client/core/providers/auth_provider.dart';
 import 'package:client/navigation/router.dart';
+import 'package:client/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:client/core/services/driver_api_service.dart';
@@ -30,7 +31,10 @@ void main() async {
 
   // Initialize Firebase (wrapped in try-catch for missing google-services.json)
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission();
     final token = await messaging.getToken();

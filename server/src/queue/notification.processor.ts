@@ -8,10 +8,21 @@ import * as admin from 'firebase-admin';
 // Initialize Firebase Admin safely
 try {
   if (!admin.apps.length) {
-    admin.initializeApp();
+    const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (credentials && credentials.trim().startsWith('{')) {
+      // Handle stringified JSON (for cloud providers like Render/Heroku)
+      admin.initializeApp({
+        credential: admin.credential.cert(
+          JSON.parse(credentials) as admin.ServiceAccount,
+        ),
+      });
+    } else {
+      // Fallback to default (path-based) or no-config
+      admin.initializeApp();
+    }
   }
-} catch {
-  // Ignored or logged in production
+} catch (error) {
+  console.error('Firebase Admin initialization failed:', error);
 }
 
 interface DeliverJobData {

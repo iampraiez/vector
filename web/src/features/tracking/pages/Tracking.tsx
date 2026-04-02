@@ -736,7 +736,6 @@ export function CustomerTracking() {
                   key={star}
                   onClick={() => {
                     setSelectedRating(star);
-                    void handleSubmitRating(star);
                   }}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}

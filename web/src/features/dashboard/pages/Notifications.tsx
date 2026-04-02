@@ -64,15 +64,33 @@ export function DashboardNotifications() {
 
   // We map the backend type to category here to support filtering
   const getCategory = (type: string): "orders" | "drivers" | "system" => {
-    if (type.includes("order") || type === "new_assignment") return "orders";
-    if (type.includes("driver") || type === "route_completed") return "drivers";
+    if (
+      type.includes("order") ||
+      type === "new_assignment" ||
+      type === "delivery_failed" ||
+      type === "stop_completed"
+    )
+      return "orders";
+    if (
+      type.includes("driver") ||
+      type === "route_completed" ||
+      type === "route_started" ||
+      type === "stop_arrived"
+    )
+      return "drivers";
     return "system";
   };
 
   const getIconType = (type: string) => {
     if (type.includes("system") || type === "new_assignment") return "system";
-    if (type.includes("driver") || type === "route_completed") return "driver";
-    if (type === "delivery_failed") return "alert";
+    if (
+      type.includes("driver") ||
+      type === "route_completed" ||
+      type === "route_started" ||
+      type === "stop_arrived"
+    )
+      return "driver";
+    if (type === "delivery_failed" || type === "stop_completed") return "order";
     return "order";
   };
 

@@ -53,7 +53,7 @@ export function DashboardTracking() {
 
     const interval = setInterval(() => {
       fetchDrivers({ limit: 100, silent: true });
-    }, 18000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [fetchDrivers, fetchRoutes]);

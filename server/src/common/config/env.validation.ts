@@ -17,5 +17,6 @@ export const envValidationSchema = Joi.object({
   CLOUDINARY_UPLOAD_PRESET: Joi.string().required(),
   PAYSTACK_SECRET_KEY: Joi.string().required(),
   PAYSTACK_PUBLIC_KEY: Joi.string().required(),
+  GOOGLE_APPLICATION_CREDENTIALS: Joi.string().optional(),
   PORT: Joi.number().integer().min(1).max(65535).default(8080),
 });

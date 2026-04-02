@@ -25,6 +25,7 @@ interface DeliveryHistory {
   packages: number;
   signature: boolean;
   timeWindow: string;
+  status: string;
 }
 
 export function DashboardDriverDetail() {
@@ -145,6 +146,7 @@ export function DashboardDriverDetail() {
     packages: 1, // Stop represents a single delivery in this context
     signature: false,
     timeWindow: stop.delivery_date || "—",
+    status: stop.status,
   }));
 
   const currentHistory = historyData; // Simplify for now as we don't have filtered history from API yet
@@ -334,9 +336,22 @@ export function DashboardDriverDetail() {
                       <p className="text-[13px] font-semibold text-gray-800">
                         {delivery.customerName}
                       </p>
-                      <p className="text-[11px] text-gray-400 font-medium">
-                        {delivery.packages} pkgs
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] text-gray-400 font-medium">
+                          {delivery.packages} pkgs
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
+                            delivery.status === "completed"
+                              ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                              : delivery.status === "failed"
+                                ? "bg-red-50 text-red-600 border border-red-100"
+                                : "bg-amber-50 text-amber-600 border border-amber-100"
+                          }`}
+                        >
+                          {delivery.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-[13px] text-gray-500 font-medium truncate max-w-50">
