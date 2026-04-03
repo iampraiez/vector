@@ -344,9 +344,9 @@ export class AccountProcessor {
         });
 
         // 3. Notify the manager
-        if (record.company.contact_email || record.company.billing_email) {
-          const recipient =
-            record.company.contact_email || record.company.billing_email;
+        const recipient =
+          record.company.contact_email || record.company.billing_email;
+        if (recipient) {
           await this.mailService.sendMail(
             recipient,
             'Your Vector Trial has Ended',
@@ -355,7 +355,6 @@ export class AccountProcessor {
           );
         }
       }
-
       this.logger.log(`Processed ${expiredTrials.length} expired trials.`);
     } catch (err) {
       this.logger.error(`Failed to run trial expiry check: ${err}`);
