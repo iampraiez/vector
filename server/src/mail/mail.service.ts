@@ -1,24 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import sgMail from '@sendgrid/mail';
-
-interface SendGridError {
-  response?: {
-    body?: unknown;
-  };
-  message?: string;
-}
+import * as nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @Injectable()
 export class MailService {
   private readonly from: string;
   private readonly logger = new Logger(MailService.name);
+  private readonly transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo>;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.getOrThrow<string>('SENDGRID_API_KEY');
-    sgMail.setApiKey(apiKey);
-
     this.from = this.configService.getOrThrow<string>('SENDER_EMAIL');
+    const user = this.configService.getOrThrow<string>('EMAIL_USER');
+    const pass = this.configService.getOrThrow<string>('EMAIL_PASS');
+
+    const options: SMTPTransport.Options = {
+      service: 'gmail',
+      auth: {
+        user,
+        pass,
+      },
+    };
+
+    this.transporter = nodemailer.createTransport(options);
   }
 
   async sendMail(
@@ -29,16 +33,9 @@ export class MailService {
     attachments?: { content: string; filename: string; type: string }[],
   ): Promise<{ messageId: string }> {
     try {
-      await sgMail.send({
+      const mailOptions: nodemailer.SendMailOptions = {
+        from: `"Vector Fleet" <${this.from}>`,
         to,
-        from: {
-          email: this.from,
-          name: 'Vector Fleet',
-        },
-        replyTo: {
-          email: this.from,
-          name: 'Vector Fleet',
-        },
         subject,
         text:
           text ||
@@ -48,33 +45,23 @@ export class MailService {
             .trim(),
         html,
         attachments: attachments?.map((a) => ({
-          content: Buffer.from(a.content).toString('base64'),
+          content: Buffer.from(a.content, 'utf-8'),
           filename: a.filename,
-          type: a.type,
-          disposition: 'attachment',
+          contentType: a.type,
         })),
-      });
+      };
 
-      this.logger.log(`Email sent via SendGrid to ${to}`);
+      const info: SMTPTransport.SentMessageInfo =
+        await this.transporter.sendMail(mailOptions);
 
-      return { messageId: 'sendgrid-' + Date.now() };
+      this.logger.log(
+        `Email sent via SMTP to ${to}: ${String(info.messageId)}`,
+      );
+
+      return { messageId: String(info.messageId) };
     } catch (error: unknown) {
-      if (typeof error === 'object' && error !== null) {
-        const err = error as SendGridError;
-        this.logger.error(
-          `FULL SENDGRID ERROR: ${JSON.stringify(error, null, 2)}`,
-        );
-        if (err.response && err.response.body) {
-          this.logger.error(
-            `Failed to send email to ${to}: ${JSON.stringify(err.response.body)}`,
-          );
-        } else if (err.message) {
-          this.logger.error(`Failed to send email to ${to}: ${err.message}`);
-        }
-        throw new Error(err.message || 'Unknown email error');
-      }
       this.logger.error(`Failed to send email to ${to}: ${String(error)}`);
-      throw new Error(String(error));
+      throw new Error(`Email delivery failed: ${String(error)}`);
     }
   }
 }

@@ -348,7 +348,7 @@ export class AccountProcessor {
           const recipient =
             record.company.contact_email || record.company.billing_email;
           await this.mailService.sendMail(
-            recipient!,
+            recipient,
             'Your Vector Trial has Ended',
             trialExpiredTemplate(record.company.name),
             `Your trial for ${record.company.name} has ended. Please upgrade to continue using Vector.`,
