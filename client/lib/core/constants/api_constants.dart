@@ -18,6 +18,15 @@ class ApiConstants {
     defaultValue: 'development',
   );
 
+  static const String _envWebUrl = String.fromEnvironment('WEB_URL');
+
+  static String get webUrl {
+    if (_envWebUrl.isNotEmpty) {
+      return _envWebUrl;
+    }
+    return 'http://localhost:5173';
+  }
+
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) {
       return _envBaseUrl;

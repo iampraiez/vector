@@ -30,7 +30,7 @@ final GoRouter appRouter = GoRouter(
     final auth = authProvider;
     final isAuth = auth.isAuthenticated;
 
-    final authPaths = ['/driver', '/signin', '/signup'];
+    final authPaths = ['/', '/driver', '/signin', '/signup'];
     // We explicitly allow /forgot-password even if authenticated as per user request
     // and /verify-email might be needed after signup
 
@@ -61,6 +61,10 @@ final GoRouter appRouter = GoRouter(
     return null;
   },
   routes: <RouteBase>[
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const WelcomeScreen(),
+    ),
     // Driver App - Welcome & Auth
     GoRoute(
       path: '/driver',

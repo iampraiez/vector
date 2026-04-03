@@ -44,14 +44,19 @@ async function bootstrap() {
   if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('Vector API')
-      .setDescription('Vector Delivery Management API documentation')
-      .setVersion('1.0')
+      .setDescription(
+        'Full API specification for the Vector fleet management platform',
+      )
+      .setVersion('1.0.0')
       .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, config);
 
     const yamlString = yaml.stringify(document);
-    fs.writeFileSync(join(process.cwd(), 'openapi.yaml'), yamlString);
+    fs.writeFileSync(
+      join(process.cwd(), 'api-docs', 'openapi.yaml'),
+      yamlString,
+    );
 
     SwaggerModule.setup('api-docs', app, document);
   }

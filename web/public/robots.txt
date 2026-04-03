@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /download
+Allow: /privacy
+Allow: /terms
+Disallow: /dashboard/
+Disallow: /api/
+
+Sitemap: https://vector-fleet.vercel.app/sitemap.xml

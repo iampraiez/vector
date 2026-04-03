@@ -69,7 +69,9 @@ export class MapService {
       results?: Array<{ lat: number; lon: number; formatted: string }>;
     };
     try {
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), {
+        signal: AbortSignal.timeout(6000),
+      });
       data = (await res.json()) as typeof data;
     } catch (err) {
       this.logger.error('Geocoding network error', err);
@@ -104,7 +106,9 @@ export class MapService {
       results?: Array<{ lat: number; lon: number; formatted: string }>;
     };
     try {
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), {
+        signal: AbortSignal.timeout(6000),
+      });
       data = (await res.json()) as typeof data;
     } catch (err) {
       this.logger.error('Reverse geocoding network error', err);
@@ -148,7 +152,9 @@ export class MapService {
       }>;
     };
     try {
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), {
+        signal: AbortSignal.timeout(6000),
+      });
       data = (await res.json()) as typeof data;
     } catch (err) {
       this.logger.error('Directions network error', err);
@@ -204,6 +210,7 @@ export class MapService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(6000),
       });
 
       const data = (await res.json()) as GeoapifyOptimizationResponse;

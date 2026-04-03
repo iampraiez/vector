@@ -30,6 +30,9 @@ export interface RecentStop {
   status: string;
   completed_at: string | null;
   delivery_date: string | null;
+  packages?: number;
+  time_window_start?: string | null;
+  time_window_end?: string | null;
 }
 
 export interface RecentRoute {

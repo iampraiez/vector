@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { Helmet } from "react-helmet-async";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Download, Smartphone } from "lucide-react";
@@ -48,15 +49,18 @@ export function DownloadApp() {
     };
   }, []);
 
-  // Use raw=1 format for direct dropbox download
-  const rawApkUrl =
-    "https://www.dropbox.com/scl/fi/icn8jkm6cuqtu6lcc97eu/app-release.apk?rlkey=uwn32qlj1hnogfx8l7x0rvr5o&st=h9u7luaz&raw=1";
-  const apkUrl = import.meta.env.VITE_APK_URL
-    ? import.meta.env.VITE_APK_URL.replace("dl=1", "raw=1")
-    : rawApkUrl;
+  const apkUrl = import.meta.env.VITE_APK_URL!;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-emerald-200">
+      <Helmet>
+        <title>Download Driver App | Vector</title>
+        <meta
+          name="description"
+          content="Download the Vector driver app to receive optimized routes, capture proof of delivery, and manage your stops with ease."
+        />
+        <link rel="canonical" href="https://vector-fleet.vercel.app/download" />
+      </Helmet>
       {/* Top nav */}
       <nav className="shrink-0 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between sticky top-0 z-50">
         <div

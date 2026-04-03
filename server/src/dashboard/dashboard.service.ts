@@ -87,40 +87,19 @@ export class DashboardService {
     const [
       activeDrivers,
       totalDrivers,
-      pendingStops,
-      completedStops,
-      totalStops,
-      activeRoute,
       companyRow,
       prevActiveDrivers,
       prevPendingStops,
-      prevCompletedStops,
-      prevTotalStops,
+      currentStops,
+      prevStops,
+      activeRoute,
+      pendingStops,
       avgRatingRow,
     ] = await Promise.all([
       this.prisma.readDb.driver.count({
         where: { company_id: companyId, status: 'active' },
       }),
-      this.prisma.readDb.driver.count({
-        where: { company_id: companyId, is_active: true },
-      }),
-      this.prisma.readDb.stop.count({
-        where: { company_id: companyId, status: 'unassigned' },
-      }),
-      this.prisma.readDb.stop.count({
-        where: {
-          company_id: companyId,
-          status: 'completed',
-          completed_at: { gte: currentStart },
-        },
-      }),
-      this.prisma.readDb.stop.count({
-        where: { company_id: companyId, created_at: { gte: currentStart } },
-      }),
-      this.prisma.readDb.route.findFirst({
-        where: { company_id: companyId, status: 'active' },
-        orderBy: { created_at: 'desc' },
-      }),
+      this.prisma.readDb.driver.count({ where: { company_id: companyId } }),
       this.prisma.readDb.company.findUnique({
         where: { id: companyId },
         select: { company_code: true },
@@ -140,17 +119,40 @@ export class DashboardService {
           created_at: { gte: previousStart, lt: currentStart },
         },
       }),
-      this.prisma.readDb.stop.count({
+      // Current period stops for on-time calculation
+      this.prisma.readDb.stop.findMany({
+        where: {
+          company_id: companyId,
+          status: 'completed',
+          completed_at: { gte: currentStart },
+        },
+        select: {
+          completed_at: true,
+          time_window_end: true,
+          delivery_date: true,
+        },
+      }),
+      // Previous period stops for on-time calculation
+      this.prisma.readDb.stop.findMany({
         where: {
           company_id: companyId,
           status: 'completed',
           completed_at: { gte: previousStart, lt: currentStart },
         },
+        select: {
+          completed_at: true,
+          time_window_end: true,
+          delivery_date: true,
+        },
+      }),
+      this.prisma.readDb.route.findFirst({
+        where: { company_id: companyId, status: 'active' },
+        orderBy: { created_at: 'desc' },
       }),
       this.prisma.readDb.stop.count({
         where: {
           company_id: companyId,
-          created_at: { gte: previousStart, lt: currentStart },
+          status: { in: ['assigned', 'pending', 'in_progress'] },
         },
       }),
       this.prisma.readDb.stop.aggregate({
@@ -163,28 +165,44 @@ export class DashboardService {
       }),
     ]);
 
+    const isOnTime = (stop: {
+      completed_at: Date | null;
+      time_window_end: string | null;
+      delivery_date: string | null;
+    }) => {
+      if (!stop.completed_at || !stop.time_window_end || !stop.delivery_date)
+        return true;
+      try {
+        const [hours, minutes] = stop.time_window_end.split(':').map(Number);
+        const [year, month, day] = stop.delivery_date.split('-').map(Number);
+        const deadline = new Date(
+          Date.UTC(year, month - 1, day, hours, minutes),
+        );
+        return stop.completed_at <= deadline;
+      } catch {
+        return true;
+      }
+    };
+
     const calculateChange = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? `+${current}` : '+0';
       const change = current - previous;
       return change >= 0 ? `+${change}` : `${change}`;
     };
 
-    const currentOnTimeRate =
-      completedStops > 0
-        ? parseFloat(((completedStops / totalStops) * 100).toFixed(1))
-        : null;
-    const prevOnTimeRate =
-      prevCompletedStops > 0
-        ? parseFloat(((prevCompletedStops / prevTotalStops) * 100).toFixed(1))
-        : null;
+    const calculateOnTimeRate = (stops: any[]) => {
+      if (stops.length === 0) return 0;
+      const onTimeCount = stops.filter(isOnTime).length;
+      return parseFloat(((onTimeCount / stops.length) * 100).toFixed(1));
+    };
 
-    const onTimeRateChange =
-      currentOnTimeRate != null && prevOnTimeRate != null
-        ? calculateChange(
-            Math.round(currentOnTimeRate),
-            Math.round(prevOnTimeRate),
-          )
-        : '+0';
+    const currentOnTimeRate = calculateOnTimeRate(currentStops);
+    const prevOnTimeRate = calculateOnTimeRate(prevStops);
+
+    const onTimeRateChange = calculateChange(
+      Math.round(currentOnTimeRate),
+      Math.round(prevOnTimeRate),
+    );
 
     return {
       active_drivers: activeDrivers,
@@ -450,10 +468,14 @@ export class DashboardService {
       throw new NotFoundException('Stop not found');
     }
 
-    if (stop.status !== 'failed' && stop.status !== 'returned') {
+    if (stop.status === 'completed' || stop.status === 'failed') {
       throw new ConflictException(
-        'Only failed or returned stops can be reassigned',
+        'Completed or failed orders cannot be reassigned',
       );
+    }
+
+    if (stop.status !== 'returned') {
+      throw new ConflictException('Only returned stops can be reassigned');
     }
 
     const updatedStop = await this.prisma.stop.update({
@@ -512,6 +534,12 @@ export class DashboardService {
     });
 
     if (!stop) throw new NotFoundException('Order not found');
+
+    if (stop.status === 'completed' || stop.status === 'failed') {
+      throw new ConflictException(
+        'Cannot update an order that is already completed or failed.',
+      );
+    }
 
     // BLOCK: Location/Address changes if route is active
     if (stop.route?.status === 'active') {
@@ -597,9 +625,9 @@ export class DashboardService {
     });
 
     if (!stop) throw new NotFoundException('Order not found');
-    if (['in_progress', 'completed'].includes(stop.status)) {
+    if (['in_progress', 'completed', 'failed'].includes(stop.status)) {
       throw new ConflictException(
-        'Cannot delete an order that is in progress or completed.',
+        'Cannot delete an order that is in progress, completed, or failed.',
       );
     }
 
@@ -694,7 +722,7 @@ export class DashboardService {
     // Get recent routes
     const recentRoutes = await this.prisma.route.findMany({
       where: { driver_id: driverId },
-      take: 5,
+      take: 20,
       orderBy: { date: 'desc' },
     });
 
@@ -704,7 +732,7 @@ export class DashboardService {
         driver_id: driverId,
         status: { in: ['completed', 'failed', 'returned'] },
       },
-      take: 10,
+      take: 100,
       orderBy: { completed_at: 'desc' },
     });
 

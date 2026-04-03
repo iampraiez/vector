@@ -591,7 +591,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               value: _statsLoading ? '--' : (_memberSince ?? 'Driver'),
                             )),
                             Container(width: 1, height: 40, color: AppColors.border),
-                            Expanded(child: _ProfileStat(label: 'Rating', value: _statsLoading ? '--' : (_rating > 0 ? _rating.toStringAsFixed(1) : '--'), icon: _rating > 0 ? Icons.star : null)),
+                            Expanded(child: _ProfileStat(label: 'Rating', value: _statsLoading ? '--' : (_rating > 0 ? _rating.toStringAsFixed(1) : '5.0'), icon: Icons.star)),
                           ],
                         )
                       ],

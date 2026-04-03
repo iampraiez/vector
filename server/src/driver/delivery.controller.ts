@@ -1,4 +1,4 @@
-import { Controller, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Param, Body, UseGuards, Get } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -36,5 +36,13 @@ export class DeliveryController {
     @Body() dto: FailDeliveryDto,
   ) {
     return this.driverService.failDelivery(userId, stopId, dto);
+  }
+
+  @Get('lookup/:token')
+  lookupStopByToken(
+    @CurrentUser('id') userId: string,
+    @Param('token') token: string,
+  ) {
+    return this.driverService.lookupStopByToken(userId, token);
   }
 }

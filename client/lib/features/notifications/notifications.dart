@@ -76,35 +76,32 @@ class NotificationsScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          if (unreadCount > 0)
+          if (hasData)
             Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: TextButton.icon(
-                onPressed: () {
-                  ns.markAllAsRead();
-                },
-                icon: const Icon(
-                  Icons.done_all,
-                  size: 16,
-                  color: AppColors.textMuted,
-                ),
-                label: const Text(
-                  'Mark all read',
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: () => _showClearAllConfirm(context, ns),
+                child: const Text(
+                  'Clear all',
                   style: TextStyle(
-                    color: AppColors.textMuted,
+                    color: AppColors.error,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              ),
+            ),
+          if (unreadCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: IconButton(
+                onPressed: () => ns.markAllAsRead(),
+                icon: const Icon(
+                  Icons.done_all,
+                  size: 20,
+                  color: AppColors.primary,
                 ),
+                tooltip: 'Mark all as read',
               ),
             )
         ],
@@ -187,17 +184,17 @@ class NotificationsScreen extends StatelessWidget {
                                 ns.markAsRead(n.id);
                               }
                             : null,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                         child: Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: isUnread ? Colors.white : AppColors.surface,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isUnread
-                                  ? AppColors.primary.withValues(alpha: 0.3)
-                                  : AppColors.border,
-                              width: isUnread ? 1.5 : 1,
+                                  ? AppColors.primary.withValues(alpha: 0.15)
+                                  : Colors.transparent,
+                              width: 1,
                             ),
                             boxShadow: isUnread
                                 ? [
@@ -205,7 +202,7 @@ class NotificationsScreen extends StatelessWidget {
                                       color: AppColors.primary.withValues(
                                         alpha: 0.05,
                                       ),
-                                      blurRadius: 10,
+                                      blurRadius: 15,
                                       offset: const Offset(0, 4),
                                     ),
                                   ]
@@ -215,17 +212,17 @@ class NotificationsScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   color: isUnread
-                                      ? AppColors.primary.withValues(alpha: 0.1)
+                                      ? AppColors.primary.withValues(alpha: 0.08)
                                       : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  shape: BoxShape.circle,
                                   border: Border.all(
                                     color: isUnread
                                         ? AppColors.primary.withValues(
-                                            alpha: 0.2,
+                                            alpha: 0.1,
                                           )
                                         : AppColors.border,
                                   ),
@@ -238,27 +235,26 @@ class NotificationsScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             n.title,
                                             style: TextStyle(
-                                              fontSize: 15,
+                                              fontSize: 16,
                                               fontWeight: isUnread
-                                                  ? FontWeight.w700
+                                                  ? FontWeight.w800
                                                   : FontWeight.w600,
                                               color: isUnread
                                                   ? AppColors.textPrimary
                                                   : AppColors.textPrimary
-                                                        .withValues(alpha: 0.8),
+                                                        .withValues(alpha: 0.7),
                                               letterSpacing: -0.2,
                                             ),
                                           ),
                                         ),
                                         if (isUnread) ...[
-                                          const SizedBox(width: 8),
+                                          const SizedBox(width: 12),
                                           Container(
                                             width: 8,
                                             height: 8,
@@ -273,26 +269,28 @@ class NotificationsScreen extends StatelessWidget {
                                         ],
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 6),
                                     Text(
                                       n.message,
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: isUnread
-                                            ? AppColors.textPrimary.withValues(
-                                                alpha: 0.8,
-                                              )
+                                            ? AppColors.textSecondary
                                             : AppColors.textMuted,
                                         height: 1.4,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 12),
                                     Text(
                                       _formatTime(n.createdAt),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textMuted,
+                                        fontWeight: isUnread
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
+                                        color: isUnread
+                                            ? AppColors.primary.withValues(alpha: 0.8)
+                                            : AppColors.textMuted,
                                       ),
                                     ),
                                   ],
@@ -325,8 +323,8 @@ class NotificationsScreen extends StatelessWidget {
       iconData = Icons.warning_amber_rounded;
       color = AppColors.error;
     } else if (lower.contains('system')) {
-      iconData = Icons.info_outline;
-      color = Colors.blue;
+      iconData = Icons.campaign_outlined;
+      color = const Color(0xFF3B82F6);
     } else {
       iconData = Icons.notifications_outlined;
       color = AppColors.textMuted;
@@ -353,5 +351,107 @@ class NotificationsScreen extends StatelessWidget {
     } else {
       return DateFormat('MMM d, y').format(time);
     }
+  }
+
+  void _showClearAllConfirm(BuildContext context, dynamic ns) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Icon(
+                Icons.delete_sweep_outlined,
+                color: AppColors.error,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Clear all notifications?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'This will permanently delete all your notifications. This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ns.deleteAll();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Clear All',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

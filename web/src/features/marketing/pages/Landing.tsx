@@ -19,6 +19,7 @@ import {
   CheckCircleIcon as CheckSolid,
   StarIcon as StarSolid,
 } from "@heroicons/react/24/solid";
+import { Helmet } from "react-helmet-async";
 import { LegalModal } from "../../../components/ui/LegalModal";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
@@ -189,6 +190,22 @@ export function WebLanding() {
 
   return (
     <div className="bg-white min-h-screen overflow-x-hidden">
+      <Helmet>
+        <title>Vector | Smart Fleet Management & Route Optimization</title>
+        <meta
+          name="description"
+          content="Vector is the all-in-one fleet management platform for local delivery businesses. Optimize routes, track drivers live, and provide real-time ETAs to customers."
+        />
+        <link rel="canonical" href="https://vector-fleet.vercel.app/" />
+        <meta
+          property="og:title"
+          content="Vector | Smart Fleet Management & Route Optimization"
+        />
+        <meta
+          property="og:description"
+          content="Optimize your delivery operations with Vector. Live GPS tracking, AI route planning, and verified proof of delivery."
+        />
+      </Helmet>
       {/* ── Navigation ─────────────────────────────────────────────── */}
       <nav
         className={clsx(

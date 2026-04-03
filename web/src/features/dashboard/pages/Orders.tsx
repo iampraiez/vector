@@ -165,7 +165,9 @@ export function DashboardOrders() {
                       .filter(
                         (o) =>
                           selectedOrders.includes(o.id) &&
-                          (o.status === "in_progress" || o.status === "failed"),
+                          (o.status === "in_progress" ||
+                            o.status === "failed" ||
+                            o.status === "completed"),
                       )
                       .map((o) => o.external_id || o.id);
 
@@ -825,18 +827,6 @@ export function DashboardOrders() {
                                 <PencilIcon className="w-4 h-4" />
                               </button>
                             )}
-                            {order.status === "failed" && (
-                              <button
-                                onClick={() => {
-                                  setReassignDriverId(order.driver_id || "");
-                                  setReassigningOrder(order);
-                                }}
-                                className="p-1.5 border border-black/8 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600/30 hover:bg-emerald-50 transition-all cursor-pointer"
-                                title="Retry / Reassign"
-                              >
-                                <ArrowPathIcon className="w-4 h-4" />
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -996,8 +986,10 @@ export function DashboardOrders() {
               {ineligibleOrders.length > 0 ? (
                 <>
                   The following orders cannot be deleted because they are
-                  already <span className="font-bold">In Progress</span> or have{" "}
-                  <span className="font-bold text-red-500">Failed</span>:
+                  already <span className="font-bold">In Progress</span>,{" "}
+                  <span className="font-bold text-emerald-600">Completed</span>,
+                  or have <span className="font-bold text-red-500">Failed</span>
+                  :
                   <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-black/5 max-h-40 overflow-y-auto">
                     <ul className="list-disc list-inside space-y-1">
                       {ineligibleOrders.map((id) => (

@@ -33,6 +33,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<Map<String, dynamic>> _completedRoutes = [];
   final _weekBarData = [0, 0, 0, 0, 0, 0, 0];
   final _weekFailedBarData = [0, 0, 0, 0, 0, 0, 0];
+  final _weekEarningsBarData = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
   final _weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   bool _isLoading = true;
@@ -118,11 +119,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<Map<String, dynamic>> _parseRoutes(Map<String, dynamic> data) {
     final List<Map<String, dynamic>> results = [];
     final List items = data['data'] as List? ?? [];
+    
+    debugPrint('Parsing ${items.length} history items');
 
     for (var i = 0; i < items.length; i++) {
       try {
         final r = items[i] as Map<String, dynamic>;
-        final isRoute = r['type'] == 'route';
+        final type = r['type']?.toString() ?? 'route';
+        final isRoute = type == 'route';
         final stops = (r['stops'] as List? ?? []);
         
         int totalStopsCount;
@@ -132,24 +136,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
         if (isRoute) {
           totalStopsCount = stops.length;
-          completedStops = stops.where((s) => (s as Map)['status'] == 'completed').length;
-          failedStops = stops.where((s) => (s as Map)['status'] == 'failed').length;
-          name = r['name'] ?? 'Route';
+          completedStops = stops.where((s) => (s as Map)['status']?.toString() == 'completed').length;
+          failedStops = stops.where((s) => (s as Map)['status']?.toString() == 'failed').length;
+          name = r['name']?.toString() ?? 'Route';
         } else {
           totalStopsCount = 1;
-          completedStops = r['status'] == 'completed' ? 1 : 0;
-          failedStops = r['status'] == 'failed' ? 1 : 0;
-          name = r['customer_name'] ?? 'Order';
+          completedStops = r['status']?.toString() == 'completed' ? 1 : 0;
+          failedStops = r['status']?.toString() == 'failed' ? 1 : 0;
+          name = r['customer_name']?.toString() ?? 'Order';
         }
 
-        final dateStr = r['date'] as String? ?? r['completed_at'] as String? ?? '';
+        final dateStr = r['date']?.toString() ?? r['completed_at']?.toString() ?? '';
         final rawDate = dateStr.isNotEmpty ? (DateTime.tryParse(dateStr) ?? DateTime.now()) : DateTime(0);
         
-        final double ratingVal = (r['rating'] as num?)?.toDouble() ?? 0.0;
+        final double ratingVal = (r['rating'] != null) ? (double.tryParse(r['rating'].toString()) ?? 5.0) : 5.0;
         final double earningsVal = (r['earnings'] as num?)?.toDouble() ?? 0.0;
 
         final parsed = {
-          'id': r['id'] ?? 'item-$i',
+          'id': r['id']?.toString() ?? 'item-$i',
           'name': name,
           'date': dateStr.isNotEmpty ? _formatDate(rawDate.toIso8601String()) : '--',
           'rawDateStr': rawDate.toIso8601String(),
@@ -166,10 +170,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
             final sm = s as Map<String, dynamic>;
             final sStatus = (sm['status'] ?? '').toString().toLowerCase();
             return {
-              'address': sm['address'] ?? '',
-              'time': sm['completed_at'] != null ? _formatTime(sm['completed_at']) : '--',
-              'customer': sm['customer_name'] ?? '',
-              'raw_completed_at': sm['completed_at'],
+              'address': sm['address']?.toString() ?? '',
+              'time': sm['completed_at'] != null ? _formatTime(sm['completed_at'].toString()) : '--',
+              'customer': sm['customer_name']?.toString() ?? '',
+              'raw_completed_at': sm['completed_at']?.toString(),
               'status': sStatus,
             };
           }).toList(),
@@ -178,8 +182,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         // Calculate actual duration: Last stop time - First stop time
         final timeline = (parsed['timeline'] as List).cast<Map<String, dynamic>>();
         final completedTimes = timeline
-            .where((t) => t['raw_completed_at'] != null)
-            .map((t) => DateTime.parse(t['raw_completed_at'] as String))
+            .where((t) => t['raw_completed_at'] != null && t['raw_completed_at'].toString().isNotEmpty)
+            .map((t) {
+              try {
+                return DateTime.parse(t['raw_completed_at'].toString());
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<DateTime>()
             .toList()
           ..sort();
 
@@ -195,16 +206,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
 
         results.add(parsed);
-      } catch (e) {
-        // Silently skip corrupted items to show the rest
+      } catch (e, stack) {
+        debugPrint('Error parsing history item $i: $e\n$stack');
       }
     }
+    
+    debugPrint('Successfully parsed ${results.length} items');
     return results;
   }
 
   void _updateChartData() {
     _weekBarData.fillRange(0, 7, 0);
     _weekFailedBarData.fillRange(0, 7, 0);
+    _weekEarningsBarData.fillRange(0, 7, 0.0);
 
     final now = DateTime.now();
     // Monday of this week
@@ -214,8 +228,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     for (final r in _completedRoutes) {
       final dtStr = r['rawDateStr'] as String?;
       if (dtStr == null || dtStr.isEmpty) continue;
-      final dt = DateTime.tryParse(dtStr);
-      if (dt == null || dt == DateTime(0)) continue;
+      final dtRaw = DateTime.tryParse(dtStr);
+      if (dtRaw == null || dtRaw == DateTime(0)) continue;
+
+      // Normalize to local date at midnight for comparison
+      final dt = DateTime(dtRaw.year, dtRaw.month, dtRaw.day);
 
       if (dt.isAfter(startOfMonday) || dt.isAtSameMomentAs(startOfMonday)) {
         final dayIndex = dt.weekday - 1; // 0 for Mon, 6 for Sun
@@ -225,6 +242,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           
           _weekBarData[dayIndex] += completedCount;
           _weekFailedBarData[dayIndex] += failedCount;
+
+          // Parse earnings
+          final earningsStr = (r['earnings'] as String? ?? '').replaceAll(_currency, '').trim();
+          final earnings = double.tryParse(earningsStr) ?? 0.0;
+          _weekEarningsBarData[dayIndex] += earnings;
         }
       }
     }
@@ -421,7 +443,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
                                     'This Week',
                                     style: TextStyle(
@@ -430,12 +452,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       color: AppColors.textPrimary,
                                     ),
                                   ),
-                                  Text(
-                                    'Deliveries per day',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Deliveries per day',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(width: 3, height: 3, decoration: const BoxDecoration(color: AppColors.border, shape: BoxShape.circle)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Weekly Earned: $_currency ${(_weekEarningsBarData.reduce((a, b) => a + b)).toStringAsFixed(1)}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.success,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -1198,6 +1235,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (!context.mounted) return;
 
+    if (!context.mounted) return;
+
+    // Show persistent feedback during API call
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            SizedBox(width: 16),
+            Text('Relaying export request...'),
+          ],
+        ),
+        duration: Duration(minutes: 1), // Stay until we hide it
+        backgroundColor: AppColors.primary,
+      ),
+    );
+
     try {
       final res = await _api.exportHistory(
         range: range,
@@ -1206,13 +1260,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
 
       if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(res['message'] ?? 'Export report shared!'),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    res['message'] ?? 'Report requested. It will be sent to your email shortly.',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 6),
             behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             margin: const EdgeInsets.all(16),
           ),
         );

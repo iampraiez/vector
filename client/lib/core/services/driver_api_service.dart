@@ -138,6 +138,15 @@ class DriverApiService {
     }
   }
 
+  Future<Map<String, dynamic>> lookupStopByToken(String token) async {
+    try {
+      final res = await _dio.get('/driver/delivery/lookup/$token');
+      return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Future<void> completeDelivery(
     String stopId, {
     String? photoUrl,
@@ -304,6 +313,14 @@ class DriverApiService {
   Future<void> deleteNotification(String notificationId) async {
     try {
       await _dio.delete('/driver/notifications/$notificationId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> deleteAllNotifications() async {
+    try {
+      await _dio.delete('/driver/notifications');
     } on DioException catch (e) {
       throw _handleError(e);
     }

@@ -30,6 +30,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
   final TextEditingController _notesController = TextEditingController();
   bool _submitting = false;
   bool _uploadingPhoto = false;
+  StopModel? _lookedUpStop;
 
   Future<void> _handleSubmit() async {
     if (!_photo || !_qrScanned) return;
@@ -160,12 +161,83 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
       );
       context.pop();
     }
+  }
 
-    if (mounted) {
+  Future<void> _handleStandaloneSubmit() async {
+    if (!_photo || (!_qrScanned && _lookedUpStop == null)) return;
+    if (_submitting) return;
+
+    if (!context.mounted) return;
+    final isOffline = await OfflineService.instance.isOffline();
+    if (!mounted) return;
+
+    if (isOffline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Standalone scan requires an internet connection.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _uploadingPhoto = true;
+    });
+
+    final localPath = _capturedPhotoPath;
+    final stopId = _lookedUpStop?.id;
+
+    if (stopId == null || localPath == null) {
       setState(() {
         _submitting = false;
         _uploadingPhoto = false;
       });
+      return;
+    }
+
+    try {
+      final cloudPhotoUrl =
+          await CloudinaryService.instance.upload(filePath: localPath);
+      if (!mounted) return;
+      setState(() => _uploadingPhoto = false);
+
+      await _api.completeDelivery(
+        stopId,
+        photoUrl: cloudPhotoUrl,
+        qrCode: _scannedQrCode,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Delivery confirmed successfully!'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _uploadingPhoto = false;
+        });
+      }
     }
   }
 
@@ -180,7 +252,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
         return null;
       }
     })();
-    final currentStop = progress?.currentStop;
+    final currentStop = progress?.currentStop ?? _lookedUpStop;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -499,22 +571,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                           InkWell(
                             onTap: () {
                               final messenger = ScaffoldMessenger.of(context);
-                              final expectedToken = RouteProgressScope.of(context)
-                                  .currentStop
-                                  ?.trackingToken
-                                  ?.trim();
-                              if (expectedToken == null || expectedToken.isEmpty) {
-                                messenger.clearSnackBars();
-                                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Delivery code unavailable. Refresh assignments, then open this stop again.',
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                                return;
-                              }
+                              final expectedToken = progress?.currentStop?.trackingToken?.trim();
 
                               showModalBottomSheet(
                                 context: context,
@@ -531,7 +588,7 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                                     child: Stack(
                                       children: [
                                         MobileScanner(
-                                          onDetect: (capture) {
+                                          onDetect: (capture) async {
                                             if (capture.barcodes.isEmpty) return;
                                             final raw =
                                                 capture.barcodes.first.rawValue;
@@ -539,21 +596,54 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
                                             final scanned = raw.trim();
                                             if (scanned.isEmpty) return;
 
-                                            if (scanned != expectedToken) {
+                                            if (expectedToken != null &&
+                                                scanned != expectedToken) {
                                               // Only show the error toast once to avoid spamming
                                               if (!_wrongQrShownOnce) {
-                                                setState(() => _wrongQrShownOnce = true);
+                                                setState(() =>
+                                                    _wrongQrShownOnce = true);
                                                 messenger.clearSnackBars();
                                                 messenger.showSnackBar(
                                                   const SnackBar(
                                                     content: Text(
                                                       'Wrong QR code. Please scan the customer\'s code.',
                                                     ),
-                                                    behavior: SnackBarBehavior.floating,
+                                                    behavior:
+                                                        SnackBarBehavior.floating,
                                                   ),
                                                 );
                                               }
                                               return;
+                                            }
+
+                                            // If no expected token (Home scan), we lookup the stop by token
+                                            if (expectedToken == null) {
+                                              try {
+                                                final stopData = await _api
+                                                    .lookupStopByToken(scanned);
+                                                if (mounted) {
+                                                  setState(() {
+                                                    _lookedUpStop =
+                                                        StopModel.fromJson(
+                                                            stopData);
+                                                    _qrScanned = true;
+                                                    _scannedQrCode = scanned;
+                                                  });
+                                                }
+                                              } catch (e) {
+                                                messenger.clearSnackBars();
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        'Order not assigned to you or invalid: $e'),
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    backgroundColor:
+                                                        AppColors.error,
+                                                  ),
+                                                );
+                                                return;
+                                              }
                                             }
 
                                             if (ctx.mounted) ctx.pop();
@@ -767,7 +857,9 @@ class _ProofDeliveryScreenState extends State<ProofDeliveryScreen> {
           width: double.infinity,
           height: 60,
           child: ElevatedButton(
-            onPressed: isComplete && !_submitting ? _handleSubmit : null,
+            onPressed: isComplete && !_submitting
+                ? (progress != null ? _handleSubmit : _handleStandaloneSubmit)
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: isComplete ? AppColors.primary : const Color(0xFFE0E0E0),
               foregroundColor: Colors.white,

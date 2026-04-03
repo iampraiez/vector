@@ -144,6 +144,16 @@ class NotificationService extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteAll() async {
+    if (_notifications.isEmpty) return;
+    _notifications.clear();
+    notifyListeners();
+    _saveToCache();
+    try {
+      await DriverApiService.instance.deleteAllNotifications();
+    } catch (_) {}
+  }
+
   void clearCache() async {
     _notifications.clear();
     final prefs = await SharedPreferences.getInstance();

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import { Helmet } from "react-helmet-async";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 
@@ -103,6 +104,10 @@ export function Terms() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
+      <Helmet>
+        <title>Terms of Service | Vector</title>
+        <link rel="canonical" href="https://vector-fleet.vercel.app/terms" />
+      </Helmet>
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-black/5 px-6 py-5 flex items-center justify-between">
         <div

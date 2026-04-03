@@ -122,20 +122,21 @@ export class DriverService {
     const today = new Date().toISOString().split('T')[0];
 
     const [completedToday, driverData, activeRoute] = await Promise.all([
-      // this.prisma.route.findMany({
-      //   where: { driver_id: driver.id, date: today },
-      //   include: { stops: true },
-      // }),
       this.prisma.stop.count({
         where: {
           driver_id: driver.id,
           status: 'completed',
-          updated_at: { gte: new Date(today) },
+          completed_at: { gte: new Date(today) },
         },
       }),
       this.prisma.driver.findUnique({
         where: { id: driver.id },
-        select: { total_deliveries: true },
+        select: {
+          total_deliveries: true,
+          avg_rating: true,
+          rating_count: true,
+          company_id: true,
+        },
       }),
       this.prisma.route.findFirst({
         where: {
@@ -145,6 +146,22 @@ export class DriverService {
         orderBy: { updated_at: 'desc' },
       }),
     ]);
+
+    let totalDeliveries = driverData?.total_deliveries || 0;
+    if (totalDeliveries === 0) {
+      const actualCount = await this.prisma.stop.count({
+        where: { driver_id: driver.id, status: 'completed' },
+      });
+      if (actualCount > 0) {
+        totalDeliveries = actualCount;
+        this.prisma.driver
+          .update({
+            where: { id: driver.id },
+            data: { total_deliveries: actualCount },
+          })
+          .catch(() => {});
+      }
+    }
 
     const pendingStopsCount = await this.prisma.stop.count({
       where: {
@@ -156,8 +173,16 @@ export class DriverService {
     // Get company settings for pricing
     const company = await this.prisma.company.findUnique({
       where: { id: driver.company_id },
-      select: { currency: true, name: true },
+      select: { currency: true, name: true, price_per_km: true },
     });
+
+    let rating = driverData?.avg_rating || 5.0;
+    if (rating === 0) {
+      // Check if driver has any ratings at all
+      if (driverData?.rating_count === 0) {
+        rating = 5.0;
+      }
+    }
 
     return {
       status: driver.status,
@@ -166,7 +191,7 @@ export class DriverService {
       pending_stops: pendingStopsCount,
       active_route_name: activeRoute?.name || null,
       active_route_id: activeRoute?.id || null,
-      rating: driver.avg_rating,
+      rating: rating,
       last_active_at: driver.last_active_at,
       company_name: company?.name || null,
       currency: company?.currency || 'NGN',
@@ -1110,6 +1135,50 @@ export class DriverService {
 
   async getProfile(userId: string) {
     const driver = await this.getDriverOrThrow(userId);
+    // Safety check: if stats are zero but driver has history, re-derive them
+    let deliveries = driver.total_deliveries;
+    let rating = driver.avg_rating || 5.0;
+
+    if (deliveries === 0) {
+      const actualCount = await this.prisma.stop.count({
+        where: { driver_id: driver.id, status: 'completed' },
+      });
+      if (actualCount > 0) {
+        deliveries = actualCount;
+        // Optionally update the DB in background
+        this.prisma.driver
+          .update({
+            where: { id: driver.id },
+            data: { total_deliveries: actualCount },
+          })
+          .catch(() => {});
+      }
+    }
+
+    if (!driver.avg_rating || driver.avg_rating === 0) {
+      const actualRatings = await this.prisma.stop.findMany({
+        where: { driver_id: driver.id, customer_rating: { not: null } },
+        select: { customer_rating: true },
+      });
+      if (actualRatings.length > 0) {
+        const total = actualRatings.reduce(
+          (sum, r) => sum + (r.customer_rating || 0),
+          0,
+        );
+        rating = parseFloat((total / actualRatings.length).toFixed(2));
+        // Optionally update DB
+        this.prisma.driver
+          .update({
+            where: { id: driver.id },
+            data: {
+              avg_rating: rating,
+              rating_count: actualRatings.length,
+            },
+          })
+          .catch(() => {});
+      }
+    }
+
     return {
       id: driver.user_id,
       driver_id: driver.id,
@@ -1123,8 +1192,8 @@ export class DriverService {
       vehicle_model: driver.vehicle_model,
       vehicle_color: driver.vehicle_color,
       license_number: driver.license_number,
-      rating: driver.avg_rating,
-      deliveries: driver.total_deliveries,
+      rating: rating,
+      deliveries: deliveries,
       joined_at: driver.created_at,
       fleet_name: driver.company.name,
       fleet_code: driver.company.company_code,
@@ -1580,5 +1649,22 @@ export class DriverService {
 
       return route;
     });
+  }
+
+  async lookupStopByToken(userId: string, token: string) {
+    const driver = await this.getDriverOrThrow(userId);
+    const stop = await this.prisma.stop.findUnique({
+      where: { tracking_token: token },
+    });
+
+    if (!stop) {
+      throw new NotFoundException('Order not found.');
+    }
+
+    if (stop.driver_id !== driver.id) {
+      throw new ForbiddenException('This order is not assigned to you.');
+    }
+
+    return stop;
   }
 }

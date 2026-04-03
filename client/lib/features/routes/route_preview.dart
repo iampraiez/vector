@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import '../../core/constants/api_constants.dart';
 import '../../core/theme/colors.dart';
 import '../../core/constants/map_constants.dart';
 import '../../core/services/map_service.dart';
@@ -164,12 +166,19 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
 
     // Pan camera to show the full route
     if (validCoords.isNotEmpty) {
-      if (validCoords.length == 1) {
+      // Use a Set with epsilon or string rounding to ensure we don't fit zero-size bounds
+      final distinct = validCoords.map((c) => '${c.latitude.toStringAsFixed(6)},${c.longitude.toStringAsFixed(6)}').toSet();
+      
+      if (distinct.length <= 1) {
         _mapController.move(validCoords.first, 14.0);
       } else {
         final bounds = LatLngBounds.fromPoints(validCoords);
         _mapController.fitCamera(
-          CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)),
+          CameraFit.bounds(
+            bounds: bounds, 
+            padding: const EdgeInsets.all(60),
+            maxZoom: 16.0, // Safety cap to avoid "Infinity" zoom on precision issues
+          ),
         );
       }
     }
@@ -248,10 +257,25 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => Share.share(
-                        'Check out my delivery route for $dateStr: ${_stops.length} stops, ${_distanceKm.toStringAsFixed(1)} km total.',
-                        subject: 'Vector Delivery Route',
-                      ),
+                      onTap: () async {
+                        String trackingLink = '';
+                        if (_stops.isNotEmpty && _stops[0]['tracking_token'] != null) {
+                          trackingLink = '\n\nLive Tracking: ${ApiConstants.webUrl}/track?token=${_stops[0]['tracking_token']}';
+                        }
+                        
+                        final text = 'Check out my delivery route for $dateStr: ${_stops.length} stops, ${_distanceKm.toStringAsFixed(1)} km total.$trackingLink';
+                        
+                        try {
+                          await Share.share(text, subject: 'Vector Delivery Route');
+                        } catch (e) {
+                          if (context.mounted) {
+                            Clipboard.setData(ClipboardData(text: text));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Route info copied to clipboard')),
+                            );
+                          }
+                        }
+                      },
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

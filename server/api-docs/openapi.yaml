@@ -1107,7 +1107,17 @@ paths:
   /driver/assignments:
     get:
       operationId: AssignmentsController_getAssignments
-      parameters: []
+      parameters:
+        - name: limit
+          required: true
+          in: query
+          schema:
+            type: number
+        - name: offset
+          required: true
+          in: query
+          schema:
+            type: number
       responses:
         "200":
           description: ""
@@ -1289,6 +1299,19 @@ paths:
               $ref: "#/components/schemas/FailDeliveryDto"
       responses:
         "201":
+          description: ""
+      tags: *a20
+  /driver/delivery/lookup/{token}:
+    get:
+      operationId: DeliveryController_lookupStopByToken
+      parameters:
+        - name: token
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
           description: ""
       tags: *a20
   /driver/history:

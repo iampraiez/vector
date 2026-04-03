@@ -8,23 +8,21 @@ import {
   EnvelopeIcon,
   StarIcon,
   ClockIcon,
-  CheckCircleIcon,
   UsersIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { LocalShippingIcon } from "../../../components/icons/LocalShippingIcon";
 import { Skeleton } from "../../../components/ui/skeleton";
-import { maskEmail, maskPhone } from "../../../utils/masking";
 
 interface DeliveryHistory {
   id: string;
   externalId: string;
   customerName: string;
   address: string;
+  date: string;
+  timeWindow: string;
   completedAt: string;
   packages: number;
-  signature: boolean;
-  timeWindow: string;
   status: string;
 }
 
@@ -35,7 +33,7 @@ export function DashboardDriverDetail() {
     useDriverStore();
   const [timeFilter, setTimeFilter] = useState<
     "today" | "week" | "month" | "all"
-  >("today");
+  >("all");
 
   useEffect(() => {
     if (id) {
@@ -122,7 +120,9 @@ export function DashboardDriverDetail() {
     vehicle: `${selectedDriver.vehicle_type || "No vehicle"} • ${selectedDriver.vehicle_plate || "No plate"}`,
     rating: selectedDriver.avg_rating || "—",
     status: selectedDriver.status,
-    lastSession: selectedDriver.last_active_at ? "Active" : "New",
+    lastSession: selectedDriver.last_active_at
+      ? new Date(selectedDriver.last_active_at).toLocaleString()
+      : "New",
     companyCode: "VECT-D", // Stubbed
     joinedDate: selectedDriver.joined_at
       ? new Date(selectedDriver.joined_at).toLocaleDateString("en-US", {
@@ -140,16 +140,53 @@ export function DashboardDriverDetail() {
     externalId: stop.external_id,
     customerName: stop.customer_name,
     address: stop.address,
-    completedAt: stop.completed_at
-      ? new Date(stop.completed_at).toLocaleTimeString()
-      : "Pending",
-    packages: 1, // Stop represents a single delivery in this context
-    signature: false,
-    timeWindow: stop.delivery_date || "—",
+    completedAt:
+      stop.status === "failed"
+        ? "Failed"
+        : stop.completed_at
+          ? new Date(stop.completed_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "Pending",
+    packages: stop.packages || 1, // Use actual packages if available
+    date: stop.delivery_date || "—",
+    timeWindow:
+      stop.time_window_start && stop.time_window_end
+        ? `${stop.time_window_start} - ${stop.time_window_end}`
+        : "—",
     status: stop.status,
   }));
+  const currentHistory = historyData.filter((item) => {
+    if (timeFilter === "all") return true;
+    if (!item.date || item.date === "—") return false;
 
-  const currentHistory = historyData; // Simplify for now as we don't have filtered history from API yet
+    const [year, month, day] = item.date.split("-").map(Number);
+    if (!year || !month || !day) return true;
+
+    const itemDate = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (timeFilter === "today") {
+      return itemDate.getTime() === today.getTime();
+    }
+
+    if (timeFilter === "week") {
+      const oneWeekAgo = new Date(today);
+      oneWeekAgo.setDate(today.getDate() - 7);
+      return itemDate >= oneWeekAgo && itemDate <= today;
+    }
+
+    if (timeFilter === "month") {
+      return (
+        itemDate.getMonth() === today.getMonth() &&
+        itemDate.getFullYear() === today.getFullYear()
+      );
+    }
+
+    return true;
+  });
 
   return (
     <div className="p-4 md:p-8 max-w-300 mx-auto">
@@ -229,8 +266,8 @@ export function DashboardDriverDetail() {
             {/* Contact Info Chips */}
             <div className="flex flex-wrap gap-2.5 mb-8">
               {[
-                { icon: EnvelopeIcon, text: maskEmail(driver.email || "") },
-                { icon: PhoneIcon, text: maskPhone(driver.phone || "") },
+                { icon: EnvelopeIcon, text: driver.email },
+                { icon: PhoneIcon, text: driver.phone },
                 { icon: LocalShippingIcon, text: driver.vehicle },
               ].map(({ icon: Icon, text }) => (
                 <div
@@ -295,9 +332,9 @@ export function DashboardDriverDetail() {
                   "ORDER ID",
                   "CUSTOMER",
                   "ADDRESS",
+                  "DATE",
                   "TIME WINDOW",
                   "COMPLETED",
-                  "SIG",
                 ].map((h) => (
                   <th
                     key={h}
@@ -360,6 +397,11 @@ export function DashboardDriverDetail() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-[13px] text-gray-500 font-medium">
+                        {delivery.date}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-[13px] text-gray-500 font-medium">
                         {delivery.timeWindow}
                       </p>
                     </td>
@@ -367,17 +409,6 @@ export function DashboardDriverDetail() {
                       <p className="text-[13px] text-gray-500 font-medium">
                         {delivery.completedAt}
                       </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      {delivery.signature ? (
-                        <div className="w-6 h-6 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                          <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
-                        </div>
-                      ) : (
-                        <span className="text-[11px] text-gray-300 font-bold">
-                          —
-                        </span>
-                      )}
                     </td>
                   </tr>
                 ))

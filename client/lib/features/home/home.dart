@@ -650,8 +650,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final s = _summary;
     final pendingStops = s?.pendingStops ?? 0;
     final hasActiveRoute =
-        (s?.activeRouteName != null && s!.activeRouteName!.isNotEmpty) ||
-        pendingStops > 0;
+        s?.activeRouteId != null && s!.activeRouteId!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -813,7 +812,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    s?.activeRouteName ?? 'Active Route',
+                                    s.activeRouteName ?? 'Active Route',
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
@@ -1041,7 +1040,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 _FooterStat(
                   icon: Icons.star,
                   label: 'Rating',
-                  value: s.rating > 0 ? s.rating.toStringAsFixed(1) : '--',
+                  value: s.rating > 0 ? s.rating.toStringAsFixed(1) : '5.0',
                   iconColor: const Color(0xFFFBBF24),
                 ),
                 Container(width: 1, height: 40, color: AppColors.border),
