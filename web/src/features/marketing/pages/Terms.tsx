@@ -107,6 +107,14 @@ export function Terms() {
       <Helmet>
         <title>Terms of Service | Vector</title>
         <link rel="canonical" href="https://vector-fleet.vercel.app/terms" />
+        <meta
+          property="og:image"
+          content="https://vector-fleet.vercel.app/icon.png"
+        />
+        <meta
+          property="twitter:image"
+          content="https://vector-fleet.vercel.app/icon.png"
+        />
       </Helmet>
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-black/5 px-6 py-5 flex items-center justify-between">

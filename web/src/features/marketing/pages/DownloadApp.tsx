@@ -60,6 +60,14 @@ export function DownloadApp() {
           content="Download the Vector driver app to receive optimized routes, capture proof of delivery, and manage your stops with ease."
         />
         <link rel="canonical" href="https://vector-fleet.vercel.app/download" />
+        <meta
+          property="og:image"
+          content="https://vector-fleet.vercel.app/icon.png"
+        />
+        <meta
+          property="twitter:image"
+          content="https://vector-fleet.vercel.app/icon.png"
+        />
       </Helmet>
       {/* Top nav */}
       <nav className="shrink-0 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between sticky top-0 z-50">

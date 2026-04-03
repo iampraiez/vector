@@ -205,6 +205,14 @@ export function WebLanding() {
           property="og:description"
           content="Optimize your delivery operations with Vector. Live GPS tracking, AI route planning, and verified proof of delivery."
         />
+        <meta
+          property="og:image"
+          content="https://vector-fleet.vercel.app/icon.png"
+        />
+        <meta
+          property="twitter:image"
+          content="https://vector-fleet.vercel.app/icon.png"
+        />
       </Helmet>
       {/* ── Navigation ─────────────────────────────────────────────── */}
       <nav
